@@ -133,18 +133,21 @@ export const eventAPI = {
   create: (data: any) => api.post("/events", data),
   update: (id: string, data: any) => api.put(`/events/${id}`, data),
   delete: (id: string) => api.delete(`/events/${id}`),
-  saveAgreement: (id: string, data: any) => api.put(`/events/${id}/agreement`, data),
+  saveAgreement: (id: string, data: any) =>
+    api.put(`/events/${id}/agreement`, data),
   dispatch: (id: string, data: any) => api.post(`/events/${id}/dispatch`, data),
   return: (id: string, data: any) => api.post(`/events/${id}/return`, data),
 };
 
 // Leads API calls
 export const leadsAPI = {
-  updateStatus: (id: string, status: string) => api.patch(`/leads/${id}/status`, { status }),
+  updateStatus: (id: string, status: string) =>
+    api.patch(`/leads/${id}/status`, { status }),
   updateStatusByClient: (clientId: string, status: string) =>
     api.patch(`/leads/by-client/${clientId}/status`, { status }),
-  updatePriority: (id: string, priority: 'hot' | 'cold') => api.patch(`/leads/${id}/priority`, { priority }),
-  updatePriorityByClient: (clientId: string, priority: 'hot' | 'cold') =>
+  updatePriority: (id: string, priority: "hot" | "cold") =>
+    api.patch(`/leads/${id}/priority`, { priority }),
+  updatePriorityByClient: (clientId: string, priority: "hot" | "cold") =>
     api.patch(`/leads/by-client/${clientId}/priority`, { priority }),
 };
 

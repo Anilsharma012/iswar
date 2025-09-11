@@ -274,7 +274,8 @@ export const updateLeadStatus = async (req: AuthRequest, res: Response) => {
 export const updateLeadPriority = async (req: AuthRequest, res: Response) => {
   try {
     const { priority } = req.body as { priority: "hot" | "cold" };
-    if (!priority) return res.status(400).json({ error: "priority is required" });
+    if (!priority)
+      return res.status(400).json({ error: "priority is required" });
     const lead = await Lead.findByIdAndUpdate(
       req.params.id,
       { priority },
@@ -344,7 +345,8 @@ export const updateLeadPriorityByClient = async (
 ) => {
   try {
     const { priority } = req.body as { priority: "hot" | "cold" };
-    if (!priority) return res.status(400).json({ error: "priority is required" });
+    if (!priority)
+      return res.status(400).json({ error: "priority is required" });
     const client = await Client.findById(req.params.clientId);
     if (!client) return res.status(404).json({ error: "Client not found" });
 

@@ -57,8 +57,14 @@ function App() {
               <Route path="stock" element={<Stock />} />
               <Route path="events" element={<Events />} />
               <Route path="event-details/:id" element={<EventDetails />} />
-              <Route path="admin/events/:id/agreement" element={<EventAgreement />} />
-              <Route path="admin/events/:id/dispatch" element={<EventDispatch />} />
+              <Route
+                path="admin/events/:id/agreement"
+                element={<EventAgreement />}
+              />
+              <Route
+                path="admin/events/:id/dispatch"
+                element={<EventDispatch />}
+              />
               <Route path="admin/events/:id/return" element={<EventReturn />} />
               <Route path="workers" element={<Workers />} />
               <Route path="attendance" element={<Attendance />} />

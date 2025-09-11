@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,10 +31,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Plus,
   Search,
@@ -46,8 +57,8 @@ import {
   MapPin,
   FileText,
   Building,
-} from 'lucide-react';
-import { clientAPI, eventAPI, leadsAPI } from '@/lib/api';
+} from "lucide-react";
+import { clientAPI, eventAPI, leadsAPI } from "@/lib/api";
 
 interface Client {
   _id: string;
@@ -69,11 +80,11 @@ interface ClientFormData {
 }
 
 const initialFormData: ClientFormData = {
-  name: '',
-  phone: '',
-  email: '',
-  address: '',
-  gstNumber: '',
+  name: "",
+  phone: "",
+  email: "",
+  address: "",
+  gstNumber: "",
 };
 
 export default function Clients() {
@@ -82,9 +93,13 @@ export default function Clients() {
   const [formData, setFormData] = useState<ClientFormData>(initialFormData);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [leadPriority, setLeadPriority] = useState<Record<string, 'hot' | 'cold' | null>>({});
-  const [leadStage, setLeadStage] = useState<Record<string, 'success' | 'pending' | 'reject' | null>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [leadPriority, setLeadPriority] = useState<
+    Record<string, "hot" | "cold" | null>
+  >({});
+  const [leadStage, setLeadStage] = useState<
+    Record<string, "success" | "pending" | "reject" | null>
+  >({});
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -100,18 +115,20 @@ export default function Clients() {
         limit: pagination.limit,
         search: searchTerm,
       };
-      
+
       const response = await clientAPI.getAll(params);
       setClients(response.data.clients || []);
-      setPagination(response.data.pagination || {
-        page: 1,
-        limit: 10,
-        total: 0,
-        pages: 0,
-      });
+      setPagination(
+        response.data.pagination || {
+          page: 1,
+          limit: 10,
+          total: 0,
+          pages: 0,
+        },
+      );
     } catch (error: any) {
-      console.error('Fetch clients error:', error);
-      toast.error('Failed to load clients');
+      console.error("Fetch clients error:", error);
+      toast.error("Failed to load clients");
     } finally {
       setLoading(false);
     }
@@ -125,19 +142,19 @@ export default function Clients() {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      toast.error('Client name is required');
+      toast.error("Client name is required");
       return;
     }
 
     if (!formData.phone.trim()) {
-      toast.error('Phone number is required');
+      toast.error("Phone number is required");
       return;
     }
 
     // Validate phone number (10 digits)
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneRegex.test(formData.phone)) {
-      toast.error('Please enter a valid 10-digit Indian phone number');
+      toast.error("Please enter a valid 10-digit Indian phone number");
       return;
     }
 
@@ -145,16 +162,17 @@ export default function Clients() {
     if (formData.email && formData.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
-        toast.error('Please enter a valid email address');
+        toast.error("Please enter a valid email address");
         return;
       }
     }
 
     // Validate GST number format if provided
     if (formData.gstNumber && formData.gstNumber.trim()) {
-      const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      const gstRegex =
+        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
       if (!gstRegex.test(formData.gstNumber.toUpperCase())) {
-        toast.error('Please enter a valid GST number (15 characters)');
+        toast.error("Please enter a valid GST number (15 characters)");
         return;
       }
     }
@@ -180,25 +198,26 @@ export default function Clients() {
     try {
       if (editingClient) {
         await clientAPI.update(editingClient._id, clientData);
-        toast.success('Client updated successfully');
+        toast.success("Client updated successfully");
       } else {
         await clientAPI.create(clientData);
-        toast.success('Client created successfully');
+        toast.success("Client created successfully");
       }
-      
+
       setIsDialogOpen(false);
       setFormData(initialFormData);
       setEditingClient(null);
       fetchClients();
     } catch (error: any) {
-      console.error('Save client error:', error);
+      console.error("Save client error:", error);
       if (error.response?.status === 409) {
-        toast.error('A client with this phone number already exists');
+        toast.error("A client with this phone number already exists");
       } else if (error.response?.status === 400) {
-        const errorMessage = error.response?.data?.error || 'Invalid data provided';
+        const errorMessage =
+          error.response?.data?.error || "Invalid data provided";
         toast.error(`Validation error: ${errorMessage}`);
       } else {
-        toast.error(error.response?.data?.error || 'Failed to save client');
+        toast.error(error.response?.data?.error || "Failed to save client");
       }
     }
   };
@@ -206,11 +225,11 @@ export default function Clients() {
   const handleEdit = (client: Client) => {
     setEditingClient(client);
     setFormData({
-      name: client.name || '',
-      phone: client.phone || '',
-      email: client.email || '',
-      address: client.address || '',
-      gstNumber: client.gstNumber || '',
+      name: client.name || "",
+      phone: client.phone || "",
+      email: client.email || "",
+      address: client.address || "",
+      gstNumber: client.gstNumber || "",
     });
     setIsDialogOpen(true);
   };
@@ -218,14 +237,16 @@ export default function Clients() {
   const handleDelete = async (id: string) => {
     try {
       await clientAPI.delete(id);
-      toast.success('Client deleted successfully');
+      toast.success("Client deleted successfully");
       fetchClients();
     } catch (error: any) {
-      console.error('Delete client error:', error);
+      console.error("Delete client error:", error);
       if (error.response?.status === 409) {
-        toast.error('Cannot delete client. There are invoices associated with this client.');
+        toast.error(
+          "Cannot delete client. There are invoices associated with this client.",
+        );
       } else {
-        toast.error(error.response?.data?.error || 'Failed to delete client');
+        toast.error(error.response?.data?.error || "Failed to delete client");
       }
     }
   };
@@ -243,22 +264,30 @@ export default function Clients() {
     return phone;
   };
 
-  const handleLeadPriority = async (clientId: string, priority: 'hot' | 'cold') => {
+  const handleLeadPriority = async (
+    clientId: string,
+    priority: "hot" | "cold",
+  ) => {
     try {
       await leadsAPI.updatePriorityByClient(clientId, priority);
       setLeadPriority((prev) => ({ ...prev, [clientId]: priority }));
       toast.success(`Priority: ${priority.toUpperCase()}`);
     } catch (error: any) {
-      console.error('Update lead priority error:', error);
-      toast.error(error.response?.data?.error || 'Failed to update priority');
+      console.error("Update lead priority error:", error);
+      toast.error(error.response?.data?.error || "Failed to update priority");
     }
   };
 
-  const handleLeadStage = async (clientId: string, status: 'success' | 'pending' | 'reject') => {
+  const handleLeadStage = async (
+    clientId: string,
+    status: "success" | "pending" | "reject",
+  ) => {
     try {
-      if (status === 'pending') {
-        const goSuccess = window.confirm('Mark now as Success? Click Cancel to mark Reject.');
-        const final = goSuccess ? 'success' : 'reject';
+      if (status === "pending") {
+        const goSuccess = window.confirm(
+          "Mark now as Success? Click Cancel to mark Reject.",
+        );
+        const final = goSuccess ? "success" : "reject";
         await leadsAPI.updateStatusByClient(clientId, final);
         setLeadStage((prev) => ({ ...prev, [clientId]: final as any }));
         toast.success(`Status: ${final.toUpperCase()}`);
@@ -268,8 +297,8 @@ export default function Clients() {
       setLeadStage((prev) => ({ ...prev, [clientId]: status }));
       toast.success(`Status: ${status.toUpperCase()}`);
     } catch (error: any) {
-      console.error('Update lead status error:', error);
-      toast.error(error.response?.data?.error || 'Failed to update status');
+      console.error("Update lead status error:", error);
+      toast.error(error.response?.data?.error || "Failed to update status");
     }
   };
 
@@ -281,21 +310,30 @@ export default function Clients() {
       if (existing?._id) {
         return existing._id;
       }
-      const today = new Date().toISOString().slice(0,10);
-      const payload = { name: `${client.name} Event`, clientId: client._id, dateFrom: today, dateTo: today, notes: 'Draft' };
+      const today = new Date().toISOString().slice(0, 10);
+      const payload = {
+        name: `${client.name} Event`,
+        clientId: client._id,
+        dateFrom: today,
+        dateTo: today,
+        notes: "Draft",
+      };
       const created = await eventAPI.create(payload);
       const id = created.data?._id;
       if (id) return id;
-      toast.error('Failed to create draft event');
+      toast.error("Failed to create draft event");
       return null;
     } catch (e: any) {
-      console.error('Ensure event error:', e);
-      toast.error(e.response?.data?.error || 'Failed to prepare event');
+      console.error("Ensure event error:", e);
+      toast.error(e.response?.data?.error || "Failed to prepare event");
       return null;
     }
   };
 
-  const goTo = async (client: Client, path: 'agreement' | 'dispatch' | 'return') => {
+  const goTo = async (
+    client: Client,
+    path: "agreement" | "dispatch" | "return",
+  ) => {
     const id = await ensureEvent(client);
     if (id) window.location.href = `/admin/events/${id}/${path}`;
   };
@@ -306,7 +344,9 @@ export default function Clients() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-          <p className="text-gray-600">Manage your customers and their contact information</p>
+          <p className="text-gray-600">
+            Manage your customers and their contact information
+          </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -318,13 +358,12 @@ export default function Clients() {
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>
-                {editingClient ? 'Edit Client' : 'Add New Client'}
+                {editingClient ? "Edit Client" : "Add New Client"}
               </DialogTitle>
               <DialogDescription>
-                {editingClient 
-                  ? 'Update the client information below.'
-                  : 'Enter the details for the new client.'
-                }
+                {editingClient
+                  ? "Update the client information below."
+                  : "Enter the details for the new client."}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
@@ -334,12 +373,14 @@ export default function Clients() {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder="Enter client name"
                     required
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="phone">Phone Number *</Label>
                   <Input
@@ -347,7 +388,9 @@ export default function Clients() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      const value = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 10);
                       setFormData({ ...formData, phone: value });
                     }}
                     placeholder="Enter 10-digit phone number"
@@ -357,29 +400,33 @@ export default function Clients() {
                     Enter 10-digit Indian mobile number (without +91)
                   </p>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="email">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="Enter email address (optional)"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="address">Address</Label>
                   <Textarea
                     id="address"
                     value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
                     placeholder="Enter client address (optional)"
                     rows={3}
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="gstNumber">GST Number</Label>
                   <Input
@@ -401,7 +448,7 @@ export default function Clients() {
                   Cancel
                 </Button>
                 <Button type="submit">
-                  {editingClient ? 'Update Client' : 'Add Client'}
+                  {editingClient ? "Update Client" : "Add Client"}
                 </Button>
               </DialogFooter>
             </form>
@@ -441,9 +488,7 @@ export default function Clients() {
             <Users className="h-5 w-5" />
             Clients ({pagination.total})
           </CardTitle>
-          <CardDescription>
-            Manage your customer database
-          </CardDescription>
+          <CardDescription>Manage your customer database</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -453,12 +498,13 @@ export default function Clients() {
           ) : clients.length === 0 ? (
             <div className="text-center py-12">
               <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No clients found</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No clients found
+              </h3>
               <p className="text-gray-500 mb-4">
-                {searchTerm 
-                  ? 'Try adjusting your search criteria.'
-                  : 'Get started by adding your first client.'
-                }
+                {searchTerm
+                  ? "Try adjusting your search criteria."
+                  : "Get started by adding your first client."}
               </p>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
@@ -494,14 +540,38 @@ export default function Clients() {
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{client.name}</span>
                               {leadPriority[client._id] && (
-                                <Badge style={{background: leadPriority[client._id] === 'hot' ? '#22C55E' : '#EF4444', color: 'white'}}>{leadPriority[client._id]}</Badge>
+                                <Badge
+                                  style={{
+                                    background:
+                                      leadPriority[client._id] === "hot"
+                                        ? "#22C55E"
+                                        : "#EF4444",
+                                    color: "white",
+                                  }}
+                                >
+                                  {leadPriority[client._id]}
+                                </Badge>
                               )}
                               {leadStage[client._id] && (
-                                <Badge style={{background: leadStage[client._id] === 'success' ? '#16A34A' : leadStage[client._id] === 'pending' ? '#F59E0B' : '#EF4444', color: 'white'}}>{leadStage[client._id]}</Badge>
+                                <Badge
+                                  style={{
+                                    background:
+                                      leadStage[client._id] === "success"
+                                        ? "#16A34A"
+                                        : leadStage[client._id] === "pending"
+                                          ? "#F59E0B"
+                                          : "#EF4444",
+                                    color: "white",
+                                  }}
+                                >
+                                  {leadStage[client._id]}
+                                </Badge>
                               )}
                             </div>
                             {client.email && (
-                              <div className="text-sm text-gray-500">{client.email}</div>
+                              <div className="text-sm text-gray-500">
+                                {client.email}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -516,7 +586,9 @@ export default function Clients() {
                         {client.address ? (
                           <div className="flex items-start gap-1">
                             <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                            <span className="text-sm max-w-xs">{client.address}</span>
+                            <span className="text-sm max-w-xs">
+                              {client.address}
+                            </span>
                           </div>
                         ) : (
                           <span className="text-gray-400">-</span>
@@ -526,7 +598,9 @@ export default function Clients() {
                         {client.gstNumber ? (
                           <div className="flex items-center gap-1">
                             <Building className="h-4 w-4 text-gray-400" />
-                            <span className="font-mono text-sm">{client.gstNumber}</span>
+                            <span className="font-mono text-sm">
+                              {client.gstNumber}
+                            </span>
                           </div>
                         ) : (
                           <span className="text-gray-400">-</span>
@@ -544,40 +618,108 @@ export default function Clients() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                              <DropdownMenuItem onClick={() => handleLeadPriority(client._id, 'hot')}>
-                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#22C55E'}} /> Hot</span>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleLeadPriority(client._id, "hot")
+                                }
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{ background: "#22C55E" }}
+                                  />{" "}
+                                  Hot
+                                </span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleLeadPriority(client._id, 'cold')}>
-                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#EF4444'}} /> Cold</span>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleLeadPriority(client._id, "cold")
+                                }
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{ background: "#EF4444" }}
+                                  />{" "}
+                                  Cold
+                                </span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" disabled={leadStage[client._id] === 'success'}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={leadStage[client._id] === "success"}
+                              >
                                 Lead Status
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                              <DropdownMenuItem onClick={() => handleLeadStage(client._id, 'success')}>
-                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#16A34A'}} /> Success</span>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleLeadStage(client._id, "success")
+                                }
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{ background: "#16A34A" }}
+                                  />{" "}
+                                  Success
+                                </span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleLeadStage(client._id, 'pending')}>
-                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#F59E0B'}} /> Pending</span>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleLeadStage(client._id, "pending")
+                                }
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{ background: "#F59E0B" }}
+                                  />{" "}
+                                  Pending
+                                </span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleLeadStage(client._id, 'reject')}>
-                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#EF4444'}} /> Reject</span>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleLeadStage(client._id, "reject")
+                                }
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{ background: "#EF4444" }}
+                                  />{" "}
+                                  Reject
+                                </span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="default" size="sm">Actions</Button>
+                              <Button variant="default" size="sm">
+                                Actions
+                              </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                              <DropdownMenuItem onClick={() => goTo(client, 'agreement')}>Terms & Conditions</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => goTo(client, 'dispatch')}>Stock Out</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => goTo(client, 'return')}>Stock In</DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => goTo(client, "agreement")}
+                              >
+                                Terms & Conditions
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => goTo(client, "dispatch")}
+                              >
+                                Stock Out
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => goTo(client, "return")}
+                              >
+                                Stock In
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                           <Button
@@ -595,19 +737,25 @@ export default function Clients() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Client</AlertDialogTitle>
+                                <AlertDialogTitle>
+                                  Delete Client
+                                </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to delete "{client.name}"? This action cannot be undone.
+                                  Are you sure you want to delete "{client.name}
+                                  "? This action cannot be undone.
                                   {client.gstNumber && (
                                     <div className="mt-2 text-amber-600">
-                                      ⚠️ This client has a GST number and may have associated invoices.
+                                      ⚠️ This client has a GST number and may
+                                      have associated invoices.
                                     </div>
                                   )}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(client._id)}>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(client._id)}
+                                >
                                   Delete
                                 </AlertDialogAction>
                               </AlertDialogFooter>
@@ -624,16 +772,24 @@ export default function Clients() {
               {pagination.pages > 1 && (
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-500">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                    {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                    {pagination.total} clients
+                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+                    {Math.min(
+                      pagination.page * pagination.limit,
+                      pagination.total,
+                    )}{" "}
+                    of {pagination.total} clients
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       disabled={pagination.page === 1}
-                      onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                      onClick={() =>
+                        setPagination({
+                          ...pagination,
+                          page: pagination.page - 1,
+                        })
+                      }
                     >
                       Previous
                     </Button>
@@ -644,7 +800,12 @@ export default function Clients() {
                       variant="outline"
                       size="sm"
                       disabled={pagination.page === pagination.pages}
-                      onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                      onClick={() =>
+                        setPagination({
+                          ...pagination,
+                          page: pagination.page + 1,
+                        })
+                      }
                     >
                       Next
                     </Button>

@@ -224,7 +224,10 @@ app.post("/api/leads/:id/convert", convertLead);
 app.patch("/api/leads/:id/status", updateLeadStatus);
 app.patch("/api/leads/by-client/:clientId/status", updateLeadStatusByClient);
 app.patch("/api/leads/:id/priority", updateLeadPriority);
-app.patch("/api/leads/by-client/:clientId/priority", updateLeadPriorityByClient);
+app.patch(
+  "/api/leads/by-client/:clientId/priority",
+  updateLeadPriorityByClient,
+);
 
 // Attendance routes
 app.get("/api/attendance", getAttendance);

@@ -139,7 +139,7 @@ export const leadSchema = Joi.object({
       "converted",
       "success",
       "pending",
-      "reject"
+      "reject",
     )
     .default("new"),
   priority: Joi.string().valid("hot", "cold").optional(),

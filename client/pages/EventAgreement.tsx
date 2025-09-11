@@ -5,7 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { productAPI, eventAPI } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -75,7 +82,9 @@ export default function EventAgreement() {
         // Pre-fill from saved selections if present
         if (Array.isArray(ev.selections) && ev.selections.length > 0) {
           ev.selections.forEach((s: any) => {
-            const i = rows.findIndex((r) => r._id === s.productId || r.sku === s.sku);
+            const i = rows.findIndex(
+              (r) => r._id === s.productId || r.sku === s.sku,
+            );
             if (i >= 0) {
               rows[i].qtyToSend = Number(s.qtyToSend || 0);
               rows[i].rate = Number(s.rate || rows[i].rate || 0);
@@ -96,7 +105,10 @@ export default function EventAgreement() {
   }, [id]);
 
   const grandTotal = useMemo(() => {
-    const total = items.reduce((sum, it) => sum + (it.qtyToSend > 0 ? it.qtyToSend * it.rate : 0), 0);
+    const total = items.reduce(
+      (sum, it) => sum + (it.qtyToSend > 0 ? it.qtyToSend * it.rate : 0),
+      0,
+    );
     return Number(total.toFixed(2));
   }, [items]);
 
@@ -183,9 +195,13 @@ export default function EventAgreement() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Terms & Conditions</h1>
         <div className="text-right">
-          <div className="text-sm">Client: <span className="font-medium">{event.clientId?.name}</span> ({event.clientId?.phone})</div>
+          <div className="text-sm">
+            Client: <span className="font-medium">{event.clientId?.name}</span>{" "}
+            ({event.clientId?.phone})
+          </div>
           <div className="text-sm text-muted-foreground">
-            Schedule: {new Date(event.dateFrom).toLocaleDateString("en-IN")} - {new Date(event.dateTo).toLocaleDateString("en-IN")}
+            Schedule: {new Date(event.dateFrom).toLocaleDateString("en-IN")} -{" "}
+            {new Date(event.dateTo).toLocaleDateString("en-IN")}
           </div>
         </div>
       </div>
@@ -211,7 +227,7 @@ export default function EventAgreement() {
               {items.map((row, idx) => (
                 <TableRow key={row._id}>
                   <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.sku || '-'}</TableCell>
+                  <TableCell>{row.sku || "-"}</TableCell>
                   <TableCell>{row.unitType}</TableCell>
                   <TableCell>{row.stockQty}</TableCell>
                   <TableCell>
@@ -219,7 +235,9 @@ export default function EventAgreement() {
                       type="number"
                       min={0}
                       value={row.qtyToSend}
-                      onChange={(e) => updateRow(idx, { qtyToSend: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateRow(idx, { qtyToSend: Number(e.target.value) })
+                      }
                       className="w-24"
                     />
                   </TableCell>
@@ -229,16 +247,22 @@ export default function EventAgreement() {
                       min={0}
                       step="0.01"
                       value={row.rate}
-                      onChange={(e) => updateRow(idx, { rate: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateRow(idx, { rate: Number(e.target.value) })
+                      }
                       className="w-28"
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{formatINR(row.amount)}</TableCell>
+                  <TableCell className="font-medium">
+                    {formatINR(row.amount)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-          <div className="flex justify-end mt-4 text-lg font-semibold">Grand Total: {formatINR(grandTotal)}</div>
+          <div className="flex justify-end mt-4 text-lg font-semibold">
+            Grand Total: {formatINR(grandTotal)}
+          </div>
         </CardContent>
       </Card>
 
@@ -250,11 +274,21 @@ export default function EventAgreement() {
           <CardContent className="space-y-3">
             <div>
               <Label>Advance Amount</Label>
-              <Input value={advance} onChange={(e) => setAdvance(e.target.value.replace(/[^0-9.]/g, ''))} />
+              <Input
+                value={advance}
+                onChange={(e) =>
+                  setAdvance(e.target.value.replace(/[^0-9.]/g, ""))
+                }
+              />
             </div>
             <div>
               <Label>Security (Optional)</Label>
-              <Input value={security} onChange={(e) => setSecurity(e.target.value.replace(/[^0-9.]/g, ''))} />
+              <Input
+                value={security}
+                onChange={(e) =>
+                  setSecurity(e.target.value.replace(/[^0-9.]/g, ""))
+                }
+              />
             </div>
           </CardContent>
         </Card>
@@ -263,7 +297,12 @@ export default function EventAgreement() {
             <CardTitle>Terms</CardTitle>
           </CardHeader>
           <CardContent>
-            <Textarea rows={6} placeholder="Write agreement terms..." value={terms} onChange={(e) => setTerms(e.target.value)} />
+            <Textarea
+              rows={6}
+              placeholder="Write agreement terms..."
+              value={terms}
+              onChange={(e) => setTerms(e.target.value)}
+            />
           </CardContent>
         </Card>
       </div>
@@ -285,7 +324,9 @@ export default function EventAgreement() {
               onMouseLeave={endDraw}
             />
             <div className="mt-2 flex gap-2">
-              <Button variant="outline" onClick={clearSign}>Clear</Button>
+              <Button variant="outline" onClick={clearSign}>
+                Clear
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -306,14 +347,20 @@ export default function EventAgreement() {
               }}
             />
             {companySign && (
-              <img src={companySign} alt="Company Sign" className="mt-2 h-24 object-contain" />
+              <img
+                src={companySign}
+                alt="Company Sign"
+                className="mt-2 h-24 object-contain"
+              />
             )}
           </CardContent>
         </Card>
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => window.history.back()}>Back</Button>
+        <Button variant="outline" onClick={() => window.history.back()}>
+          Back
+        </Button>
         <Button onClick={handleSave}>Save</Button>
       </div>
     </div>
