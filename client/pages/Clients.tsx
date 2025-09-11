@@ -295,11 +295,15 @@ export default function Clients() {
     clientId: string,
     priority: "hot" | "cold",
   ) => {
+    const prev = leadPriority[clientId] || null;
+    // optimistic update
+    setLeadPriority((p) => ({ ...p, [clientId]: priority }));
     try {
       await leadsAPI.updatePriorityByClient(clientId, priority);
-      setLeadPriority((prev) => ({ ...prev, [clientId]: priority }));
       toast.success(`Priority: ${priority.toUpperCase()}`);
     } catch (error: any) {
+      // rollback
+      setLeadPriority((p) => ({ ...p, [clientId]: prev }));
       console.error("Update lead priority error:", error);
       toast.error(error.response?.data?.error || "Failed to update priority");
     }
@@ -309,21 +313,44 @@ export default function Clients() {
     clientId: string,
     status: "success" | "pending" | "reject",
   ) => {
+    const prev = leadStage[clientId] || null;
+
+    if (status === "pending") {
+      // show inline prompt
+      setLeadStage((p) => ({ ...p, [clientId]: "pending" }));
+      setPendingPrompt((pp) => ({ ...pp, [clientId]: true }));
+      return;
+    }
+
+    // If already success, do nothing
+    if (prev === "success") return;
+
+    // optimistic update
+    setLeadStage((p) => ({ ...p, [clientId]: status }));
     try {
-      if (status === "pending") {
-        const goSuccess = window.confirm(
-          "Mark now as Success? Click Cancel to mark Reject.",
-        );
-        const final = goSuccess ? "success" : "reject";
-        await leadsAPI.updateStatusByClient(clientId, final);
-        setLeadStage((prev) => ({ ...prev, [clientId]: final as any }));
-        toast.success(`Status: ${final.toUpperCase()}`);
-        return;
-      }
       await leadsAPI.updateStatusByClient(clientId, status);
-      setLeadStage((prev) => ({ ...prev, [clientId]: status }));
       toast.success(`Status: ${status.toUpperCase()}`);
     } catch (error: any) {
+      // rollback
+      setLeadStage((p) => ({ ...p, [clientId]: prev }));
+      console.error("Update lead status error:", error);
+      toast.error(error.response?.data?.error || "Failed to update status");
+    }
+  };
+
+  const handlePendingDecision = async (
+    clientId: string,
+    final: "success" | "reject",
+  ) => {
+    const prev = leadStage[clientId] || null;
+    // optimistic
+    setLeadStage((p) => ({ ...p, [clientId]: final }));
+    setPendingPrompt((pp) => ({ ...pp, [clientId]: false }));
+    try {
+      await leadsAPI.updateStatusByClient(clientId, final);
+      toast.success(`Status: ${final.toUpperCase()}`);
+    } catch (error: any) {
+      setLeadStage((p) => ({ ...p, [clientId]: prev }));
       console.error("Update lead status error:", error);
       toast.error(error.response?.data?.error || "Failed to update status");
     }
