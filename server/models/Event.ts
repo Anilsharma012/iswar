@@ -1,5 +1,16 @@
 import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
+export interface ISelectionItem {
+  productId: Types.ObjectId;
+  name?: string;
+  sku?: string;
+  unitType?: string;
+  stockQty?: number;
+  qtyToSend: number;
+  rate: number;
+  amount: number;
+}
+
 export interface IEvent extends Document {
   name: string;
   location?: string;
@@ -9,8 +20,23 @@ export interface IEvent extends Document {
   notes?: string;
   budget?: number;
   estimate?: number;
+  selections?: ISelectionItem[];
+  advance?: number;
+  security?: number;
+  agreementTerms?: string;
   createdAt: Date;
 }
+
+const selectionSchema = new Schema<ISelectionItem>({
+  productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+  name: { type: String },
+  sku: { type: String },
+  unitType: { type: String },
+  stockQty: { type: Number },
+  qtyToSend: { type: Number, required: true, min: 0 },
+  rate: { type: Number, required: true, min: 0 },
+  amount: { type: Number, required: true, min: 0 },
+});
 
 const eventSchema = new Schema<IEvent>({
   name: {
