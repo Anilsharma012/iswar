@@ -26,6 +26,7 @@ import {
   updateProduct,
   deleteProduct,
   getCategories,
+  getItems,
 } from "./routes/products";
 import {
   getInvoices,
@@ -50,6 +51,8 @@ import {
   deleteEvent,
   getEventSummary,
   saveAgreement,
+  dispatchEvent,
+  returnEvent,
 } from "./routes/events";
 import {
   getEventExpenses,
@@ -94,6 +97,8 @@ import {
   convertLead,
   updateLeadStatus,
   updateLeadStatusByClient,
+  updateLeadPriority,
+  updateLeadPriorityByClient,
 } from "./routes/leads";
 import {
   createIssueFromInvoice,
@@ -154,6 +159,7 @@ app.get("/api/products/:id", getProduct);
 app.post("/api/products", createProduct);
 app.put("/api/products/:id", updateProduct);
 app.delete("/api/products/:id", deleteProduct);
+app.get("/api/items", getItems);
 
 // Invoice routes
 app.get("/api/invoices", getInvoices);
@@ -175,6 +181,8 @@ app.get("/api/events", getEvents);
 app.get("/api/events/:id", getEvent);
 app.get("/api/events/:id/summary", getEventSummary);
 app.put("/api/events/:id/agreement", saveAgreement);
+app.post("/api/events/:id/dispatch", dispatchEvent);
+app.post("/api/events/:id/return", returnEvent);
 app.post("/api/events", createEvent);
 app.put("/api/events/:id", updateEvent);
 app.delete("/api/events/:id", deleteEvent);
@@ -215,6 +223,8 @@ app.post("/api/leads/:id/call", logCall);
 app.post("/api/leads/:id/convert", convertLead);
 app.patch("/api/leads/:id/status", updateLeadStatus);
 app.patch("/api/leads/by-client/:clientId/status", updateLeadStatusByClient);
+app.patch("/api/leads/:id/priority", updateLeadPriority);
+app.patch("/api/leads/by-client/:clientId/priority", updateLeadPriorityByClient);
 
 // Attendance routes
 app.get("/api/attendance", getAttendance);

@@ -33,6 +33,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Plus,
@@ -82,7 +83,8 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [leadStatuses, setLeadStatuses] = useState<Record<string, 'hot' | 'cold' | null>>({});
+  const [leadPriority, setLeadPriority] = useState<Record<string, 'hot' | 'cold' | null>>({});
+  const [leadStage, setLeadStage] = useState<Record<string, 'success' | 'pending' | 'reject' | null>>({});
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -241,46 +243,61 @@ export default function Clients() {
     return phone;
   };
 
-  const handleLeadStatus = async (clientId: string, status: 'hot' | 'cold') => {
+  const handleLeadPriority = async (clientId: string, priority: 'hot' | 'cold') => {
     try {
-      await leadsAPI.updateStatusByClient(clientId, status);
-      setLeadStatuses((prev) => ({ ...prev, [clientId]: status }));
-      toast.success(`Marked as ${status.toUpperCase()}`);
+      await leadsAPI.updatePriorityByClient(clientId, priority);
+      setLeadPriority((prev) => ({ ...prev, [clientId]: priority }));
+      toast.success(`Priority: ${priority.toUpperCase()}`);
     } catch (error: any) {
-      console.error('Update lead status error:', error);
-      toast.error(error.response?.data?.error || 'Failed to update lead');
+      console.error('Update lead priority error:', error);
+      toast.error(error.response?.data?.error || 'Failed to update priority');
     }
   };
 
-  const handleGoToAgreement = async (client: Client) => {
+  const handleLeadStage = async (clientId: string, status: 'success' | 'pending' | 'reject') => {
+    try {
+      if (status === 'pending') {
+        const goSuccess = window.confirm('Mark now as Success? Click Cancel to mark Reject.');
+        const final = goSuccess ? 'success' : 'reject';
+        await leadsAPI.updateStatusByClient(clientId, final);
+        setLeadStage((prev) => ({ ...prev, [clientId]: final as any }));
+        toast.success(`Status: ${final.toUpperCase()}`);
+        return;
+      }
+      await leadsAPI.updateStatusByClient(clientId, status);
+      setLeadStage((prev) => ({ ...prev, [clientId]: status }));
+      toast.success(`Status: ${status.toUpperCase()}`);
+    } catch (error: any) {
+      console.error('Update lead status error:', error);
+      toast.error(error.response?.data?.error || 'Failed to update status');
+    }
+  };
+
+  const ensureEvent = async (client: Client): Promise<string | null> => {
     try {
       // Try to find an event for this client
       const res = await eventAPI.getAll({ clientId: client._id, limit: 1 });
       const existing = res.data?.events?.[0];
       if (existing?._id) {
-        window.location.href = `/admin/events/${existing._id}/agreement`;
-        return;
+        return existing._id;
       }
-      // Create draft event
       const today = new Date().toISOString().slice(0,10);
-      const payload = {
-        name: `${client.name} Event`,
-        clientId: client._id,
-        dateFrom: today,
-        dateTo: today,
-        notes: 'Draft',
-      };
+      const payload = { name: `${client.name} Event`, clientId: client._id, dateFrom: today, dateTo: today, notes: 'Draft' };
       const created = await eventAPI.create(payload);
       const id = created.data?._id;
-      if (id) {
-        window.location.href = `/admin/events/${id}/agreement`;
-      } else {
-        toast.error('Failed to create draft event');
-      }
+      if (id) return id;
+      toast.error('Failed to create draft event');
+      return null;
     } catch (e: any) {
-      console.error('Go to agreement error:', e);
-      toast.error(e.response?.data?.error || 'Failed to open T&C');
+      console.error('Ensure event error:', e);
+      toast.error(e.response?.data?.error || 'Failed to prepare event');
+      return null;
     }
+  };
+
+  const goTo = async (client: Client, path: 'agreement' | 'dispatch' | 'return') => {
+    const id = await ensureEvent(client);
+    if (id) window.location.href = `/admin/events/${id}/${path}`;
   };
 
   return (
@@ -474,7 +491,15 @@ export default function Clients() {
                             <Users className="h-5 w-5 text-blue-600" />
                           </div>
                           <div>
-                            <div className="font-medium">{client.name}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{client.name}</span>
+                              {leadPriority[client._id] && (
+                                <Badge style={{background: leadPriority[client._id] === 'hot' ? '#22C55E' : '#EF4444', color: 'white'}}>{leadPriority[client._id]}</Badge>
+                              )}
+                              {leadStage[client._id] && (
+                                <Badge style={{background: leadStage[client._id] === 'success' ? '#16A34A' : leadStage[client._id] === 'pending' ? '#F59E0B' : '#EF4444', color: 'white'}}>{leadStage[client._id]}</Badge>
+                              )}
+                            </div>
                             {client.email && (
                               <div className="text-sm text-gray-500">{client.email}</div>
                             )}
@@ -512,29 +537,49 @@ export default function Clients() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={leadStatuses[client._id] === 'hot' ? 'bg-green-600 text-white hover:bg-green-700' : ''}
-                            onClick={() => handleLeadStatus(client._id, 'hot')}
-                          >
-                            Hot Lead
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={leadStatuses[client._id] === 'cold' ? 'bg-red-600 text-white hover:bg-red-700' : ''}
-                            onClick={() => handleLeadStatus(client._id, 'cold')}
-                          >
-                            Cold Lead
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleGoToAgreement(client)}
-                          >
-                            Terms & Conditions
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                Lead Priority
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => handleLeadPriority(client._id, 'hot')}>
+                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#22C55E'}} /> Hot</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleLeadPriority(client._id, 'cold')}>
+                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#EF4444'}} /> Cold</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" disabled={leadStage[client._id] === 'success'}>
+                                Lead Status
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => handleLeadStage(client._id, 'success')}>
+                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#16A34A'}} /> Success</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleLeadStage(client._id, 'pending')}>
+                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#F59E0B'}} /> Pending</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleLeadStage(client._id, 'reject')}>
+                                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{background:'#EF4444'}} /> Reject</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="default" size="sm">Actions</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => goTo(client, 'agreement')}>Terms & Conditions</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => goTo(client, 'dispatch')}>Stock Out</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => goTo(client, 'return')}>Stock In</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                           <Button
                             variant="ghost"
                             size="sm"

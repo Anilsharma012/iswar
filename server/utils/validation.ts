@@ -130,8 +130,19 @@ export const leadSchema = Joi.object({
   email: Joi.string().email().optional().allow("").allow(null),
   source: Joi.string().optional().allow("").allow(null),
   status: Joi.string()
-    .valid("new", "rejected", "callback", "hot", "cold", "converted")
+    .valid(
+      "new",
+      "rejected",
+      "callback",
+      "hot",
+      "cold",
+      "converted",
+      "success",
+      "pending",
+      "reject"
+    )
     .default("new"),
+  priority: Joi.string().valid("hot", "cold").optional(),
   notes: Joi.string().optional().allow("").allow(null),
 });
 
