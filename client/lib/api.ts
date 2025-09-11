@@ -137,10 +137,17 @@ export const eventAPI = {
     api.put(`/events/${id}/agreement`, data),
   dispatch: (id: string, data: any) => api.post(`/events/${id}/dispatch`, data),
   return: (id: string, data: any) => api.post(`/events/${id}/return`, data),
+  downloadAgreement: (id: string) =>
+    api.get(`/events/${id}/agreement/pdf`, { responseType: "blob" }),
 };
 
 // Leads API calls
 export const leadsAPI = {
+  getAll: (params?: any) => api.get("/leads", { params }),
+  getById: (id: string) => api.get(`/leads/${id}`),
+  create: (data: any) => api.post(`/leads`, data),
+  update: (id: string, data: any) => api.put(`/leads/${id}`, data),
+  delete: (id: string) => api.delete(`/leads/${id}`),
   updateStatus: (id: string, status: string) =>
     api.patch(`/leads/${id}/status`, { status }),
   updateStatusByClient: (clientId: string, status: string) =>

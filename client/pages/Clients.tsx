@@ -100,6 +100,9 @@ export default function Clients() {
   const [leadStage, setLeadStage] = useState<
     Record<string, "success" | "pending" | "reject" | null>
   >({});
+  const [pendingPrompt, setPendingPrompt] = useState<Record<string, boolean>>(
+    {},
+  );
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -117,7 +120,8 @@ export default function Clients() {
       };
 
       const response = await clientAPI.getAll(params);
-      setClients(response.data.clients || []);
+      const fetchedClients = response.data.clients || [];
+      setClients(fetchedClients);
       setPagination(
         response.data.pagination || {
           page: 1,
@@ -126,6 +130,34 @@ export default function Clients() {
           pages: 0,
         },
       );
+
+      // Load existing leads for these clients to show current priority/status
+      try {
+        const leadPromises = fetchedClients.map((c: Client) =>
+          leadsAPI.getAll({ search: c.phone, limit: 1 }).catch(() => null),
+        );
+        const leadResults = await Promise.all(leadPromises);
+        const newPriority: Record<string, "hot" | "cold" | null> = {};
+        const newStage: Record<
+          string,
+          "success" | "pending" | "reject" | null
+        > = {};
+        leadResults.forEach((res: any, idx: number) => {
+          const client = fetchedClients[idx];
+          const lead = res?.data?.leads?.[0];
+          if (lead) {
+            newPriority[client._id] = lead.priority || null;
+            newStage[client._id] = lead.status || null;
+          } else {
+            newPriority[client._id] = null;
+            newStage[client._id] = null;
+          }
+        });
+        setLeadPriority((prev) => ({ ...newPriority, ...prev }));
+        setLeadStage((prev) => ({ ...newStage, ...prev }));
+      } catch (e) {
+        console.warn("Failed to load lead metadata for clients", e);
+      }
     } catch (error: any) {
       console.error("Fetch clients error:", error);
       toast.error("Failed to load clients");
@@ -268,11 +300,15 @@ export default function Clients() {
     clientId: string,
     priority: "hot" | "cold",
   ) => {
+    const prev = leadPriority[clientId] || null;
+    // optimistic update
+    setLeadPriority((p) => ({ ...p, [clientId]: priority }));
     try {
       await leadsAPI.updatePriorityByClient(clientId, priority);
-      setLeadPriority((prev) => ({ ...prev, [clientId]: priority }));
       toast.success(`Priority: ${priority.toUpperCase()}`);
     } catch (error: any) {
+      // rollback
+      setLeadPriority((p) => ({ ...p, [clientId]: prev }));
       console.error("Update lead priority error:", error);
       toast.error(error.response?.data?.error || "Failed to update priority");
     }
@@ -282,21 +318,44 @@ export default function Clients() {
     clientId: string,
     status: "success" | "pending" | "reject",
   ) => {
+    const prev = leadStage[clientId] || null;
+
+    if (status === "pending") {
+      // show inline prompt
+      setLeadStage((p) => ({ ...p, [clientId]: "pending" }));
+      setPendingPrompt((pp) => ({ ...pp, [clientId]: true }));
+      return;
+    }
+
+    // If already success, do nothing
+    if (prev === "success") return;
+
+    // optimistic update
+    setLeadStage((p) => ({ ...p, [clientId]: status }));
     try {
-      if (status === "pending") {
-        const goSuccess = window.confirm(
-          "Mark now as Success? Click Cancel to mark Reject.",
-        );
-        const final = goSuccess ? "success" : "reject";
-        await leadsAPI.updateStatusByClient(clientId, final);
-        setLeadStage((prev) => ({ ...prev, [clientId]: final as any }));
-        toast.success(`Status: ${final.toUpperCase()}`);
-        return;
-      }
       await leadsAPI.updateStatusByClient(clientId, status);
-      setLeadStage((prev) => ({ ...prev, [clientId]: status }));
       toast.success(`Status: ${status.toUpperCase()}`);
     } catch (error: any) {
+      // rollback
+      setLeadStage((p) => ({ ...p, [clientId]: prev }));
+      console.error("Update lead status error:", error);
+      toast.error(error.response?.data?.error || "Failed to update status");
+    }
+  };
+
+  const handlePendingDecision = async (
+    clientId: string,
+    final: "success" | "reject",
+  ) => {
+    const prev = leadStage[clientId] || null;
+    // optimistic
+    setLeadStage((p) => ({ ...p, [clientId]: final }));
+    setPendingPrompt((pp) => ({ ...pp, [clientId]: false }));
+    try {
+      await leadsAPI.updateStatusByClient(clientId, final);
+      toast.success(`Status: ${final.toUpperCase()}`);
+    } catch (error: any) {
+      setLeadStage((p) => ({ ...p, [clientId]: prev }));
       console.error("Update lead status error:", error);
       toast.error(error.response?.data?.error || "Failed to update status");
     }
@@ -334,6 +393,12 @@ export default function Clients() {
     client: Client,
     path: "agreement" | "dispatch" | "return",
   ) => {
+    // client-level check: if lead is cold, block
+    if (leadPriority[client._id] === "cold") {
+      toast.error("Cold lead — actions disabled");
+      return;
+    }
+
     const id = await ensureEvent(client);
     if (id) window.location.href = `/admin/events/${id}/${path}`;
   };
@@ -613,8 +678,27 @@ export default function Clients() {
                         <div className="flex items-center gap-2">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                Lead Priority
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                aria-label={`Lead priority for ${client.name}`}
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{
+                                      background:
+                                        leadPriority[client._id] === "hot"
+                                          ? "#22C55E"
+                                          : leadPriority[client._id] === "cold"
+                                            ? "#EF4444"
+                                            : "transparent",
+                                    }}
+                                  />
+                                  <span className="capitalize">
+                                    {leadPriority[client._id] || "Priority"}
+                                  </span>
+                                </span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
@@ -627,7 +711,7 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#22C55E" }}
-                                  />{" "}
+                                  />
                                   Hot
                                 </span>
                               </DropdownMenuItem>
@@ -640,7 +724,7 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#EF4444" }}
-                                  />{" "}
+                                  />
                                   Cold
                                 </span>
                               </DropdownMenuItem>
@@ -652,8 +736,26 @@ export default function Clients() {
                                 variant="outline"
                                 size="sm"
                                 disabled={leadStage[client._id] === "success"}
+                                aria-label={`Lead status for ${client.name}`}
                               >
-                                Lead Status
+                                <span className="inline-flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{
+                                      background:
+                                        leadStage[client._id] === "success"
+                                          ? "#16A34A"
+                                          : leadStage[client._id] === "pending"
+                                            ? "#F59E0B"
+                                            : leadStage[client._id] === "reject"
+                                              ? "#EF4444"
+                                              : "transparent",
+                                    }}
+                                  />
+                                  <span className="capitalize">
+                                    {leadStage[client._id] || "Status"}
+                                  </span>
+                                </span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
@@ -666,7 +768,7 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#16A34A" }}
-                                  />{" "}
+                                  />
                                   Success
                                 </span>
                               </DropdownMenuItem>
@@ -679,7 +781,7 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#F59E0B" }}
-                                  />{" "}
+                                  />
                                   Pending
                                 </span>
                               </DropdownMenuItem>
@@ -692,43 +794,86 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#EF4444" }}
-                                  />{" "}
+                                  />
                                   Reject
                                 </span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="default" size="sm">
-                                Actions
+                          {/* Inline pending prompt */}
+                          {pendingPrompt[client._id] && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-600">
+                                Mark now as
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() =>
+                                  handlePendingDecision(client._id, "success")
+                                }
+                              >
+                                Success
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
-                                onClick={() => goTo(client, "agreement")}
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handlePendingDecision(client._id, "reject")
+                                }
                               >
-                                Terms & Conditions
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => goTo(client, "dispatch")}
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                          {leadPriority[client._id] !== "cold" ? (
+                            <>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="default" size="sm">
+                                    Actions
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem
+                                    onClick={() => goTo(client, "agreement")}
+                                  >
+                                    Terms & Conditions
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => goTo(client, "dispatch")}
+                                  >
+                                    Stock Out
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => goTo(client, "return")}
+                                  >
+                                    Stock In
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(client)}
                               >
-                                Stock Out
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => goTo(client, "return")}
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
+                                Cold — actions disabled
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(client)}
                               >
-                                Stock In
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(client)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="sm">

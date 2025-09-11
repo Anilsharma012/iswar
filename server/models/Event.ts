@@ -91,6 +91,8 @@ const eventSchema = new Schema<IEvent>(
     advance: { type: Number, min: 0, default: 0 },
     security: { type: Number, min: 0, default: 0 },
     agreementTerms: { type: String, trim: true },
+    clientSign: { type: String, trim: true },
+    companySign: { type: String, trim: true },
     dispatches: {
       type: [
         new Schema({

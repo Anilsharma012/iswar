@@ -252,6 +252,21 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: "selections must be an array" });
     }
 
+    // Check cold lead
+    const existingEvent = await Event.findById(id).populate("clientId");
+    if (!existingEvent)
+      return res.status(404).json({ error: "Event not found" });
+    const client = existingEvent.clientId as any;
+    if (client && client.phone) {
+      const Lead = mongoose.models.Lead as any;
+      const lead = await Lead.findOne({ phone: client.phone });
+      if (lead && lead.priority === "cold") {
+        return res
+          .status(403)
+          .json({ error: "Cold lead - actions disabled", code: "COLD_LEAD" });
+      }
+    }
+
     const sanitized = selections.map((s: any) => ({
       productId: s.productId,
       name: s.name,
@@ -274,11 +289,336 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       { new: true },
     ).populate("clientId");
 
-    if (!event) return res.status(404).json({ error: "Event not found" });
-
     res.json(event);
   } catch (error) {
     console.error("Save agreement error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const dispatchEvent = async (req: AuthRequest, res: Response) => {
+  const maxRetries = 3;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+
+      const { id } = req.params;
+      const { items = [] } = req.body || {};
+
+      if (!Array.isArray(items) || items.length === 0) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ error: "items are required" });
+      }
+
+      const event = await Event.findById(id).session(session);
+      if (!event) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Cold lead guard
+      const clientPop = await Event.findById(id).populate("clientId");
+      const client = clientPop?.clientId as any;
+      if (client && client.phone) {
+        const Lead = mongoose.models.Lead as any;
+        const lead = await Lead.findOne({ phone: client.phone }).session(
+          session,
+        );
+        if (lead && lead.priority === "cold") {
+          await session.abortTransaction();
+          session.endSession();
+          return res
+            .status(403)
+            .json({ error: "Cold lead - actions disabled", code: "COLD_LEAD" });
+        }
+      }
+
+      let total = 0;
+      const sanitized: any[] = [];
+
+      for (const it of items) {
+        const pid = it.productId;
+        const qty = Number(it.qty || 0);
+        const rate = Number(it.rate || 0);
+        if (!pid || qty <= 0) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(400).json({ error: "Invalid item payload" });
+        }
+
+        const product = await (mongoose.models.Product as any)
+          .findById(pid)
+          .session(session);
+        if (!product) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(404).json({ error: `Product ${pid} not found` });
+        }
+
+        if (product.stockQty < qty) {
+          await session.abortTransaction();
+          session.endSession();
+          return res
+            .status(400)
+            .json({ error: `Insufficient stock for product ${product.name}` });
+        }
+
+        product.stockQty = Number(product.stockQty) - qty;
+        await product.save({ session });
+
+        const amount = Number((qty * rate).toFixed(2));
+        total += amount;
+
+        sanitized.push({
+          productId: product._id,
+          name: product.name,
+          sku: product.sku,
+          unitType: product.unitType,
+          stockQty: product.stockQty,
+          qtyToSend: qty,
+          rate,
+          amount,
+        });
+      }
+
+      event.dispatches = event.dispatches || [];
+      event.dispatches.push({ items: sanitized, date: new Date(), total });
+      event.status = "dispatched";
+      await event.save({ session });
+
+      await (mongoose.models.AuditLog as any).create(
+        [
+          {
+            action: "dispatch",
+            entity: "Event",
+            entityId: event._id,
+            userId: req.adminId
+              ? new mongoose.Types.ObjectId(req.adminId)
+              : undefined,
+            meta: { items: sanitized, total },
+          },
+        ],
+        { session },
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      const populatedEvent = await Event.findById(event._id).populate(
+        "clientId",
+      );
+      return res.json(populatedEvent);
+    } catch (error: any) {
+      try {
+        await session.abortTransaction();
+      } catch (e) {
+        /* ignore */
+      }
+      session.endSession();
+
+      // Retry on transient transaction errors / write conflicts
+      const isTransient =
+        error &&
+        (error.errorLabelSet?.has("TransientTransactionError") ||
+          error.codeName === "WriteConflict");
+
+      console.error(`Dispatch event error (attempt ${attempt}):`, error);
+
+      if (isTransient && attempt < maxRetries) {
+        // small backoff
+        await new Promise((r) => setTimeout(r, 100 * attempt));
+        continue;
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+};
+
+export const returnEvent = async (req: AuthRequest, res: Response) => {
+  const maxRetries = 3;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+
+      const { id } = req.params;
+      const { items = [] } = req.body || {};
+
+      if (!Array.isArray(items)) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ error: "items must be an array" });
+      }
+
+      const event = await Event.findById(id).session(session);
+      if (!event) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      // Cold lead guard
+      const populated = await Event.findById(id).populate("clientId");
+      const client = populated?.clientId as any;
+      if (client && client.phone) {
+        const Lead = mongoose.models.Lead as any;
+        const lead = await Lead.findOne({ phone: client.phone }).session(
+          session,
+        );
+        if (lead && lead.priority === "cold") {
+          await session.abortTransaction();
+          session.endSession();
+          return res
+            .status(403)
+            .json({ error: "Cold lead - actions disabled", code: "COLD_LEAD" });
+        }
+      }
+
+      let totalAdjust = 0;
+      const sanitized: any[] = [];
+
+      for (const it of items) {
+        // Expect each item: { productId, expected, returned, shortage, damageAmount, lateFee, lossPrice?, rate }
+        const pid = it.productId || it.itemId || it._id || null;
+        const expected = Number(it.expected || 0);
+        const returned = Number(it.returned || 0);
+        const shortage = Number(
+          it.shortage ?? Math.max(0, expected - returned),
+        );
+        const damageAmount = Number(it.damageAmount || 0);
+        const lateFee = Number(it.lateFee || 0);
+
+        if (!pid || expected < 0 || returned < 0 || shortage < 0) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(400).json({ error: "Invalid item payload" });
+        }
+
+        const product = await (mongoose.models.Product as any)
+          .findById(pid)
+          .session(session);
+        if (!product) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(404).json({ error: `Product ${pid} not found` });
+        }
+
+        // Increase stock by returned qty
+        product.stockQty = Number(product.stockQty) + returned;
+        await product.save({ session });
+
+        // Determine loss price: prefer provided lossPrice, then buyPrice, then rate, else 0
+        const lossPrice = Number(
+          it.lossPrice ?? product.buyPrice ?? it.rate ?? 0,
+        );
+
+        const lineAdjust = Number(
+          (shortage * lossPrice + damageAmount + lateFee).toFixed(2),
+        );
+        totalAdjust += lineAdjust;
+
+        const qtyToSend = expected; // preserve original expected as qtyToSend
+        const rate = Number(
+          it.rate ?? product.sellPrice ?? product.buyPrice ?? 0,
+        );
+        const amount = Number((returned * rate).toFixed(2));
+
+        sanitized.push({
+          productId: product._id,
+          name: product.name,
+          sku: product.sku,
+          unitType: product.unitType,
+          stockQty: product.stockQty,
+          qtyToSend,
+          qtyReturned: returned,
+          shortage,
+          damageAmount,
+          lateFee,
+          lossPrice,
+          rate,
+          amount,
+          lineAdjust,
+        });
+      }
+
+      event.returns = event.returns || [];
+      event.returns.push({
+        items: sanitized,
+        date: new Date(),
+        total: Number(totalAdjust.toFixed(2)),
+        shortages: sanitized.reduce((s, it) => s + it.shortage, 0),
+        damages: sanitized.reduce((s, it) => s + it.damageAmount, 0),
+        lateFee: sanitized.reduce((s, it) => s + it.lateFee, 0),
+      });
+      event.status = "returned";
+
+      await event.save({ session });
+
+      await (mongoose.models.AuditLog as any).create(
+        [
+          {
+            action: "return",
+            entity: "Event",
+            entityId: event._id,
+            userId: req.adminId
+              ? new mongoose.Types.ObjectId(req.adminId)
+              : undefined,
+            meta: { items: sanitized, totalAdjust },
+          },
+        ],
+        { session },
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      const populatedEvent = await Event.findById(event._id).populate(
+        "clientId",
+      );
+      return res.json(populatedEvent);
+    } catch (error: any) {
+      try {
+        await session.abortTransaction();
+      } catch (e) {
+        /* ignore */
+      }
+      session.endSession();
+
+      const isTransient =
+        error &&
+        (error.errorLabelSet?.has("TransientTransactionError") ||
+          error.codeName === "WriteConflict");
+
+      console.error(`Return event error (attempt ${attempt}):`, error);
+
+      if (isTransient && attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 100 * attempt));
+        continue;
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  }
+};
+
+export const generateAgreementPDFRoute = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  try {
+    const event = await Event.findById(req.params.id).populate("clientId");
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    const { generateAgreementPDF } = await import("../utils/pdfGenerator");
+    generateAgreementPDF(event, "en", res);
+  } catch (error) {
+    console.error("Generate agreement PDF error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

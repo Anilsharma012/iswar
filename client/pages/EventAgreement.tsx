@@ -61,39 +61,62 @@ export default function EventAgreement() {
     const load = async () => {
       try {
         setLoading(true);
-        const [evRes, prodRes] = await Promise.all([
-          eventAPI.getById(id!),
-          productAPI.getAll({ limit: 1000 }),
-        ]);
+        const evRes = await eventAPI.getById(id!);
         const ev: EventType = evRes.data;
         setEvent(ev);
         setAdvance(String(ev.advance ?? 0));
         setSecurity(String(ev.security ?? 0));
         setTerms(ev.agreementTerms || "");
 
-        const products: ProductType[] = prodRes.data?.products || [];
-        const rows: Row[] = products.map((p) => ({
-          ...p,
-          qtyToSend: 0,
-          rate: p.sellPrice || 0,
-          amount: 0,
-        }));
+        // Prefer latest dispatch lines as source
+        const lastDispatch = ev.dispatches?.[ev.dispatches.length - 1];
+        if (
+          lastDispatch &&
+          Array.isArray(lastDispatch.items) &&
+          lastDispatch.items.length > 0
+        ) {
+          const rows: Row[] = lastDispatch.items.map((p: any) => ({
+            _id: p.productId,
+            name: p.name,
+            sku: p.sku,
+            unitType: p.unitType,
+            stockQty: Number(p.stockQty || 0),
+            sellPrice: Number(p.rate || 0),
+            qtyToSend: Number(p.qtyToSend || p.qty || 0),
+            rate: Number(p.rate || 0),
+            amount: Number(
+              (Number(p.qtyToSend || p.qty || 0) * Number(p.rate || 0)).toFixed(
+                2,
+              ),
+            ),
+          }));
+          setItems(rows);
+        } else {
+          // fallback to product catalog and previous selections
+          const prodRes = await productAPI.getAll({ limit: 1000 });
+          const products: ProductType[] = prodRes.data?.products || [];
+          const rows: Row[] = products.map((p) => ({
+            ...p,
+            qtyToSend: 0,
+            rate: p.sellPrice || 0,
+            amount: 0,
+          }));
 
-        // Pre-fill from saved selections if present
-        if (Array.isArray(ev.selections) && ev.selections.length > 0) {
-          ev.selections.forEach((s: any) => {
-            const i = rows.findIndex(
-              (r) => r._id === s.productId || r.sku === s.sku,
-            );
-            if (i >= 0) {
-              rows[i].qtyToSend = Number(s.qtyToSend || 0);
-              rows[i].rate = Number(s.rate || rows[i].rate || 0);
-              rows[i].amount = rows[i].qtyToSend * rows[i].rate;
-            }
-          });
+          if (Array.isArray(ev.selections) && ev.selections.length > 0) {
+            ev.selections.forEach((s: any) => {
+              const i = rows.findIndex(
+                (r) => r._id === s.productId || r.sku === s.sku,
+              );
+              if (i >= 0) {
+                rows[i].qtyToSend = Number(s.qtyToSend || 0);
+                rows[i].rate = Number(s.rate || rows[i].rate || 0);
+                rows[i].amount = rows[i].qtyToSend * rows[i].rate;
+              }
+            });
+          }
+
+          setItems(rows);
         }
-
-        setItems(rows);
       } catch (e) {
         console.error(e);
         toast.error("Failed to load agreement data");
@@ -307,59 +330,23 @@ export default function EventAgreement() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Client e-Sign</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <canvas
-              ref={canvasRef}
-              width={600}
-              height={200}
-              className="border rounded-md w-full"
-              onMouseDown={startDraw}
-              onMouseMove={draw}
-              onMouseUp={endDraw}
-              onMouseLeave={endDraw}
-            />
-            <div className="mt-2 flex gap-2">
-              <Button variant="outline" onClick={clearSign}>
-                Clear
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Company Sign</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <input
-              type="file"
-              accept="image/png,image/jpeg"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => setCompanySign(String(reader.result));
-                reader.readAsDataURL(file);
-              }}
-            />
-            {companySign && (
-              <img
-                src={companySign}
-                alt="Company Sign"
-                className="mt-2 h-24 object-contain"
-              />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex justify-end gap-2">
+      <div className="flex items-center justify-end gap-2">
         <Button variant="outline" onClick={() => window.history.back()}>
           Back
+        </Button>
+        <Button
+          onClick={() =>
+            window.open(`/admin/events/${id}/agreement/preview`, "_blank")
+          }
+        >
+          Preview
+        </Button>
+        <Button
+          onClick={() =>
+            (window.location.href = `/admin/events/${id}/agreement/sign`)
+          }
+        >
+          Proceed to e-Sign
         </Button>
         <Button onClick={handleSave}>Save</Button>
       </div>
