@@ -53,6 +53,7 @@ import {
   saveAgreement,
   dispatchEvent,
   returnEvent,
+  generateAgreementPDFRoute,
 } from "./routes/events";
 import {
   getEventExpenses,
