@@ -147,35 +147,48 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
             );
           })}
 
-          {currentEventId && (
-            <div className="mt-4 space-y-1">
-              <Link
-                to={`/admin/events/${currentEventId}/agreement`}
-                onClick={onLinkClick}
-                className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  path.includes('/admin/events/') && path.endsWith('/agreement') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-100')}
-              >
-                <FileText className="h-4 w-4" />
-                <span>Terms & Conditions</span>
-              </Link>
-              <Link
-                to={`/admin/events/${currentEventId}/dispatch`}
-                onClick={onLinkClick}
-                className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors','text-gray-700 hover:bg-gray-100')}
-              >
-                <Warehouse className="h-4 w-4" />
-                <span>Stock Out</span>
-              </Link>
-              <Link
-                to={`/admin/events/${currentEventId}/return`}
-                onClick={onLinkClick}
-                className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors','text-gray-700 hover:bg-gray-100')}
-              >
-                <Warehouse className="h-4 w-4" />
-                <span>Stock In</span>
-              </Link>
-            </div>
-          )}
+          <div className="mt-4 space-y-1">
+            <Link
+              to={currentEventId ? `/admin/events/${currentEventId}/agreement` : `#`}
+              onClick={(e) => {
+                if (!currentEventId) {
+                  e.preventDefault();
+                  toast.info('Open an event to access Terms & Conditions');
+                } else if (onLinkClick) onLinkClick();
+              }}
+              className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                path.includes('/admin/events/') && path.endsWith('/agreement') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' : (!currentEventId ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'))}
+            >
+              <FileText className="h-4 w-4" />
+              <span>Terms & Conditions</span>
+            </Link>
+            <Link
+              to={currentEventId ? `/admin/events/${currentEventId}/dispatch` : `#`}
+              onClick={(e) => {
+                if (!currentEventId) {
+                  e.preventDefault();
+                  toast.info('Open an event to access Stock Out');
+                } else if (onLinkClick) onLinkClick();
+              }}
+              className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors', !currentEventId ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100')}
+            >
+              <Warehouse className="h-4 w-4" />
+              <span>Stock Out</span>
+            </Link>
+            <Link
+              to={currentEventId ? `/admin/events/${currentEventId}/return` : `#`}
+              onClick={(e) => {
+                if (!currentEventId) {
+                  e.preventDefault();
+                  toast.info('Open an event to access Stock In');
+                } else if (onLinkClick) onLinkClick();
+              }}
+              className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors', !currentEventId ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100')}
+            >
+              <Warehouse className="h-4 w-4" />
+              <span>Stock In</span>
+            </Link>
+          </div>
         </div>
       </nav>
     </div>
