@@ -252,6 +252,18 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: "selections must be an array" });
     }
 
+    // Check cold lead
+    const existingEvent = await Event.findById(id).populate("clientId");
+    if (!existingEvent) return res.status(404).json({ error: "Event not found" });
+    const client = existingEvent.clientId as any;
+    if (client && client.phone) {
+      const Lead = mongoose.models.Lead as any;
+      const lead = await Lead.findOne({ phone: client.phone });
+      if (lead && lead.priority === "cold") {
+        return res.status(403).json({ error: "Cold lead - actions disabled", code: "COLD_LEAD" });
+      }
+    }
+
     const sanitized = selections.map((s: any) => ({
       productId: s.productId,
       name: s.name,
@@ -273,8 +285,6 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       },
       { new: true },
     ).populate("clientId");
-
-    if (!event) return res.status(404).json({ error: "Event not found" });
 
     res.json(event);
   } catch (error) {
