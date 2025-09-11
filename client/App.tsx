@@ -64,6 +64,14 @@ function App() {
                 element={<EventAgreement />}
               />
               <Route
+                path="admin/events/:id/agreement/preview"
+                element={<EventAgreementPreview />}
+              />
+              <Route
+                path="admin/events/:id/agreement/sign"
+                element={<EventAgreementSign />}
+              />
+              <Route
                 path="admin/events/:id/dispatch"
                 element={<EventDispatch />}
               />
