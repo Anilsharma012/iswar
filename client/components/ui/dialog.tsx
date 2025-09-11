@@ -32,14 +32,16 @@ const hasDialogTitle = (children: React.ReactNode): boolean => {
   for (const child of arr) {
     // @ts-ignore
     if (!child) continue;
-    // If element is DialogPrimitive.Title from Radix
+    // If element is DialogPrimitive.Title from Radix or our DialogTitle wrapper
     // Compare by type and displayName
     // @ts-ignore
     const type = (child as any).type;
-    // Direct match
+    // Direct match against Radix primitive
     if (type === DialogPrimitive.Title) return true;
-    // Match by displayName (covers wrapped DialogTitle export)
-    if (type?.displayName === DialogPrimitive.Title.displayName) return true;
+    // Direct match against our exported DialogTitle wrapper
+    if (type === DialogTitle) return true;
+    // Match by displayName if present
+    if (type?.displayName === DialogPrimitive.Title.displayName || type?.displayName === 'DialogTitle') return true;
     // If child has props and children, search recursively
     // @ts-ignore
     if ((child as any).props && (child as any).props.children) {
