@@ -15,6 +15,8 @@ import Stock from "@/pages/Stock";
 import Events from "@/pages/Events";
 import EventDetails from "@/pages/EventDetails";
 import EventAgreement from "@/pages/EventAgreement";
+import EventAgreementPreview from "@/pages/EventAgreementPreview";
+import EventAgreementSign from "@/pages/EventAgreementSign";
 import EventDispatch from "@/pages/EventDispatch";
 import EventReturn from "@/pages/EventReturn";
 import Workers from "@/pages/Workers";
