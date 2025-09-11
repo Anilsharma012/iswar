@@ -236,3 +236,44 @@ export const getEventSummary = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const saveAgreement = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { selections = [], advance = 0, security = 0, agreementTerms = '' } = req.body || {};
+
+    // Basic validation
+    if (!Array.isArray(selections)) {
+      return res.status(400).json({ error: 'selections must be an array' });
+    }
+
+    const sanitized = selections.map((s: any) => ({
+      productId: s.productId,
+      name: s.name,
+      sku: s.sku,
+      unitType: s.unitType,
+      stockQty: Number(s.stockQty || 0),
+      qtyToSend: Number(s.qtyToSend || 0),
+      rate: Number(s.rate || 0),
+      amount: Number(s.amount || 0),
+    }));
+
+    const event = await Event.findByIdAndUpdate(
+      id,
+      {
+        selections: sanitized,
+        advance: Number(advance || 0),
+        security: Number(security || 0),
+        agreementTerms: String(agreementTerms || ''),
+      },
+      { new: true }
+    ).populate('clientId');
+
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    res.json(event);
+  } catch (error) {
+    console.error('Save agreement error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
