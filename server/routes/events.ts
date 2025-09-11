@@ -395,8 +395,8 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
       await session.commitTransaction();
       session.endSession();
 
-      const populated = await Event.findById(event._id).populate("clientId");
-      return res.json(populated);
+      const populatedEvent = await Event.findById(event._id).populate("clientId");
+      return res.json(populatedEvent);
     } catch (error: any) {
       try {
         await session.abortTransaction();
@@ -545,8 +545,8 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       await session.commitTransaction();
       session.endSession();
 
-      const populated = await Event.findById(event._id).populate("clientId");
-    return res.json(populated);
+      const populatedEvent = await Event.findById(event._id).populate("clientId");
+      return res.json(populatedEvent);
   } catch (error: any) {
     try {
       await session.abortTransaction();
