@@ -320,62 +320,12 @@ export default function EventAgreement() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Client e-Sign</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <canvas
-              ref={canvasRef}
-              width={600}
-              height={200}
-              className="border rounded-md w-full"
-              onMouseDown={startDraw}
-              onMouseMove={draw}
-              onMouseUp={endDraw}
-              onMouseLeave={endDraw}
-            />
-            <div className="mt-2 flex gap-2">
-              <Button variant="outline" onClick={clearSign}>
-                Clear
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Company Sign</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <input
-              type="file"
-              accept="image/png,image/jpeg"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => setCompanySign(String(reader.result));
-                reader.readAsDataURL(file);
-              }}
-            />
-            {companySign && (
-              <img
-                src={companySign}
-                alt="Company Sign"
-                className="mt-2 h-24 object-contain"
-              />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => window.history.back()}>
-          Back
-        </Button>
-        <Button onClick={handleSave}>Save</Button>
-      </div>
+      <div className="flex items-center justify-end gap-2">
+    <Button variant="outline" onClick={() => window.history.back()}>Back</Button>
+    <Button onClick={() => window.open(`/admin/events/${id}/agreement/preview`, '_blank')}>Preview</Button>
+    <Button onClick={() => (window.location.href = `/admin/events/${id}/agreement/sign`)}>Proceed to e-Sign</Button>
+    <Button onClick={handleSave}>Save</Button>
+  </div>
     </div>
   );
 }
