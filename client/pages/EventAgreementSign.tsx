@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { eventAPI } from '@/lib/api';
-import { toast } from 'sonner';
+import { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { eventAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function EventAgreementSign() {
   const { id } = useParams<{ id: string }>();
@@ -12,7 +12,7 @@ export default function EventAgreementSign() {
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [companySign, setCompanySign] = useState<string>('');
+  const [companySign, setCompanySign] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function EventAgreementSign() {
         setEvent(res.data);
       } catch (e) {
         console.error(e);
-        toast.error('Failed to load event');
+        toast.error("Failed to load event");
       } finally {
         setLoading(false);
       }
@@ -34,8 +34,8 @@ export default function EventAgreementSign() {
   const startDraw = (e: React.MouseEvent) => {
     setIsDrawing(true);
     const rect = canvasRef.current!.getBoundingClientRect();
-    const ctx = canvasRef.current!.getContext('2d')!;
-    ctx.strokeStyle = '#000';
+    const ctx = canvasRef.current!.getContext("2d")!;
+    ctx.strokeStyle = "#000";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
@@ -43,13 +43,13 @@ export default function EventAgreementSign() {
   const draw = (e: React.MouseEvent) => {
     if (!isDrawing) return;
     const rect = canvasRef.current!.getBoundingClientRect();
-    const ctx = canvasRef.current!.getContext('2d')!;
+    const ctx = canvasRef.current!.getContext("2d")!;
     ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
     ctx.stroke();
   };
   const endDraw = () => setIsDrawing(false);
   const clearSign = () => {
-    const ctx = canvasRef.current!.getContext('2d')!;
+    const ctx = canvasRef.current!.getContext("2d")!;
     ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
   };
 
@@ -66,11 +66,11 @@ export default function EventAgreementSign() {
       const clientSign = canvasRef.current?.toDataURL();
       const payload: any = { clientSign, companySign };
       await eventAPI.saveAgreement(id!, payload);
-      toast.success('Signatures saved');
+      toast.success("Signatures saved");
       navigate(-1);
     } catch (e: any) {
       console.error(e);
-      toast.error(e.response?.data?.error || 'Failed to save signatures');
+      toast.error(e.response?.data?.error || "Failed to save signatures");
     }
   };
 
@@ -95,7 +95,9 @@ export default function EventAgreementSign() {
             onMouseLeave={endDraw}
           />
           <div className="mt-2 flex gap-2">
-            <Button variant="outline" onClick={clearSign}>Clear</Button>
+            <Button variant="outline" onClick={clearSign}>
+              Clear
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -105,13 +107,25 @@ export default function EventAgreementSign() {
           <CardTitle>Company Sign</CardTitle>
         </CardHeader>
         <CardContent>
-          <input type="file" accept="image/png,image/jpeg" onChange={handleUploadCompany} />
-          {companySign && <img src={companySign} className="mt-2 h-24 object-contain" alt="Company sign" />}
+          <input
+            type="file"
+            accept="image/png,image/jpeg"
+            onChange={handleUploadCompany}
+          />
+          {companySign && (
+            <img
+              src={companySign}
+              className="mt-2 h-24 object-contain"
+              alt="Company sign"
+            />
+          )}
         </CardContent>
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => navigate(-1)}>Back</Button>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          Back
+        </Button>
         <Button onClick={save}>Save Signatures</Button>
       </div>
     </div>

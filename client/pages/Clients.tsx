@@ -100,7 +100,9 @@ export default function Clients() {
   const [leadStage, setLeadStage] = useState<
     Record<string, "success" | "pending" | "reject" | null>
   >({});
-  const [pendingPrompt, setPendingPrompt] = useState<Record<string, boolean>>({});
+  const [pendingPrompt, setPendingPrompt] = useState<Record<string, boolean>>(
+    {},
+  );
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -136,7 +138,10 @@ export default function Clients() {
         );
         const leadResults = await Promise.all(leadPromises);
         const newPriority: Record<string, "hot" | "cold" | null> = {};
-        const newStage: Record<string, "success" | "pending" | "reject" | null> = {};
+        const newStage: Record<
+          string,
+          "success" | "pending" | "reject" | null
+        > = {};
         leadResults.forEach((res: any, idx: number) => {
           const client = fetchedClients[idx];
           const lead = res?.data?.leads?.[0];
@@ -686,8 +691,8 @@ export default function Clients() {
                                         leadPriority[client._id] === "hot"
                                           ? "#22C55E"
                                           : leadPriority[client._id] === "cold"
-                                          ? "#EF4444"
-                                          : "transparent",
+                                            ? "#EF4444"
+                                            : "transparent",
                                     }}
                                   />
                                   <span className="capitalize">
@@ -741,10 +746,10 @@ export default function Clients() {
                                         leadStage[client._id] === "success"
                                           ? "#16A34A"
                                           : leadStage[client._id] === "pending"
-                                          ? "#F59E0B"
-                                          : leadStage[client._id] === "reject"
-                                          ? "#EF4444"
-                                          : "transparent",
+                                            ? "#F59E0B"
+                                            : leadStage[client._id] === "reject"
+                                              ? "#EF4444"
+                                              : "transparent",
                                     }}
                                   />
                                   <span className="capitalize">
@@ -821,7 +826,7 @@ export default function Clients() {
                               </Button>
                             </div>
                           )}
-                          {leadPriority[client._id] !== 'cold' ? (
+                          {leadPriority[client._id] !== "cold" ? (
                             <>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -857,7 +862,9 @@ export default function Clients() {
                             </>
                           ) : (
                             <div className="flex items-center gap-2">
-                              <span className="text-sm bg-gray-200 text-gray-600 px-2 py-1 rounded-full">Cold — actions disabled</span>
+                              <span className="text-sm bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
+                                Cold — actions disabled
+                              </span>
                               <Button
                                 variant="ghost"
                                 size="sm"

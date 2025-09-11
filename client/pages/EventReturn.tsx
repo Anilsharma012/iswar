@@ -48,13 +48,20 @@ export default function EventReturn() {
         // compute per-row late fee if event ended
         const end = new Date(data.dateTo).getTime();
         const now = Date.now();
-        const perRowLate = now > end ? Math.ceil((now - end) / (1000 * 60 * 60 * 24)) * 100 : 0;
+        const perRowLate =
+          now > end ? Math.ceil((now - end) / (1000 * 60 * 60 * 24)) * 100 : 0;
         if (perRowLate > 0) mapped.forEach((r) => (r.lateFee = perRowLate));
 
         mapped.forEach((r) => {
           r.shortage = Math.max(0, r.expected - r.returned);
           const lossPrice = r.lossPrice || r.buyPrice || r.rate || 0;
-          r.lineAdjust = Number((r.shortage * lossPrice + Number(r.damageAmount || 0) + Number(r.lateFee || 0)).toFixed(2));
+          r.lineAdjust = Number(
+            (
+              r.shortage * lossPrice +
+              Number(r.damageAmount || 0) +
+              Number(r.lateFee || 0)
+            ).toFixed(2),
+          );
         });
 
         setRows(mapped);
@@ -76,15 +83,26 @@ export default function EventReturn() {
       const r = { ...next[i], ...patch };
       if (r.returned < 0) r.returned = 0;
       if (r.returned > r.expected) r.returned = r.expected;
-      r.shortage = Number(patch.shortage ?? Math.max(0, r.expected - r.returned));
+      r.shortage = Number(
+        patch.shortage ?? Math.max(0, r.expected - r.returned),
+      );
       const lossPrice = r.lossPrice || r.buyPrice || r.rate || 0;
-      r.lineAdjust = Number((r.shortage * lossPrice + Number(r.damageAmount || 0) + Number(r.lateFee || 0)).toFixed(2));
+      r.lineAdjust = Number(
+        (
+          r.shortage * lossPrice +
+          Number(r.damageAmount || 0) +
+          Number(r.lateFee || 0)
+        ).toFixed(2),
+      );
       next[i] = r;
       return next;
     });
   };
 
-  const totalAdjust = useMemo(() => rows.reduce((s, r) => s + Number(r.lineAdjust || 0), 0), [rows]);
+  const totalAdjust = useMemo(
+    () => rows.reduce((s, r) => s + Number(r.lineAdjust || 0), 0),
+    [rows],
+  );
 
   const submit = async () => {
     try {
@@ -148,7 +166,9 @@ export default function EventReturn() {
                       type="number"
                       className="w-24"
                       value={r.returned}
-                      onChange={(e) => updateRow(i, { returned: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateRow(i, { returned: Number(e.target.value) })
+                      }
                     />
                   </TableCell>
                   <TableCell>
@@ -156,7 +176,9 @@ export default function EventReturn() {
                       type="number"
                       className="w-24"
                       value={r.shortage}
-                      onChange={(e) => updateRow(i, { shortage: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateRow(i, { shortage: Number(e.target.value) })
+                      }
                     />
                   </TableCell>
                   <TableCell>
@@ -164,7 +186,9 @@ export default function EventReturn() {
                       type="number"
                       className="w-24"
                       value={r.damageAmount}
-                      onChange={(e) => updateRow(i, { damageAmount: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateRow(i, { damageAmount: Number(e.target.value) })
+                      }
                     />
                   </TableCell>
                   <TableCell>
@@ -172,7 +196,9 @@ export default function EventReturn() {
                       type="number"
                       className="w-24"
                       value={r.lateFee}
-                      onChange={(e) => updateRow(i, { lateFee: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateRow(i, { lateFee: Number(e.target.value) })
+                      }
                     />
                   </TableCell>
                   <TableCell>
@@ -180,10 +206,14 @@ export default function EventReturn() {
                       type="number"
                       className="w-24"
                       value={r.rate || 0}
-                      onChange={(e) => updateRow(i, { rate: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateRow(i, { rate: Number(e.target.value) })
+                      }
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{formatINR(r.lineAdjust || 0)}</TableCell>
+                  <TableCell className="font-medium">
+                    {formatINR(r.lineAdjust || 0)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

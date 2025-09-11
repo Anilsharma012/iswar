@@ -70,7 +70,11 @@ export default function EventAgreement() {
 
         // Prefer latest dispatch lines as source
         const lastDispatch = ev.dispatches?.[ev.dispatches.length - 1];
-        if (lastDispatch && Array.isArray(lastDispatch.items) && lastDispatch.items.length > 0) {
+        if (
+          lastDispatch &&
+          Array.isArray(lastDispatch.items) &&
+          lastDispatch.items.length > 0
+        ) {
           const rows: Row[] = lastDispatch.items.map((p: any) => ({
             _id: p.productId,
             name: p.name,
@@ -80,7 +84,11 @@ export default function EventAgreement() {
             sellPrice: Number(p.rate || 0),
             qtyToSend: Number(p.qtyToSend || p.qty || 0),
             rate: Number(p.rate || 0),
-            amount: Number((Number(p.qtyToSend || p.qty || 0) * Number(p.rate || 0)).toFixed(2)),
+            amount: Number(
+              (Number(p.qtyToSend || p.qty || 0) * Number(p.rate || 0)).toFixed(
+                2,
+              ),
+            ),
           }));
           setItems(rows);
         } else {
@@ -96,7 +104,9 @@ export default function EventAgreement() {
 
           if (Array.isArray(ev.selections) && ev.selections.length > 0) {
             ev.selections.forEach((s: any) => {
-              const i = rows.findIndex((r) => r._id === s.productId || r.sku === s.sku);
+              const i = rows.findIndex(
+                (r) => r._id === s.productId || r.sku === s.sku,
+              );
               if (i >= 0) {
                 rows[i].qtyToSend = Number(s.qtyToSend || 0);
                 rows[i].rate = Number(s.rate || rows[i].rate || 0);
@@ -321,11 +331,25 @@ export default function EventAgreement() {
       </div>
 
       <div className="flex items-center justify-end gap-2">
-    <Button variant="outline" onClick={() => window.history.back()}>Back</Button>
-    <Button onClick={() => window.open(`/admin/events/${id}/agreement/preview`, '_blank')}>Preview</Button>
-    <Button onClick={() => (window.location.href = `/admin/events/${id}/agreement/sign`)}>Proceed to e-Sign</Button>
-    <Button onClick={handleSave}>Save</Button>
-  </div>
+        <Button variant="outline" onClick={() => window.history.back()}>
+          Back
+        </Button>
+        <Button
+          onClick={() =>
+            window.open(`/admin/events/${id}/agreement/preview`, "_blank")
+          }
+        >
+          Preview
+        </Button>
+        <Button
+          onClick={() =>
+            (window.location.href = `/admin/events/${id}/agreement/sign`)
+          }
+        >
+          Proceed to e-Sign
+        </Button>
+        <Button onClick={handleSave}>Save</Button>
+      </div>
     </div>
   );
 }

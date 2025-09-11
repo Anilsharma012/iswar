@@ -138,7 +138,7 @@ export const eventAPI = {
   dispatch: (id: string, data: any) => api.post(`/events/${id}/dispatch`, data),
   return: (id: string, data: any) => api.post(`/events/${id}/return`, data),
   downloadAgreement: (id: string) =>
-    api.get(`/events/${id}/agreement/pdf`, { responseType: 'blob' }),
+    api.get(`/events/${id}/agreement/pdf`, { responseType: "blob" }),
 };
 
 // Leads API calls

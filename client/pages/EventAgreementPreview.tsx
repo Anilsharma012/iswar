@@ -1,10 +1,17 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { eventAPI } from '@/lib/api';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { eventAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function EventAgreementPreview() {
   const { id } = useParams<{ id: string }>();
@@ -20,7 +27,7 @@ export default function EventAgreementPreview() {
         setEvent(res.data);
       } catch (e) {
         console.error(e);
-        toast.error('Failed to load agreement preview');
+        toast.error("Failed to load agreement preview");
       } finally {
         setLoading(false);
       }
@@ -33,8 +40,10 @@ export default function EventAgreementPreview() {
   const onDownload = async () => {
     try {
       const resp = await eventAPI.downloadAgreement(id!);
-      const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
+      const url = window.URL.createObjectURL(
+        new Blob([resp.data], { type: "application/pdf" }),
+      );
+      const a = document.createElement("a");
       a.href = url;
       a.download = `agreement-${id}.pdf`;
       document.body.appendChild(a);
@@ -43,17 +52,28 @@ export default function EventAgreementPreview() {
       window.URL.revokeObjectURL(url);
     } catch (e: any) {
       console.error(e);
-      toast.error(e.response?.data?.error || 'Failed to download PDF');
+      toast.error(e.response?.data?.error || "Failed to download PDF");
     }
   };
 
   if (loading || !event) return <div className="p-6">Loading...</div>;
 
-  const rows = (event.dispatches && event.dispatches.length)
-    ? event.dispatches[event.dispatches.length - 1].items
-    : event.selections || [];
+  const rows =
+    event.dispatches && event.dispatches.length
+      ? event.dispatches[event.dispatches.length - 1].items
+      : event.selections || [];
 
-  const subtotal = rows.reduce((s: number, it: any) => s + Number((Number(it.qtyToSend ?? it.qty ?? it.qtyReturned ?? 0) * Number(it.rate || it.sellPrice || 0)).toFixed(2)), 0);
+  const subtotal = rows.reduce(
+    (s: number, it: any) =>
+      s +
+      Number(
+        (
+          Number(it.qtyToSend ?? it.qty ?? it.qtyReturned ?? 0) *
+          Number(it.rate || it.sellPrice || 0)
+        ).toFixed(2),
+      ),
+    0,
+  );
 
   return (
     <div className="p-6">
@@ -62,8 +82,14 @@ export default function EventAgreementPreview() {
         <div className="flex gap-2">
           <Button onClick={onPrint}>Print</Button>
           <Button onClick={onDownload}>Download PDF</Button>
-          <Button variant="outline" onClick={() => navigate(-1)}>Back</Button>
-          <Button onClick={() => navigate(`/admin/events/${id}/agreement/sign`)}>Proceed to e-Sign</Button>
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            Back
+          </Button>
+          <Button
+            onClick={() => navigate(`/admin/events/${id}/agreement/sign`)}
+          >
+            Proceed to e-Sign
+          </Button>
         </div>
       </div>
 
@@ -83,7 +109,10 @@ export default function EventAgreementPreview() {
           <CardTitle>Event</CardTitle>
         </CardHeader>
         <CardContent>
-          <div>Schedule: {new Date(event.dateFrom).toLocaleString('en-IN')} - {new Date(event.dateTo).toLocaleString('en-IN')}</div>
+          <div>
+            Schedule: {new Date(event.dateFrom).toLocaleString("en-IN")} -{" "}
+            {new Date(event.dateTo).toLocaleString("en-IN")}
+          </div>
           {event.location && <div>Venue: {event.location}</div>}
         </CardContent>
       </Card>
@@ -105,13 +134,17 @@ export default function EventAgreementPreview() {
             </TableHeader>
             <TableBody>
               {rows.map((it: any, i: number) => {
-                const qty = Number(it.qtyToSend ?? it.qty ?? it.qtyReturned ?? 0);
+                const qty = Number(
+                  it.qtyToSend ?? it.qty ?? it.qtyReturned ?? 0,
+                );
                 const rate = Number(it.rate ?? it.sellPrice ?? 0);
                 const amount = Number((qty * rate).toFixed(2));
                 return (
                   <TableRow key={i}>
                     <TableCell>{it.name || it.productId?.name}</TableCell>
-                    <TableCell>{it.unitType || it.productId?.unitType}</TableCell>
+                    <TableCell>
+                      {it.unitType || it.productId?.unitType}
+                    </TableCell>
                     <TableCell>{qty}</TableCell>
                     <TableCell>₹{rate.toFixed(2)}</TableCell>
                     <TableCell>₹{amount.toFixed(2)}</TableCell>
@@ -122,7 +155,9 @@ export default function EventAgreementPreview() {
           </Table>
 
           <div className="flex justify-end mt-4">
-            <div className="text-lg font-semibold">Subtotal: ₹{subtotal.toFixed(2)}</div>
+            <div className="text-lg font-semibold">
+              Subtotal: ₹{subtotal.toFixed(2)}
+            </div>
           </div>
           <div className="flex justify-end mt-2">
             <div>Advance: ₹{Number(event.advance || 0).toFixed(2)}</div>
@@ -130,10 +165,16 @@ export default function EventAgreementPreview() {
           <div className="flex justify-end mt-2">
             <div>Security: ₹{Number(event.security || 0).toFixed(2)}</div>
           </div>
-          <div className="flex justify-end mt-2 font-bold text-lg">Grand Total: ₹{(subtotal - Number(event.advance || 0) - Number(event.security || 0)).toFixed(2)}</div>
+          <div className="flex justify-end mt-2 font-bold text-lg">
+            Grand Total: ₹
+            {(
+              subtotal -
+              Number(event.advance || 0) -
+              Number(event.security || 0)
+            ).toFixed(2)}
+          </div>
         </CardContent>
       </Card>
-
     </div>
   );
 }
