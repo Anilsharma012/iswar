@@ -123,3 +123,13 @@ export const getCategories = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const getItems = async (req: AuthRequest, res: Response) => {
+  try {
+    const items = await Product.find({}).sort({ name: 1 });
+    res.json({ items });
+  } catch (error) {
+    console.error('Get items error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
