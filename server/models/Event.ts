@@ -71,7 +71,11 @@ const eventSchema = new Schema<IEvent>({
   estimate: {
     type: Number,
     min: 0
-  }
+  },
+  selections: { type: [selectionSchema], default: [] },
+  advance: { type: Number, min: 0, default: 0 },
+  security: { type: Number, min: 0, default: 0 },
+  agreementTerms: { type: String, trim: true },
 }, {
   timestamps: true
 });
