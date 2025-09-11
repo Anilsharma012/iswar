@@ -32,4 +32,4 @@ const adminSchema = new Schema<IAdmin>({
   timestamps: true
 });
 
-export const Admin = model<IAdmin>('Admin', adminSchema);
+export const Admin = (models.Admin as any) || model<IAdmin>('Admin', adminSchema);
