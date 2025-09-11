@@ -46,7 +46,7 @@ import {
   FileText,
   Building,
 } from 'lucide-react';
-import { clientAPI } from '@/lib/api';
+import { clientAPI, eventAPI, leadsAPI } from '@/lib/api';
 
 interface Client {
   _id: string;
@@ -238,6 +238,47 @@ export default function Clients() {
       return `+91 ${phone.slice(0, 5)} ${phone.slice(5)}`;
     }
     return phone;
+  };
+
+  const handleLeadStatus = async (clientId: string, status: 'hot' | 'cold') => {
+    try {
+      await leadsAPI.updateStatusByClient(clientId, status);
+      toast.success(`Marked as ${status.toUpperCase()}`);
+    } catch (error: any) {
+      console.error('Update lead status error:', error);
+      toast.error(error.response?.data?.error || 'Failed to update lead');
+    }
+  };
+
+  const handleGoToAgreement = async (client: Client) => {
+    try {
+      // Try to find an event for this client
+      const res = await eventAPI.getAll({ clientId: client._id, limit: 1 });
+      const existing = res.data?.events?.[0];
+      if (existing?._id) {
+        window.location.href = `/admin/events/${existing._id}/agreement`;
+        return;
+      }
+      // Create draft event
+      const today = new Date().toISOString().slice(0,10);
+      const payload = {
+        name: `${client.name} Event`,
+        clientId: client._id,
+        dateFrom: today,
+        dateTo: today,
+        notes: 'Draft',
+      };
+      const created = await eventAPI.create(payload);
+      const id = created.data?._id;
+      if (id) {
+        window.location.href = `/admin/events/${id}/agreement`;
+      } else {
+        toast.error('Failed to create draft event');
+      }
+    } catch (e: any) {
+      console.error('Go to agreement error:', e);
+      toast.error(e.response?.data?.error || 'Failed to open T&C');
+    }
   };
 
   return (
@@ -469,6 +510,27 @@ export default function Clients() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleLeadStatus(client._id, 'hot')}
+                          >
+                            Hot Lead
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleLeadStatus(client._id, 'cold')}
+                          >
+                            Cold Lead
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleGoToAgreement(client)}
+                          >
+                            Terms & Conditions
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
