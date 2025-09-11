@@ -1,6 +1,12 @@
-import { Schema, model, Document } from "mongoose";
+import mongoose, { Schema, model, Document } from "mongoose";
 
-export type LeadStatus = "new" | "rejected" | "callback" | "hot" | "converted";
+export type LeadStatus =
+  | "new"
+  | "rejected"
+  | "callback"
+  | "hot"
+  | "cold"
+  | "converted";
 
 export interface ICallLog {
   outcome: "answered" | "missed" | "voicemail" | "connected";
@@ -38,7 +44,7 @@ const leadSchema = new Schema<ILead>(
     source: { type: String, trim: true },
     status: {
       type: String,
-      enum: ["new", "rejected", "callback", "hot", "converted"],
+      enum: ["new", "rejected", "callback", "hot", "cold", "converted"],
       required: true,
       default: "new",
     },
@@ -48,7 +54,7 @@ const leadSchema = new Schema<ILead>(
   { timestamps: true },
 );
 
-leadSchema.index({ phone: 1 }, { unique: true });
 leadSchema.index({ status: 1, updatedAt: -1 });
 
-export const Lead = model<ILead>("Lead", leadSchema);
+export const Lead =
+  (mongoose.models.Lead as any) || model<ILead>("Lead", leadSchema);

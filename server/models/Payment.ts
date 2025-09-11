@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from "mongoose";
+import mongoose, { Schema, model, Document, Types } from "mongoose";
 
 export type PaymentMode = "cash" | "upi" | "card" | "bank" | "cheque";
 
@@ -29,4 +29,5 @@ const paymentSchema = new Schema<IPayment>(
 
 paymentSchema.index({ invoiceId: 1, date: -1 });
 
-export const Payment = model<IPayment>("Payment", paymentSchema);
+export const Payment =
+  (mongoose.models.Payment as any) || model<IPayment>("Payment", paymentSchema);
