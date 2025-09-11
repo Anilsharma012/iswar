@@ -82,6 +82,7 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [leadStatuses, setLeadStatuses] = useState<Record<string, 'hot' | 'cold' | null>>({});
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -243,6 +244,7 @@ export default function Clients() {
   const handleLeadStatus = async (clientId: string, status: 'hot' | 'cold') => {
     try {
       await leadsAPI.updateStatusByClient(clientId, status);
+      setLeadStatuses((prev) => ({ ...prev, [clientId]: status }));
       toast.success(`Marked as ${status.toUpperCase()}`);
     } catch (error: any) {
       console.error('Update lead status error:', error);
@@ -513,6 +515,7 @@ export default function Clients() {
                           <Button
                             variant="outline"
                             size="sm"
+                            className={leadStatuses[client._id] === 'hot' ? 'bg-green-600 text-white hover:bg-green-700' : ''}
                             onClick={() => handleLeadStatus(client._id, 'hot')}
                           >
                             Hot Lead
@@ -520,6 +523,7 @@ export default function Clients() {
                           <Button
                             variant="outline"
                             size="sm"
+                            className={leadStatuses[client._id] === 'cold' ? 'bg-red-600 text-white hover:bg-red-700' : ''}
                             onClick={() => handleLeadStatus(client._id, 'cold')}
                           >
                             Cold Lead
