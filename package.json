@@ -18,7 +18,8 @@
     "start": "node dist/server/node-build.mjs",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "seed:tent": "tsx server/seed/seed-tent.ts"
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
