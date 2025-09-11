@@ -6,7 +6,10 @@ export type LeadStatus =
   | "callback"
   | "hot"
   | "cold"
-  | "converted";
+  | "converted"
+  | "success"
+  | "pending"
+  | "reject";
 
 export interface ICallLog {
   outcome: "answered" | "missed" | "voicemail" | "connected";
@@ -21,6 +24,7 @@ export interface ILead extends Document {
   email?: string;
   source?: string;
   status: LeadStatus;
+  priority?: "hot" | "cold";
   notes?: string;
   callLogs: ICallLog[];
 }
@@ -44,9 +48,24 @@ const leadSchema = new Schema<ILead>(
     source: { type: String, trim: true },
     status: {
       type: String,
-      enum: ["new", "rejected", "callback", "hot", "cold", "converted"],
+      enum: [
+        "new",
+        "rejected",
+        "callback",
+        "hot",
+        "cold",
+        "converted",
+        "success",
+        "pending",
+        "reject",
+      ],
       required: true,
       default: "new",
+    },
+    priority: {
+      type: String,
+      enum: ["hot", "cold"],
+      default: "cold",
     },
     notes: { type: String, trim: true },
     callLogs: { type: [callLogSchema], default: [] },

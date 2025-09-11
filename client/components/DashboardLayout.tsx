@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useState } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,12 +10,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Home,
   Users,
@@ -32,71 +28,75 @@ import {
   Tent,
   Receipt,
   ClipboardList,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const sidebarItems = [
   {
-    title: 'Dashboard',
+    title: "Dashboard",
     icon: Home,
-    href: '/dashboard',
+    href: "/dashboard",
   },
   {
-    title: 'Clients',
+    title: "Clients",
     icon: Users,
-    href: '/clients',
+    href: "/clients",
   },
   {
-    title: 'Products',
+    title: "Products",
     icon: Package,
-    href: '/products',
+    href: "/products",
   },
   {
-    title: 'Bills',
+    title: "Bills",
     icon: Receipt,
-    href: '/invoices',
-    badge: 'Quick',
+    href: "/invoices",
+    badge: "Quick",
   },
   {
-    title: 'Stock',
+    title: "Stock",
     icon: Warehouse,
-    href: '/stock',
+    href: "/stock",
   },
   {
-    title: 'Issue Tracker',
+    title: "Issue Tracker",
     icon: ClipboardList,
-    href: '/issue-tracker',
+    href: "/issue-tracker",
   },
   {
-    title: 'Events',
+    title: "Events",
     icon: Calendar,
-    href: '/events',
+    href: "/events",
   },
   {
-    title: 'Workers',
+    title: "Workers",
     icon: UserCheck,
-    href: '/workers',
+    href: "/workers",
   },
   {
-    title: 'Attendance',
+    title: "Attendance",
     icon: CreditCard,
-    href: '/attendance',
+    href: "/attendance",
   },
   {
-    title: 'Payroll',
+    title: "Payroll",
     icon: DollarSign,
-    href: '/payroll',
+    href: "/payroll",
   },
   {
-    title: 'Reports',
+    title: "Reports",
     icon: BarChart3,
-    href: '/reports',
+    href: "/reports",
   },
 ];
 
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const location = useLocation();
+  const path = location.pathname;
+  const match =
+    path.match(/admin\/events\/(.+?)\//) || path.match(/event-details\/(.+?)$/);
+  const currentEventId = match?.[1];
 
   return (
     <div className="flex h-full flex-col">
@@ -122,27 +122,98 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
                 to={item.href}
                 onClick={onLinkClick}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                    : "text-gray-700 hover:bg-gray-100",
                 )}
               >
                 <item.icon className="h-4 w-4" />
                 <span>{item.title}</span>
                 {item.badge && (
-                  <span className={cn(
-                    'ml-auto rounded-full px-2 py-0.5 text-xs font-medium',
-                    isActive 
-                      ? 'bg-white/20 text-white' 
-                      : 'bg-blue-100 text-blue-700'
-                  )}>
+                  <span
+                    className={cn(
+                      "ml-auto rounded-full px-2 py-0.5 text-xs font-medium",
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-blue-100 text-blue-700",
+                    )}
+                  >
                     {item.badge}
                   </span>
                 )}
               </Link>
             );
           })}
+
+          <div className="mt-4 space-y-1">
+            <Link
+              to={
+                currentEventId
+                  ? `/admin/events/${currentEventId}/agreement`
+                  : `#`
+              }
+              onClick={(e) => {
+                if (!currentEventId) {
+                  e.preventDefault();
+                  toast.info("Open an event to access Terms & Conditions");
+                } else if (onLinkClick) onLinkClick();
+              }}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                path.includes("/admin/events/") && path.endsWith("/agreement")
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                  : !currentEventId
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-gray-700 hover:bg-gray-100",
+              )}
+            >
+              <FileText className="h-4 w-4" />
+              <span>Terms & Conditions</span>
+            </Link>
+            <Link
+              to={
+                currentEventId
+                  ? `/admin/events/${currentEventId}/dispatch`
+                  : `#`
+              }
+              onClick={(e) => {
+                if (!currentEventId) {
+                  e.preventDefault();
+                  toast.info("Open an event to access Stock Out");
+                } else if (onLinkClick) onLinkClick();
+              }}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                !currentEventId
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-gray-700 hover:bg-gray-100",
+              )}
+            >
+              <Warehouse className="h-4 w-4" />
+              <span>Stock Out</span>
+            </Link>
+            <Link
+              to={
+                currentEventId ? `/admin/events/${currentEventId}/return` : `#`
+              }
+              onClick={(e) => {
+                if (!currentEventId) {
+                  e.preventDefault();
+                  toast.info("Open an event to access Stock In");
+                } else if (onLinkClick) onLinkClick();
+              }}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                !currentEventId
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-gray-700 hover:bg-gray-100",
+              )}
+            >
+              <Warehouse className="h-4 w-4" />
+              <span>Stock In</span>
+            </Link>
+          </div>
         </div>
       </nav>
     </div>
@@ -156,8 +227,8 @@ export default function DashboardLayout() {
 
   const handleLogout = () => {
     logout();
-    toast.success('Logged out successfully');
-    navigate('/login');
+    toast.success("Logged out successfully");
+    navigate("/login");
   };
 
   return (
@@ -192,10 +263,11 @@ export default function DashboardLayout() {
                   </Button>
                 </SheetTrigger>
               </Sheet>
-              
+
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
-                  {sidebarItems.find(item => item.href === location.pathname)?.title || 'Dashboard'}
+                  {sidebarItems.find((item) => item.href === location.pathname)
+                    ?.title || "Dashboard"}
                 </h1>
                 <p className="text-sm text-gray-500">
                   Manage your tent house business
@@ -206,10 +278,13 @@ export default function DashboardLayout() {
             {/* User menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                      {admin?.name?.charAt(0)?.toUpperCase() || 'A'}
+                      {admin?.name?.charAt(0)?.toUpperCase() || "A"}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -217,7 +292,9 @@ export default function DashboardLayout() {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{admin?.name}</p>
+                    <p className="text-sm font-medium leading-none">
+                      {admin?.name}
+                    </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {admin?.phone}
                     </p>

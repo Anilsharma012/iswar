@@ -6,7 +6,13 @@ dotenv.config();
 async function connect() {
   try {
     console.log("🔄 Connecting to MongoDB...");
-    console.log("URI:", process.env.MONGO_URI ? "SET" : "NOT SET");
+    const hasUri = Boolean(process.env.MONGO_URI);
+    console.log("URI:", hasUri ? "SET" : "NOT SET");
+
+    if (!hasUri) {
+      console.warn("⚠️  Skipping MongoDB connection: MONGO_URI is not set");
+      return;
+    }
 
     await mongoose.connect(process.env.MONGO_URI, {
       dbName: "mannat",

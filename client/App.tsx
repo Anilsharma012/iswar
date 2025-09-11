@@ -14,12 +14,16 @@ import Invoices from "@/pages/Invoices";
 import Stock from "@/pages/Stock";
 import Events from "@/pages/Events";
 import EventDetails from "@/pages/EventDetails";
+import EventAgreement from "@/pages/EventAgreement";
+import EventDispatch from "@/pages/EventDispatch";
+import EventReturn from "@/pages/EventReturn";
 import Workers from "@/pages/Workers";
 import Attendance from "@/pages/Attendance";
 import Payroll from "@/pages/Payroll";
 import Reports from "@/pages/Reports";
 import IssueTracker from "@/pages/IssueTracker";
 import NotFound from "@/pages/NotFound";
+import PlaceholderPage from "@/components/PlaceholderPage";
 
 // Import layout
 import DashboardLayout from "@/components/DashboardLayout";
@@ -53,6 +57,15 @@ function App() {
               <Route path="stock" element={<Stock />} />
               <Route path="events" element={<Events />} />
               <Route path="event-details/:id" element={<EventDetails />} />
+              <Route
+                path="admin/events/:id/agreement"
+                element={<EventAgreement />}
+              />
+              <Route
+                path="admin/events/:id/dispatch"
+                element={<EventDispatch />}
+              />
+              <Route path="admin/events/:id/return" element={<EventReturn />} />
               <Route path="workers" element={<Workers />} />
               <Route path="attendance" element={<Attendance />} />
               <Route path="payroll" element={<Payroll />} />

@@ -24,6 +24,20 @@ export interface IEvent extends Document {
   advance?: number;
   security?: number;
   agreementTerms?: string;
+  dispatches?: Array<{
+    items: ISelectionItem[];
+    date: Date;
+    total: number;
+    note?: any;
+  }>;
+  returns?: Array<{
+    items: ISelectionItem[];
+    date: Date;
+    total: number;
+    shortages?: number;
+    damages?: number;
+    lateFee?: number;
+  }>;
   createdAt: Date;
 }
 
@@ -77,6 +91,30 @@ const eventSchema = new Schema<IEvent>(
     advance: { type: Number, min: 0, default: 0 },
     security: { type: Number, min: 0, default: 0 },
     agreementTerms: { type: String, trim: true },
+    dispatches: {
+      type: [
+        new Schema({
+          items: { type: [selectionSchema], default: [] },
+          date: { type: Date, default: Date.now },
+          total: { type: Number, default: 0 },
+          note: { type: Schema.Types.Mixed },
+        }),
+      ],
+      default: [],
+    },
+    returns: {
+      type: [
+        new Schema({
+          items: { type: [selectionSchema], default: [] },
+          date: { type: Date, default: Date.now },
+          total: { type: Number, default: 0 },
+          shortages: { type: Number, default: 0 },
+          damages: { type: Number, default: 0 },
+          lateFee: { type: Number, default: 0 },
+        }),
+      ],
+      default: [],
+    },
   },
   {
     timestamps: true,

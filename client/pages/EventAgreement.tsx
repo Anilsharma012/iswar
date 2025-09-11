@@ -1,0 +1,368 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { productAPI, eventAPI } from "@/lib/api";
+import { toast } from "sonner";
+
+interface EventType {
+  _id: string;
+  name: string;
+  dateFrom: string;
+  dateTo: string;
+  clientId?: { _id: string; name: string; phone: string };
+  advance?: number;
+  security?: number;
+  selections?: any[];
+  agreementTerms?: string;
+}
+
+interface ProductType {
+  _id: string;
+  name: string;
+  sku?: string;
+  unitType: string;
+  stockQty: number;
+  sellPrice: number;
+}
+
+interface Row extends ProductType {
+  qtyToSend: number;
+  rate: number;
+  amount: number;
+}
+
+export default function EventAgreement() {
+  const { id } = useParams<{ id: string }>();
+  const [event, setEvent] = useState<EventType | null>(null);
+  const [items, setItems] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [advance, setAdvance] = useState<string>("0");
+  const [security, setSecurity] = useState<string>("0");
+  const [terms, setTerms] = useState<string>("");
+
+  // Signatures
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [companySign, setCompanySign] = useState<string>("");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const [evRes, prodRes] = await Promise.all([
+          eventAPI.getById(id!),
+          productAPI.getAll({ limit: 1000 }),
+        ]);
+        const ev: EventType = evRes.data;
+        setEvent(ev);
+        setAdvance(String(ev.advance ?? 0));
+        setSecurity(String(ev.security ?? 0));
+        setTerms(ev.agreementTerms || "");
+
+        const products: ProductType[] = prodRes.data?.products || [];
+        const rows: Row[] = products.map((p) => ({
+          ...p,
+          qtyToSend: 0,
+          rate: p.sellPrice || 0,
+          amount: 0,
+        }));
+
+        // Pre-fill from saved selections if present
+        if (Array.isArray(ev.selections) && ev.selections.length > 0) {
+          ev.selections.forEach((s: any) => {
+            const i = rows.findIndex(
+              (r) => r._id === s.productId || r.sku === s.sku,
+            );
+            if (i >= 0) {
+              rows[i].qtyToSend = Number(s.qtyToSend || 0);
+              rows[i].rate = Number(s.rate || rows[i].rate || 0);
+              rows[i].amount = rows[i].qtyToSend * rows[i].rate;
+            }
+          });
+        }
+
+        setItems(rows);
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to load agreement data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) load();
+  }, [id]);
+
+  const grandTotal = useMemo(() => {
+    const total = items.reduce(
+      (sum, it) => sum + (it.qtyToSend > 0 ? it.qtyToSend * it.rate : 0),
+      0,
+    );
+    return Number(total.toFixed(2));
+  }, [items]);
+
+  const formatINR = (n: number) => `₹${n.toFixed(2)}`;
+
+  const startDraw = (e: React.MouseEvent) => {
+    setIsDrawing(true);
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const ctx = canvasRef.current!.getContext("2d")!;
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+  };
+  const draw = (e: React.MouseEvent) => {
+    if (!isDrawing) return;
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const ctx = canvasRef.current!.getContext("2d")!;
+    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.stroke();
+  };
+  const endDraw = () => setIsDrawing(false);
+  const clearSign = () => {
+    const ctx = canvasRef.current!.getContext("2d")!;
+    ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
+  };
+
+  const updateRow = (idx: number, patch: Partial<Row>) => {
+    setItems((prev) => {
+      const next = [...prev];
+      const r = { ...next[idx], ...patch } as Row;
+      if (r.qtyToSend < 0) r.qtyToSend = 0;
+      if (r.qtyToSend > r.stockQty) {
+        r.qtyToSend = r.stockQty;
+        toast.warning("Qty cannot exceed available stock");
+      }
+      r.rate = Number(isNaN(Number(r.rate)) ? 0 : r.rate);
+      r.amount = Number((r.qtyToSend * r.rate).toFixed(2));
+      next[idx] = r;
+      return next;
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      const selections = items
+        .filter((r) => r.qtyToSend > 0)
+        .map((r) => ({
+          productId: r._id,
+          name: r.name,
+          sku: r.sku,
+          unitType: r.unitType,
+          stockQty: r.stockQty,
+          qtyToSend: r.qtyToSend,
+          rate: r.rate,
+          amount: Number((r.qtyToSend * r.rate).toFixed(2)),
+        }));
+      const payload = {
+        selections,
+        advance: Number(advance || 0),
+        security: Number(security || 0),
+        agreementTerms: terms,
+      };
+      await eventAPI.saveAgreement(id!, payload);
+      toast.success("Agreement saved");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.response?.data?.error || "Failed to save agreement");
+    }
+  };
+
+  if (loading || !event) {
+    return (
+      <div className="p-6">
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Terms & Conditions</h1>
+        <div className="text-right">
+          <div className="text-sm">
+            Client: <span className="font-medium">{event.clientId?.name}</span>{" "}
+            ({event.clientId?.phone})
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Schedule: {new Date(event.dateFrom).toLocaleDateString("en-IN")} -{" "}
+            {new Date(event.dateTo).toLocaleDateString("en-IN")}
+          </div>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Products</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead>UOM</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Qty To Send</TableHead>
+                <TableHead>Rate</TableHead>
+                <TableHead>Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((row, idx) => (
+                <TableRow key={row._id}>
+                  <TableCell>{row.name}</TableCell>
+                  <TableCell>{row.sku || "-"}</TableCell>
+                  <TableCell>{row.unitType}</TableCell>
+                  <TableCell>{row.stockQty}</TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={row.qtyToSend}
+                      onChange={(e) =>
+                        updateRow(idx, { qtyToSend: Number(e.target.value) })
+                      }
+                      className="w-24"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={row.rate}
+                      onChange={(e) =>
+                        updateRow(idx, { rate: Number(e.target.value) })
+                      }
+                      className="w-28"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {formatINR(row.amount)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <div className="flex justify-end mt-4 text-lg font-semibold">
+            Grand Total: {formatINR(grandTotal)}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <Label>Advance Amount</Label>
+              <Input
+                value={advance}
+                onChange={(e) =>
+                  setAdvance(e.target.value.replace(/[^0-9.]/g, ""))
+                }
+              />
+            </div>
+            <div>
+              <Label>Security (Optional)</Label>
+              <Input
+                value={security}
+                onChange={(e) =>
+                  setSecurity(e.target.value.replace(/[^0-9.]/g, ""))
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Terms</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              rows={6}
+              placeholder="Write agreement terms..."
+              value={terms}
+              onChange={(e) => setTerms(e.target.value)}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Client e-Sign</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <canvas
+              ref={canvasRef}
+              width={600}
+              height={200}
+              className="border rounded-md w-full"
+              onMouseDown={startDraw}
+              onMouseMove={draw}
+              onMouseUp={endDraw}
+              onMouseLeave={endDraw}
+            />
+            <div className="mt-2 flex gap-2">
+              <Button variant="outline" onClick={clearSign}>
+                Clear
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Company Sign</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <input
+              type="file"
+              accept="image/png,image/jpeg"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => setCompanySign(String(reader.result));
+                reader.readAsDataURL(file);
+              }}
+            />
+            {companySign && (
+              <img
+                src={companySign}
+                alt="Company Sign"
+                className="mt-2 h-24 object-contain"
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => window.history.back()}>
+          Back
+        </Button>
+        <Button onClick={handleSave}>Save</Button>
+      </div>
+    </div>
+  );
+}
