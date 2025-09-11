@@ -117,7 +117,8 @@ export default function Clients() {
       };
 
       const response = await clientAPI.getAll(params);
-      setClients(response.data.clients || []);
+      const fetchedClients = response.data.clients || [];
+      setClients(fetchedClients);
       setPagination(
         response.data.pagination || {
           page: 1,
@@ -126,6 +127,31 @@ export default function Clients() {
           pages: 0,
         },
       );
+
+      // Load existing leads for these clients to show current priority/status
+      try {
+        const leadPromises = fetchedClients.map((c: Client) =>
+          leadsAPI.getAll({ search: c.phone, limit: 1 }).catch(() => null),
+        );
+        const leadResults = await Promise.all(leadPromises);
+        const newPriority: Record<string, "hot" | "cold" | null> = {};
+        const newStage: Record<string, "success" | "pending" | "reject" | null> = {};
+        leadResults.forEach((res: any, idx: number) => {
+          const client = fetchedClients[idx];
+          const lead = res?.data?.leads?.[0];
+          if (lead) {
+            newPriority[client._id] = lead.priority || null;
+            newStage[client._id] = lead.status || null;
+          } else {
+            newPriority[client._id] = null;
+            newStage[client._id] = null;
+          }
+        });
+        setLeadPriority((prev) => ({ ...newPriority, ...prev }));
+        setLeadStage((prev) => ({ ...newStage, ...prev }));
+      } catch (e) {
+        console.warn("Failed to load lead metadata for clients", e);
+      }
     } catch (error: any) {
       console.error("Fetch clients error:", error);
       toast.error("Failed to load clients");
