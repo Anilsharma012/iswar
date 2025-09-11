@@ -19,9 +19,6 @@ export default function EventReturn() {
   const [event, setEvent] = useState<any>(null);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [damages, setDamages] = useState<number>(0);
-  const [shortages, setShortages] = useState<number>(0);
-  const [lateFee, setLateFee] = useState<number>(0);
 
   useEffect(() => {
     const run = async () => {
@@ -32,14 +29,35 @@ export default function EventReturn() {
         setEvent(data);
         const lastDispatch = data.dispatches?.[data.dispatches.length - 1];
         const items = lastDispatch?.items || data.selections || [];
-        setRows(items.map((x: any) => ({ ...x, qty: x.qtyToSend || 0 })));
 
+        const mapped = items.map((x: any) => ({
+          productId: x.productId || x._id,
+          name: x.name,
+          sku: x.sku,
+          unitType: x.unitType,
+          expected: Number(x.qtyToSend || x.qty || 0),
+          returned: Number(x.qtyToSend || x.qty || 0),
+          shortage: 0,
+          damageAmount: 0,
+          lateFee: 0,
+          rate: Number(x.rate || 0),
+          buyPrice: Number(x.buyPrice || 0),
+          lossPrice: Number(x.lossPrice || 0),
+        }));
+
+        // compute per-row late fee if event ended
         const end = new Date(data.dateTo).getTime();
         const now = Date.now();
-        if (now > end) {
-          const diffDays = Math.ceil((now - end) / (1000 * 60 * 60 * 24));
-          setLateFee(diffDays * 100); // simple daily fee
-        }
+        const perRowLate = now > end ? Math.ceil((now - end) / (1000 * 60 * 60 * 24)) * 100 : 0;
+        if (perRowLate > 0) mapped.forEach((r) => (r.lateFee = perRowLate));
+
+        mapped.forEach((r) => {
+          r.shortage = Math.max(0, r.expected - r.returned);
+          const lossPrice = r.lossPrice || r.buyPrice || r.rate || 0;
+          r.lineAdjust = Number((r.shortage * lossPrice + Number(r.damageAmount || 0) + Number(r.lateFee || 0)).toFixed(2));
+        });
+
+        setRows(mapped);
       } catch (e) {
         console.error(e);
         toast.error("Failed to load return data");
@@ -50,36 +68,38 @@ export default function EventReturn() {
     if (id) run();
   }, [id]);
 
-  const total = useMemo(
-    () =>
-      rows.reduce((s, r) => s + r.qty * (r.rate || 0), 0) + damages + lateFee,
-    [rows, damages, lateFee],
-  );
   const formatINR = (n: number) => `₹${n.toFixed(2)}`;
 
   const updateRow = (i: number, patch: any) => {
     setRows((prev) => {
       const next = [...prev];
       const r = { ...next[i], ...patch };
-      if (r.qty < 0) r.qty = 0;
+      if (r.returned < 0) r.returned = 0;
+      if (r.returned > r.expected) r.returned = r.expected;
+      r.shortage = Number(patch.shortage ?? Math.max(0, r.expected - r.returned));
+      const lossPrice = r.lossPrice || r.buyPrice || r.rate || 0;
+      r.lineAdjust = Number((r.shortage * lossPrice + Number(r.damageAmount || 0) + Number(r.lateFee || 0)).toFixed(2));
       next[i] = r;
       return next;
     });
   };
 
+  const totalAdjust = useMemo(() => rows.reduce((s, r) => s + Number(r.lineAdjust || 0), 0), [rows]);
+
   const submit = async () => {
     try {
-      const items = rows
-        .filter((r) => r.qty > 0)
-        .map((r) => ({
-          productId: r.productId || r._id,
-          name: r.name,
-          sku: r.sku,
-          unitType: r.unitType,
-          qty: r.qty,
-          rate: r.rate,
-        }));
-      await eventAPI.return(id!, { items, shortages, damages, lateFee });
+      const payloadItems = rows.map((r) => ({
+        itemId: r.productId,
+        expected: r.expected,
+        returned: r.returned,
+        shortage: r.shortage,
+        damageAmount: r.damageAmount,
+        lateFee: r.lateFee,
+        lossPrice: r.lossPrice || r.buyPrice || r.rate || 0,
+        rate: r.rate,
+      }));
+
+      await eventAPI.return(id!, { items: payloadItems });
       toast.success("Return recorded");
       window.location.href = `/admin/events/${id}/return`;
     } catch (e: any) {
@@ -111,22 +131,48 @@ export default function EventReturn() {
                 <TableHead>Name</TableHead>
                 <TableHead>Expected</TableHead>
                 <TableHead>Returned</TableHead>
+                <TableHead>Shortage</TableHead>
+                <TableHead>Damages (₹)</TableHead>
+                <TableHead>Late Fee (₹)</TableHead>
                 <TableHead>Rate</TableHead>
+                <TableHead>Line Adjust</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((r, i) => (
                 <TableRow key={i}>
                   <TableCell>{r.name}</TableCell>
-                  <TableCell>{r.qtyToSend || "-"}</TableCell>
+                  <TableCell>{r.expected || "-"}</TableCell>
                   <TableCell>
                     <Input
                       type="number"
                       className="w-24"
-                      value={r.qty}
-                      onChange={(e) =>
-                        updateRow(i, { qty: Number(e.target.value) })
-                      }
+                      value={r.returned}
+                      onChange={(e) => updateRow(i, { returned: Number(e.target.value) })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      className="w-24"
+                      value={r.shortage}
+                      onChange={(e) => updateRow(i, { shortage: Number(e.target.value) })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      className="w-24"
+                      value={r.damageAmount}
+                      onChange={(e) => updateRow(i, { damageAmount: Number(e.target.value) })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      className="w-24"
+                      value={r.lateFee}
+                      onChange={(e) => updateRow(i, { lateFee: Number(e.target.value) })}
                     />
                   </TableCell>
                   <TableCell>
@@ -134,45 +180,17 @@ export default function EventReturn() {
                       type="number"
                       className="w-24"
                       value={r.rate || 0}
-                      onChange={(e) =>
-                        updateRow(i, { rate: Number(e.target.value) })
-                      }
+                      onChange={(e) => updateRow(i, { rate: Number(e.target.value) })}
                     />
                   </TableCell>
+                  <TableCell className="font-medium">{formatINR(r.lineAdjust || 0)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div>
-              <label className="text-sm font-medium">Shortages</label>
-              <Input
-                type="number"
-                value={shortages}
-                onChange={(e) => setShortages(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Damages (₹)</label>
-              <Input
-                type="number"
-                value={damages}
-                onChange={(e) => setDamages(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Late Fee (₹)</label>
-              <Input
-                type="number"
-                value={lateFee}
-                onChange={(e) => setLateFee(Number(e.target.value))}
-              />
-            </div>
-          </div>
-
           <div className="flex justify-end mt-4 text-lg font-semibold">
-            Total Adjustments: {formatINR(total)}
+            Total Adjustments: {formatINR(totalAdjust)}
           </div>
         </CardContent>
       </Card>
