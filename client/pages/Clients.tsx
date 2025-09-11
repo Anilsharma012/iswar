@@ -388,6 +388,12 @@ export default function Clients() {
     client: Client,
     path: "agreement" | "dispatch" | "return",
   ) => {
+    // client-level check: if lead is cold, block
+    if (leadPriority[client._id] === "cold") {
+      toast.error("Cold lead — actions disabled");
+      return;
+    }
+
     const id = await ensureEvent(client);
     if (id) window.location.href = `/admin/events/${id}/${path}`;
   };
