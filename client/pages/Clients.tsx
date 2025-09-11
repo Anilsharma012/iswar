@@ -100,6 +100,7 @@ export default function Clients() {
   const [leadStage, setLeadStage] = useState<
     Record<string, "success" | "pending" | "reject" | null>
   >({});
+  const [pendingPrompt, setPendingPrompt] = useState<Record<string, boolean>>({});
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
