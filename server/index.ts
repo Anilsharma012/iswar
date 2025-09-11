@@ -78,6 +78,15 @@ import {
   getTimeseries
 } from './routes/reports';
 import {
+  getLeads,
+  getLead,
+  createLead,
+  updateLead,
+  deleteLead,
+  logCall,
+  convertLead
+} from './routes/leads';
+import {
   createIssueFromInvoice,
   returnItems,
   getIssueSummary,
@@ -182,6 +191,15 @@ app.get('/api/workers/:id', getWorker);
 app.post('/api/workers', createWorker);
 app.put('/api/workers/:id', updateWorker);
 app.delete('/api/workers/:id', deleteWorker);
+
+// Lead routes
+app.get('/api/leads', getLeads);
+app.get('/api/leads/:id', getLead);
+app.post('/api/leads', createLead);
+app.put('/api/leads/:id', updateLead);
+app.delete('/api/leads/:id', deleteLead);
+app.post('/api/leads/:id/call', logCall);
+app.post('/api/leads/:id/convert', convertLead);
 
 // Attendance routes
 app.get('/api/attendance', getAttendance);
