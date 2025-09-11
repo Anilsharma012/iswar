@@ -408,7 +408,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       session.startTransaction();
 
       const { id } = req.params;
-      const { items = [], shortages = 0, damages = 0, lateFee = 0 } = req.body || {};
+      const { items = [] } = req.body || {};
 
       if (!Array.isArray(items)) {
         await session.abortTransaction();
@@ -423,14 +423,19 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         return res.status(404).json({ error: "Event not found" });
       }
 
-      let total = 0;
+      let totalAdjust = 0;
       const sanitized: any[] = [];
 
       for (const it of items) {
-        const pid = it.productId || it._id || it.product || null;
-        const qty = Number(it.qty || 0);
-        const rate = Number(it.rate || 0);
-        if (!pid || qty < 0) {
+        // Expect each item: { productId, expected, returned, shortage, damageAmount, lateFee, lossPrice?, rate }
+        const pid = it.productId || it.itemId || it._id || null;
+        const expected = Number(it.expected || 0);
+        const returned = Number(it.returned || 0);
+        const shortage = Number(it.shortage ?? Math.max(0, expected - returned));
+        const damageAmount = Number(it.damageAmount || 0);
+        const lateFee = Number(it.lateFee || 0);
+
+        if (!pid || expected < 0 || returned < 0 || shortage < 0) {
           await session.abortTransaction();
           session.endSession();
           return res.status(400).json({ error: "Invalid item payload" });
@@ -443,36 +448,40 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           return res.status(404).json({ error: `Product ${pid} not found` });
         }
 
-        product.stockQty = Number(product.stockQty) + qty;
+        // Increase stock by returned qty
+        product.stockQty = Number(product.stockQty) + returned;
         await product.save({ session });
 
-        const amount = Number((qty * rate).toFixed(2));
-        total += amount;
+        // Determine loss price: prefer provided lossPrice, then buyPrice, then rate, else 0
+        const lossPrice = Number(it.lossPrice ?? product.buyPrice ?? it.rate ?? 0);
+
+        const lineAdjust = Number((shortage * lossPrice + damageAmount + lateFee).toFixed(2));
+        totalAdjust += lineAdjust;
 
         sanitized.push({
           productId: product._id,
           name: product.name,
           sku: product.sku,
           unitType: product.unitType,
+          expected,
+          returned,
+          shortage,
+          damageAmount,
+          lateFee,
+          lossPrice,
+          lineAdjust,
           stockQty: product.stockQty,
-          qtyToSend: qty,
-          rate,
-          amount,
         });
       }
-
-      const numericShortages = Number(shortages || 0);
-      const numericDamages = Number(damages || 0);
-      const numericLateFee = Number(lateFee || 0);
 
       event.returns = event.returns || [];
       event.returns.push({
         items: sanitized,
         date: new Date(),
-        total: Number((total + numericDamages + numericLateFee).toFixed(2)),
-        shortages: numericShortages,
-        damages: numericDamages,
-        lateFee: numericLateFee,
+        total: Number(totalAdjust.toFixed(2)),
+        shortages: sanitized.reduce((s, it) => s + it.shortage, 0),
+        damages: sanitized.reduce((s, it) => s + it.damageAmount, 0),
+        lateFee: sanitized.reduce((s, it) => s + it.lateFee, 0),
       });
       event.status = "returned";
 
@@ -485,7 +494,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
             entity: "Event",
             entityId: event._id,
             userId: req.adminId ? new mongoose.Types.ObjectId(req.adminId) : undefined,
-            meta: { items: sanitized, shortages: numericShortages, damages: numericDamages, lateFee: numericLateFee },
+            meta: { items: sanitized, totalAdjust },
           },
         ],
         { session },
