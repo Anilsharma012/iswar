@@ -84,7 +84,9 @@ import {
   updateLead,
   deleteLead,
   logCall,
-  convertLead
+  convertLead,
+  updateLeadStatus,
+  updateLeadStatusByClient,
 } from './routes/leads';
 import {
   createIssueFromInvoice,
@@ -200,6 +202,8 @@ app.put('/api/leads/:id', updateLead);
 app.delete('/api/leads/:id', deleteLead);
 app.post('/api/leads/:id/call', logCall);
 app.post('/api/leads/:id/convert', convertLead);
+app.patch('/api/leads/:id/status', updateLeadStatus);
+app.patch('/api/leads/by-client/:clientId/status', updateLeadStatusByClient);
 
 // Attendance routes
 app.get('/api/attendance', getAttendance);
