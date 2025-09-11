@@ -318,8 +318,8 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
       }
 
       // Cold lead guard
-      const populated = await Event.findById(id).populate('clientId');
-      const client = populated?.clientId as any;
+      const clientPop = await Event.findById(id).populate('clientId');
+      const client = clientPop?.clientId as any;
       if (client && client.phone) {
         const Lead = mongoose.models.Lead as any;
         const lead = await Lead.findOne({ phone: client.phone }).session(session);
