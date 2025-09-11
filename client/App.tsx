@@ -14,12 +14,14 @@ import Invoices from "@/pages/Invoices";
 import Stock from "@/pages/Stock";
 import Events from "@/pages/Events";
 import EventDetails from "@/pages/EventDetails";
+import EventAgreement from "@/pages/EventAgreement";
 import Workers from "@/pages/Workers";
 import Attendance from "@/pages/Attendance";
 import Payroll from "@/pages/Payroll";
 import Reports from "@/pages/Reports";
 import IssueTracker from "@/pages/IssueTracker";
 import NotFound from "@/pages/NotFound";
+import PlaceholderPage from "@/components/PlaceholderPage";
 
 // Import layout
 import DashboardLayout from "@/components/DashboardLayout";
