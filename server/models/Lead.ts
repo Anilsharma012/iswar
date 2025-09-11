@@ -48,7 +48,6 @@ const leadSchema = new Schema<ILead>(
   { timestamps: true },
 );
 
-leadSchema.index({ phone: 1 }, { unique: true });
 leadSchema.index({ status: 1, updatedAt: -1 });
 
 export const Lead = model<ILead>("Lead", leadSchema);
