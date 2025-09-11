@@ -115,3 +115,19 @@ export const workerPaymentSchema = Joi.object({
   notes: Joi.string().optional().trim(),
   referenceNumber: Joi.string().optional().trim()
 });
+
+export const leadSchema = Joi.object({
+  name: Joi.string().required().trim(),
+  phone: Joi.string().required().trim(),
+  email: Joi.string().email().optional().allow('').allow(null),
+  source: Joi.string().optional().allow('').allow(null),
+  status: Joi.string().valid('new', 'rejected', 'callback', 'hot', 'converted').default('new'),
+  notes: Joi.string().optional().allow('').allow(null)
+});
+
+export const callLogSchema = Joi.object({
+  outcome: Joi.string().valid('answered', 'missed', 'voicemail', 'connected').required(),
+  duration: Joi.number().min(0).optional(),
+  note: Joi.string().optional().allow('').allow(null),
+  at: Joi.date().optional()
+});
