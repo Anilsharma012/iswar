@@ -284,47 +284,193 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
 };
 
 export const dispatchEvent = async (req: AuthRequest, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { id } = req.params;
-    const { dispatchedBy, dispatchDate } = req.body || {};
+    const { items = [] } = req.body || {};
 
-    const event = await Event.findById(id);
-    if (!event) return res.status(404).json({ error: "Event not found" });
+    if (!Array.isArray(items) || items.length === 0)
+      return res.status(400).json({ error: "items are required" });
 
+    const event = await Event.findById(id).session(session);
+    if (!event) {
+      await session.abortTransaction();
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Sanitize items and update product stock
+    let total = 0;
+    const sanitized: any[] = [];
+
+    for (const it of items) {
+      const pid = it.productId;
+      const qty = Number(it.qty || 0);
+      const rate = Number(it.rate || 0);
+      if (!pid || qty <= 0) {
+        await session.abortTransaction();
+        return res.status(400).json({ error: "Invalid item payload" });
+      }
+      const product = await (mongoose.models.Product as any).findById(
+        pid,
+      ).session(session);
+      if (!product) {
+        await session.abortTransaction();
+        return res.status(404).json({ error: `Product ${pid} not found` });
+      }
+
+      if (product.stockQty < qty) {
+        await session.abortTransaction();
+        return res.status(400).json({
+          error: `Insufficient stock for product ${product.name}`,
+        });
+      }
+
+      // decrement stock
+      product.stockQty = Number(product.stockQty) - qty;
+      await product.save({ session });
+
+      const amount = Number((qty * rate).toFixed(2));
+      total += amount;
+
+      sanitized.push({
+        productId: product._id,
+        name: product.name,
+        sku: product.sku,
+        unitType: product.unitType,
+        stockQty: product.stockQty,
+        qtyToSend: qty,
+        rate,
+        amount,
+      });
+    }
+
+    // push dispatch record
+    event.dispatches = event.dispatches || [];
+    event.dispatches.push({ items: sanitized, date: new Date(), total });
     event.status = "dispatched";
-    // store who dispatched and when (if provided)
-    (event as any).dispatchedBy = dispatchedBy || (req as any)?.user?.id || null;
-    (event as any).dispatchedAt = dispatchDate ? new Date(dispatchDate) : new Date();
+    await event.save({ session });
 
-    await event.save();
+    await (mongoose.models.AuditLog as any).create(
+      [
+        {
+          action: "dispatch",
+          entity: "Event",
+          entityId: event._id,
+          userId: req.adminId ? new mongoose.Types.ObjectId(req.adminId) : undefined,
+          meta: { items: sanitized, total },
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
 
     const populated = await Event.findById(event._id).populate("clientId");
     res.json(populated);
   } catch (error) {
+    await session.abortTransaction();
     console.error("Dispatch event error:", error);
     res.status(500).json({ error: "Internal server error" });
+  } finally {
+    session.endSession();
   }
 };
 
 export const returnEvent = async (req: AuthRequest, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { id } = req.params;
-    const { returnNotes = "", returnedBy } = req.body || {};
+    const { items = [], shortages = 0, damages = 0, lateFee = 0 } = req.body || {};
 
-    const event = await Event.findById(id);
-    if (!event) return res.status(404).json({ error: "Event not found" });
+    if (!Array.isArray(items))
+      return res.status(400).json({ error: "items must be an array" });
 
+    const event = await Event.findById(id).session(session);
+    if (!event) {
+      await session.abortTransaction();
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // For each returned item, increase product stock
+    let total = 0;
+    const sanitized: any[] = [];
+    for (const it of items) {
+      const pid = it.productId || it._id || it.product || null;
+      const qty = Number(it.qty || 0);
+      const rate = Number(it.rate || 0);
+      if (!pid || qty < 0) {
+        await session.abortTransaction();
+        return res.status(400).json({ error: "Invalid item payload" });
+      }
+      const product = await (mongoose.models.Product as any).findById(
+        pid,
+      ).session(session);
+      if (!product) {
+        await session.abortTransaction();
+        return res.status(404).json({ error: `Product ${pid} not found` });
+      }
+
+      // increment stock by returned qty
+      product.stockQty = Number(product.stockQty) + qty;
+      await product.save({ session });
+
+      const amount = Number((qty * rate).toFixed(2));
+      total += amount;
+
+      sanitized.push({
+        productId: product._id,
+        name: product.name,
+        sku: product.sku,
+        unitType: product.unitType,
+        stockQty: product.stockQty,
+        qtyToSend: qty,
+        rate,
+        amount,
+      });
+    }
+
+    // compute totals
+    const numericShortages = Number(shortages || 0);
+    const numericDamages = Number(damages || 0);
+    const numericLateFee = Number(lateFee || 0);
+
+    event.returns = event.returns || [];
+    event.returns.push({
+      items: sanitized,
+      date: new Date(),
+      total: Number((total + numericDamages + numericLateFee).toFixed(2)),
+      shortages: numericShortages,
+      damages: numericDamages,
+      lateFee: numericLateFee,
+    });
     event.status = "returned";
-    (event as any).returnedBy = returnedBy || (req as any)?.user?.id || null;
-    (event as any).returnedAt = new Date();
-    (event as any).returnNotes = String(returnNotes || "");
 
-    await event.save();
+    await event.save({ session });
+
+    await (mongoose.models.AuditLog as any).create(
+      [
+        {
+          action: "return",
+          entity: "Event",
+          entityId: event._id,
+          userId: req.adminId ? new mongoose.Types.ObjectId(req.adminId) : undefined,
+          meta: { items: sanitized, shortages: numericShortages, damages: numericDamages, lateFee: numericLateFee },
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
 
     const populated = await Event.findById(event._id).populate("clientId");
     res.json(populated);
   } catch (error) {
+    await session.abortTransaction();
     console.error("Return event error:", error);
     res.status(500).json({ error: "Internal server error" });
+  } finally {
+    session.endSession();
   }
 };
