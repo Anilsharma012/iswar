@@ -667,8 +667,27 @@ export default function Clients() {
                         <div className="flex items-center gap-2">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                Lead Priority
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                aria-label={`Lead priority for ${client.name}`}
+                              >
+                                <span className="inline-flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{
+                                      background:
+                                        leadPriority[client._id] === "hot"
+                                          ? "#22C55E"
+                                          : leadPriority[client._id] === "cold"
+                                          ? "#EF4444"
+                                          : "transparent",
+                                    }}
+                                  />
+                                  <span className="capitalize">
+                                    {leadPriority[client._id] || "Priority"}
+                                  </span>
+                                </span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
@@ -681,7 +700,7 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#22C55E" }}
-                                  />{" "}
+                                  />
                                   Hot
                                 </span>
                               </DropdownMenuItem>
@@ -694,7 +713,7 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#EF4444" }}
-                                  />{" "}
+                                  />
                                   Cold
                                 </span>
                               </DropdownMenuItem>
@@ -706,8 +725,26 @@ export default function Clients() {
                                 variant="outline"
                                 size="sm"
                                 disabled={leadStage[client._id] === "success"}
+                                aria-label={`Lead status for ${client.name}`}
                               >
-                                Lead Status
+                                <span className="inline-flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 rounded-full"
+                                    style={{
+                                      background:
+                                        leadStage[client._id] === "success"
+                                          ? "#16A34A"
+                                          : leadStage[client._id] === "pending"
+                                          ? "#F59E0B"
+                                          : leadStage[client._id] === "reject"
+                                          ? "#EF4444"
+                                          : "transparent",
+                                    }}
+                                  />
+                                  <span className="capitalize">
+                                    {leadStage[client._id] || "Status"}
+                                  </span>
+                                </span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
@@ -720,7 +757,7 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#16A34A" }}
-                                  />{" "}
+                                  />
                                   Success
                                 </span>
                               </DropdownMenuItem>
@@ -733,7 +770,7 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#F59E0B" }}
-                                  />{" "}
+                                  />
                                   Pending
                                 </span>
                               </DropdownMenuItem>
@@ -746,12 +783,38 @@ export default function Clients() {
                                   <span
                                     className="h-2 w-2 rounded-full"
                                     style={{ background: "#EF4444" }}
-                                  />{" "}
+                                  />
                                   Reject
                                 </span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
+                          {/* Inline pending prompt */}
+                          {pendingPrompt[client._id] && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-600">
+                                Mark now as
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() =>
+                                  handlePendingDecision(client._id, "success")
+                                }
+                              >
+                                Success
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() =>
+                                  handlePendingDecision(client._id, "reject")
+                                }
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          )}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="default" size="sm">
