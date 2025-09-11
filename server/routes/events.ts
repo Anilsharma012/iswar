@@ -458,19 +458,25 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         const lineAdjust = Number((shortage * lossPrice + damageAmount + lateFee).toFixed(2));
         totalAdjust += lineAdjust;
 
+        const qtyToSend = expected; // preserve original expected as qtyToSend
+        const rate = Number(it.rate ?? product.sellPrice ?? product.buyPrice ?? 0);
+        const amount = Number((returned * rate).toFixed(2));
+
         sanitized.push({
           productId: product._id,
           name: product.name,
           sku: product.sku,
           unitType: product.unitType,
-          expected,
-          returned,
+          stockQty: product.stockQty,
+          qtyToSend,
+          qtyReturned: returned,
           shortage,
           damageAmount,
           lateFee,
           lossPrice,
+          rate,
+          amount,
           lineAdjust,
-          stockQty: product.stockQty,
         });
       }
 
