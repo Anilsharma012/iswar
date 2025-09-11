@@ -510,26 +510,39 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       session.endSession();
 
       const populated = await Event.findById(event._id).populate("clientId");
-      return res.json(populated);
-    } catch (error: any) {
-      try {
-        await session.abortTransaction();
-      } catch (e) {
-        /* ignore */
-      }
-      session.endSession();
-
-      const isTransient =
-        error && (error.errorLabelSet?.has("TransientTransactionError") || error.codeName === "WriteConflict");
-
-      console.error(`Return event error (attempt ${attempt}):`, error);
-
-      if (isTransient && attempt < maxRetries) {
-        await new Promise((r) => setTimeout(r, 100 * attempt));
-        continue;
-      }
-
-      return res.status(500).json({ error: "Internal server error" });
+    return res.json(populated);
+  } catch (error: any) {
+    try {
+      await session.abortTransaction();
+    } catch (e) {
+      /* ignore */
     }
+    session.endSession();
+
+    const isTransient =
+      error && (error.errorLabelSet?.has("TransientTransactionError") || error.codeName === "WriteConflict");
+
+    console.error(`Return event error (attempt ${attempt}):`, error);
+
+    if (isTransient && attempt < maxRetries) {
+      await new Promise((r) => setTimeout(r, 100 * attempt));
+      continue;
+    }
+
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+};
+
+export const generateAgreementPDFRoute = async (req: AuthRequest, res: Response) => {
+  try {
+    const event = await Event.findById(req.params.id).populate('clientId');
+    if (!event) return res.status(404).json({ error: 'Event not found' });
+
+    const { generateAgreementPDF } = await import('../utils/pdfGenerator');
+    generateAgreementPDF(event, 'en', res);
+  } catch (error) {
+    console.error('Generate agreement PDF error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
