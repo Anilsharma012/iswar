@@ -60,6 +60,5 @@ const productSchema = new Schema<IProduct>(
   },
 );
 
-productSchema.index({ sku: 1 }, { unique: true, sparse: true });
 
 export const Product = model<IProduct>("Product", productSchema);
