@@ -49,6 +49,7 @@ import {
   updateEvent,
   deleteEvent,
   getEventSummary,
+  saveAgreement,
 } from "./routes/events";
 import {
   getEventExpenses,
