@@ -210,3 +210,102 @@ export const generateInvoicePDF = (
   // Finalize the PDF
   doc.end();
 };
+
+export const generateAgreementPDF = (event: any, language: 'en' | 'hi' = 'en', res: Response) => {
+  const doc = new PDFDocument({ margin: 50 });
+  // basic translations reuse invoice labels
+  const t = translations[language] || translations.en;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  const clientName = event.clientId?.name?.replace(/\s+/g, '_') || 'client';
+  const dateStr = new Date().toISOString().slice(0,10);
+  res.setHeader('Content-Disposition', `attachment; filename=agreement-${clientName}-${dateStr}.pdf`);
+
+  doc.pipe(res);
+
+  doc.fontSize(18).font('Helvetica-Bold').text('Terms & Conditions / Agreement', { align: 'center' });
+  doc.moveDown();
+
+  // Client block
+  doc.fontSize(12).font('Helvetica-Bold').text('Client:');
+  doc.font('Helvetica').text(event.clientId?.name || '-');
+  doc.text(event.clientId?.phone || '-');
+  if (event.clientId?.address) doc.text(event.clientId.address);
+  doc.moveDown();
+
+  // Event block
+  doc.fontSize(12).font('Helvetica-Bold').text('Event:');
+  const from = event.dateFrom ? new Date(event.dateFrom).toLocaleString('en-IN') : '-';
+  const to = event.dateTo ? new Date(event.dateTo).toLocaleString('en-IN') : '-';
+  doc.font('Helvetica').text(`Schedule: ${from} - ${to}`);
+  if (event.location) doc.text(`Venue: ${event.location}`);
+  doc.moveDown();
+
+  // Terms text
+  doc.fontSize(12).font('Helvetica-Bold').text('Terms:');
+  const termsText = event.agreementTerms || '';
+  doc.font('Helvetica').text(termsText, { align: 'left' });
+  doc.moveDown();
+
+  // Products table
+  const rows = (event.dispatches && event.dispatches.length)
+    ? event.dispatches[event.dispatches.length - 1].items
+    : event.selections || [];
+
+  const tableTop = doc.y + 10;
+  const colX = { name: 50, uom: 260, qty: 340, rate: 420, amount: 500 };
+
+  doc.fontSize(10).font('Helvetica-Bold');
+  doc.text('Item', colX.name, tableTop);
+  doc.text('UOM', colX.uom, tableTop);
+  doc.text('Qty', colX.qty, tableTop);
+  doc.text('Rate', colX.rate, tableTop);
+  doc.text('Amount', colX.amount, tableTop);
+
+  doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+
+  let y = tableTop + 25;
+  doc.font('Helvetica').fontSize(10);
+  let subtotal = 0;
+  rows.forEach((it: any) => {
+    const name = it.name || it.productId?.name || '-';
+    const uom = it.unitType || it.productId?.unitType || '-';
+    const qty = Number(it.qtyToSend ?? it.qty ?? it.qtyReturned ?? 0);
+    const rate = Number(it.rate ?? it.sellPrice ?? it.rate ?? 0);
+    const amount = Number((qty * rate).toFixed(2));
+    subtotal += amount;
+
+    doc.text(name, colX.name, y, { width: 200 });
+    doc.text(uom, colX.uom, y);
+    doc.text(String(qty), colX.qty, y);
+    doc.text(`₹${rate.toFixed(2)}`, colX.rate, y);
+    doc.text(`₹${amount.toFixed(2)}`, colX.amount, y);
+
+    y += 20;
+  });
+
+  y += 10;
+  doc.moveTo(300, y).lineTo(550, y).stroke();
+  y += 10;
+
+  doc.font('Helvetica-Bold').text('Subtotal:', 360, y);
+  doc.font('Helvetica').text(`₹${subtotal.toFixed(2)}`, 500, y);
+  y += 16;
+  doc.font('Helvetica-Bold').text('Advance:', 360, y);
+  doc.font('Helvetica').text(`₹${Number(event.advance || 0).toFixed(2)}`, 500, y);
+  y += 16;
+  doc.font('Helvetica-Bold').text('Security:', 360, y);
+  doc.font('Helvetica').text(`₹${Number(event.security || 0).toFixed(2)}`, 500, y);
+  y += 18;
+  const grand = subtotal - Number(event.advance || 0) - Number(event.security || 0);
+  doc.font('Helvetica-Bold').text('Grand Total:', 360, y);
+  doc.font('Helvetica-Bold').text(`₹${grand.toFixed(2)}`, 500, y);
+
+  y += 40;
+  doc.fontSize(10).font('Helvetica').text('Client Signature:', 60, y);
+  doc.text('____________________________', 60, y + 15);
+  doc.text('Company Signature:', 360, y);
+  doc.text('____________________________', 360, y + 15);
+
+  doc.end();
+};
