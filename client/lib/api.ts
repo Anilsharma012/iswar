@@ -141,6 +141,11 @@ export const eventAPI = {
 
 // Leads API calls
 export const leadsAPI = {
+  getAll: (params?: any) => api.get("/leads", { params }),
+  getById: (id: string) => api.get(`/leads/${id}`),
+  create: (data: any) => api.post(`/leads`, data),
+  update: (id: string, data: any) => api.put(`/leads/${id}`, data),
+  delete: (id: string) => api.delete(`/leads/${id}`),
   updateStatus: (id: string, status: string) =>
     api.patch(`/leads/${id}/status`, { status }),
   updateStatusByClient: (clientId: string, status: string) =>
