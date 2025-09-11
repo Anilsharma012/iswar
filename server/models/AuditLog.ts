@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import { Schema, model, Document, Types } from "mongoose";
 
 export interface IAuditLog extends Document {
   action: string;
@@ -9,15 +9,18 @@ export interface IAuditLog extends Document {
   at: Date;
 }
 
-const auditLogSchema = new Schema<IAuditLog>({
-  action: { type: String, required: true, trim: true },
-  entity: { type: String, required: true, trim: true },
-  entityId: { type: Schema.Types.ObjectId },
-  userId: { type: Schema.Types.ObjectId, ref: 'Admin' },
-  meta: { type: Schema.Types.Mixed },
-  at: { type: Date, required: true, default: Date.now }
-}, { timestamps: true });
+const auditLogSchema = new Schema<IAuditLog>(
+  {
+    action: { type: String, required: true, trim: true },
+    entity: { type: String, required: true, trim: true },
+    entityId: { type: Schema.Types.ObjectId },
+    userId: { type: Schema.Types.ObjectId, ref: "Admin" },
+    meta: { type: Schema.Types.Mixed },
+    at: { type: Date, required: true, default: Date.now },
+  },
+  { timestamps: true },
+);
 
 auditLogSchema.index({ entity: 1, entityId: 1, at: -1 });
 
-export const AuditLog = model<IAuditLog>('AuditLog', auditLogSchema);
+export const AuditLog = model<IAuditLog>("AuditLog", auditLogSchema);

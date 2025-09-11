@@ -1,1 +1,1 @@
-export { IssueTxn as InvTxn, type IIssueTxn as IInvTxn } from './IssueTxn';
+export { IssueTxn as InvTxn, type IIssueTxn as IInvTxn } from "./IssueTxn";
