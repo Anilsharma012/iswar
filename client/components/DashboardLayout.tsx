@@ -97,6 +97,9 @@ const sidebarItems = [
 
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const location = useLocation();
+  const path = location.pathname;
+  const match = path.match(/admin\/events\/(.+?)\//) || path.match(/event-details\/(.+?)$/);
+  const currentEventId = match?.[1];
 
   return (
     <div className="flex h-full flex-col">
