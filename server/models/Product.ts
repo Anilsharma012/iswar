@@ -60,5 +60,5 @@ const productSchema = new Schema<IProduct>(
   },
 );
 
-
-export const Product = (mongoose.models.Product as any) || model<IProduct>("Product", productSchema);
+export const Product =
+  (mongoose.models.Product as any) || model<IProduct>("Product", productSchema);

@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, Document } from 'mongoose';
+import mongoose, { Schema, model, Document } from "mongoose";
 
 export interface IClient extends Document {
   name: string;
@@ -8,34 +8,38 @@ export interface IClient extends Document {
   gstNumber?: string;
 }
 
-const clientSchema = new Schema<IClient>({
-  name: {
-    type: String,
-    required: true,
-    trim: true
+const clientSchema = new Schema<IClient>(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+    },
+    email: {
+      type: String,
+      trim: true,
+      sparse: true,
+    },
+    address: {
+      type: String,
+      trim: true,
+    },
+    gstNumber: {
+      type: String,
+      trim: true,
+      sparse: true,
+    },
   },
-  phone: {
-    type: String,
-    required: true,
-    trim: true,
-    unique: true
+  {
+    timestamps: true,
   },
-  email: {
-    type: String,
-    trim: true,
-    sparse: true
-  },
-  address: {
-    type: String,
-    trim: true
-  },
-  gstNumber: {
-    type: String,
-    trim: true,
-    sparse: true
-  }
-}, {
-  timestamps: true
-});
+);
 
-export const Client = (mongoose.models.Client as any) || model<IClient>('Client', clientSchema);
+export const Client =
+  (mongoose.models.Client as any) || model<IClient>("Client", clientSchema);

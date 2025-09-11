@@ -34,7 +34,11 @@ const hasAlertTitle = (children: React.ReactNode): boolean => {
     const type = (child as any).type;
     if (type === AlertDialogPrimitive.Title) return true;
     if (type === AlertDialogTitle) return true;
-    if (type?.displayName === AlertDialogPrimitive.Title.displayName || type?.displayName === 'AlertDialogTitle') return true;
+    if (
+      type?.displayName === AlertDialogPrimitive.Title.displayName ||
+      type?.displayName === "AlertDialogTitle"
+    )
+      return true;
     // @ts-ignore
     if ((child as any).props && (child as any).props.children) {
       // @ts-ignore
@@ -61,7 +65,9 @@ const AlertDialogContent = React.forwardRef<
         {...props}
       >
         {needsHiddenTitle && (
-          <AlertDialogPrimitive.Title className="sr-only">Alert</AlertDialogPrimitive.Title>
+          <AlertDialogPrimitive.Title className="sr-only">
+            Alert
+          </AlertDialogPrimitive.Title>
         )}
         {children}
       </AlertDialogPrimitive.Content>
@@ -108,7 +114,7 @@ const AlertDialogTitle = React.forwardRef<
     {...props}
   />
 ));
-AlertDialogTitle.displayName = 'AlertDialogTitle';
+AlertDialogTitle.displayName = "AlertDialogTitle";
 
 const AlertDialogDescription = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Description>,

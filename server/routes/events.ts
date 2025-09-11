@@ -240,11 +240,16 @@ export const getEventSummary = async (req: AuthRequest, res: Response) => {
 export const saveAgreement = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { selections = [], advance = 0, security = 0, agreementTerms = '' } = req.body || {};
+    const {
+      selections = [],
+      advance = 0,
+      security = 0,
+      agreementTerms = "",
+    } = req.body || {};
 
     // Basic validation
     if (!Array.isArray(selections)) {
-      return res.status(400).json({ error: 'selections must be an array' });
+      return res.status(400).json({ error: "selections must be an array" });
     }
 
     const sanitized = selections.map((s: any) => ({
@@ -264,16 +269,16 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
         selections: sanitized,
         advance: Number(advance || 0),
         security: Number(security || 0),
-        agreementTerms: String(agreementTerms || ''),
+        agreementTerms: String(agreementTerms || ""),
       },
-      { new: true }
-    ).populate('clientId');
+      { new: true },
+    ).populate("clientId");
 
-    if (!event) return res.status(404).json({ error: 'Event not found' });
+    if (!event) return res.status(404).json({ error: "Event not found" });
 
     res.json(event);
   } catch (error) {
-    console.error('Save agreement error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Save agreement error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -41,7 +41,11 @@ const hasDialogTitle = (children: React.ReactNode): boolean => {
     // Direct match against our exported DialogTitle wrapper
     if (type === DialogTitle) return true;
     // Match by displayName if present
-    if (type?.displayName === DialogPrimitive.Title.displayName || type?.displayName === 'DialogTitle') return true;
+    if (
+      type?.displayName === DialogPrimitive.Title.displayName ||
+      type?.displayName === "DialogTitle"
+    )
+      return true;
     // If child has props and children, search recursively
     // @ts-ignore
     if ((child as any).props && (child as any).props.children) {
@@ -69,7 +73,9 @@ const DialogContent = React.forwardRef<
         {...props}
       >
         {needsHiddenTitle && (
-          <DialogPrimitive.Title className="sr-only">Dialog</DialogPrimitive.Title>
+          <DialogPrimitive.Title className="sr-only">
+            Dialog
+          </DialogPrimitive.Title>
         )}
         {children}
         <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
@@ -123,7 +129,7 @@ const DialogTitle = React.forwardRef<
     {...props}
   />
 ));
-DialogTitle.displayName = 'DialogTitle';
+DialogTitle.displayName = "DialogTitle";
 
 const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,

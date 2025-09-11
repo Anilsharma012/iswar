@@ -23,4 +23,6 @@ const auditLogSchema = new Schema<IAuditLog>(
 
 auditLogSchema.index({ entity: 1, entityId: 1, at: -1 });
 
-export const AuditLog = (mongoose.models.AuditLog as any) || model<IAuditLog>("AuditLog", auditLogSchema);
+export const AuditLog =
+  (mongoose.models.AuditLog as any) ||
+  model<IAuditLog>("AuditLog", auditLogSchema);

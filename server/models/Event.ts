@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from "mongoose";
 
 export interface ISelectionItem {
   productId: Types.ObjectId;
@@ -28,7 +28,7 @@ export interface IEvent extends Document {
 }
 
 const selectionSchema = new Schema<ISelectionItem>({
-  productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+  productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
   name: { type: String },
   sku: { type: String },
   unitType: { type: String },
@@ -38,46 +38,50 @@ const selectionSchema = new Schema<ISelectionItem>({
   amount: { type: Number, required: true, min: 0 },
 });
 
-const eventSchema = new Schema<IEvent>({
-  name: {
-    type: String,
-    required: true,
-    trim: true
+const eventSchema = new Schema<IEvent>(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    location: {
+      type: String,
+      trim: true,
+    },
+    clientId: {
+      type: Schema.Types.ObjectId,
+      ref: "Client",
+    },
+    dateFrom: {
+      type: Date,
+      required: true,
+    },
+    dateTo: {
+      type: Date,
+      required: true,
+    },
+    notes: {
+      type: String,
+      trim: true,
+    },
+    budget: {
+      type: Number,
+      min: 0,
+    },
+    estimate: {
+      type: Number,
+      min: 0,
+    },
+    selections: { type: [selectionSchema], default: [] },
+    advance: { type: Number, min: 0, default: 0 },
+    security: { type: Number, min: 0, default: 0 },
+    agreementTerms: { type: String, trim: true },
   },
-  location: {
-    type: String,
-    trim: true
+  {
+    timestamps: true,
   },
-  clientId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Client'
-  },
-  dateFrom: {
-    type: Date,
-    required: true
-  },
-  dateTo: {
-    type: Date,
-    required: true
-  },
-  notes: {
-    type: String,
-    trim: true
-  },
-  budget: {
-    type: Number,
-    min: 0
-  },
-  estimate: {
-    type: Number,
-    min: 0
-  },
-  selections: { type: [selectionSchema], default: [] },
-  advance: { type: Number, min: 0, default: 0 },
-  security: { type: Number, min: 0, default: 0 },
-  agreementTerms: { type: String, trim: true },
-}, {
-  timestamps: true
-});
+);
 
-export const Event = (mongoose.models.Event as any) || model<IEvent>('Event', eventSchema);
+export const Event =
+  (mongoose.models.Event as any) || model<IEvent>("Event", eventSchema);

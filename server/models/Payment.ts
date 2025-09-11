@@ -29,4 +29,5 @@ const paymentSchema = new Schema<IPayment>(
 
 paymentSchema.index({ invoiceId: 1, date: -1 });
 
-export const Payment = (mongoose.models.Payment as any) || model<IPayment>("Payment", paymentSchema);
+export const Payment =
+  (mongoose.models.Payment as any) || model<IPayment>("Payment", paymentSchema);

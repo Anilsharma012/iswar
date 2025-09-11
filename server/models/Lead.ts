@@ -1,6 +1,12 @@
 import mongoose, { Schema, model, Document } from "mongoose";
 
-export type LeadStatus = "new" | "rejected" | "callback" | "hot" | "cold" | "converted";
+export type LeadStatus =
+  | "new"
+  | "rejected"
+  | "callback"
+  | "hot"
+  | "cold"
+  | "converted";
 
 export interface ICallLog {
   outcome: "answered" | "missed" | "voicemail" | "connected";
@@ -50,4 +56,5 @@ const leadSchema = new Schema<ILead>(
 
 leadSchema.index({ status: 1, updatedAt: -1 });
 
-export const Lead = (mongoose.models.Lead as any) || model<ILead>("Lead", leadSchema);
+export const Lead =
+  (mongoose.models.Lead as any) || model<ILead>("Lead", leadSchema);

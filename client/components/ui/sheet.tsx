@@ -60,7 +60,11 @@ const hasSheetTitle = (children: React.ReactNode): boolean => {
     const type = (child as any).type;
     if (type === SheetPrimitive.Title) return true;
     if (type === SheetTitle) return true;
-    if (type?.displayName === SheetPrimitive.Title.displayName || type?.displayName === 'SheetTitle') return true;
+    if (
+      type?.displayName === SheetPrimitive.Title.displayName ||
+      type?.displayName === "SheetTitle"
+    )
+      return true;
     // @ts-ignore
     if ((child as any).props && (child as any).props.children) {
       // @ts-ignore
@@ -135,7 +139,7 @@ const SheetTitle = React.forwardRef<
     {...props}
   />
 ));
-SheetTitle.displayName = 'SheetTitle';
+SheetTitle.displayName = "SheetTitle";
 
 const SheetDescription = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Description>,

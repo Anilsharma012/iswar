@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from "mongoose";
 
 export interface IIssueSummary extends Document {
   clientId: Types.ObjectId;
@@ -9,38 +9,41 @@ export interface IIssueSummary extends Document {
   updatedAt: Date;
 }
 
-const issueSummarySchema = new Schema<IIssueSummary>({
-  clientId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Client',
-    required: true
+const issueSummarySchema = new Schema<IIssueSummary>(
+  {
+    clientId: {
+      type: Schema.Types.ObjectId,
+      ref: "Client",
+      required: true,
+    },
+    productId: {
+      type: Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
+    issued: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    returned: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    remaining: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
   },
-  productId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Product',
-    required: true
+  {
+    timestamps: true,
   },
-  issued: {
-    type: Number,
-    required: true,
-    default: 0,
-    min: 0
-  },
-  returned: {
-    type: Number,
-    required: true,
-    default: 0,
-    min: 0
-  },
-  remaining: {
-    type: Number,
-    required: true,
-    default: 0,
-    min: 0
-  }
-}, {
-  timestamps: true
-});
+);
 
 // Unique compound index for clientId + productId
 issueSummarySchema.index({ clientId: 1, productId: 1 }, { unique: true });
@@ -48,4 +51,6 @@ issueSummarySchema.index({ clientId: 1, productId: 1 }, { unique: true });
 // Index for client-based queries
 issueSummarySchema.index({ clientId: 1 });
 
-export const IssueSummary = (mongoose.models.IssueSummary as any) || model<IIssueSummary>('IssueSummary', issueSummarySchema);
+export const IssueSummary =
+  (mongoose.models.IssueSummary as any) ||
+  model<IIssueSummary>("IssueSummary", issueSummarySchema);
