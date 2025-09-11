@@ -317,6 +317,19 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
         return res.status(404).json({ error: "Event not found" });
       }
 
+      // Cold lead guard
+      const populated = await Event.findById(id).populate('clientId');
+      const client = populated?.clientId as any;
+      if (client && client.phone) {
+        const Lead = mongoose.models.Lead as any;
+        const lead = await Lead.findOne({ phone: client.phone }).session(session);
+        if (lead && lead.priority === 'cold') {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(403).json({ error: 'Cold lead - actions disabled', code: 'COLD_LEAD' });
+        }
+      }
+
       let total = 0;
       const sanitized: any[] = [];
 
