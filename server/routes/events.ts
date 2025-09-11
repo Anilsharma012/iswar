@@ -282,3 +282,49 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const dispatchEvent = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { dispatchedBy, dispatchDate } = req.body || {};
+
+    const event = await Event.findById(id);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    event.status = "dispatched";
+    // store who dispatched and when (if provided)
+    (event as any).dispatchedBy = dispatchedBy || (req as any)?.user?.id || null;
+    (event as any).dispatchedAt = dispatchDate ? new Date(dispatchDate) : new Date();
+
+    await event.save();
+
+    const populated = await Event.findById(event._id).populate("clientId");
+    res.json(populated);
+  } catch (error) {
+    console.error("Dispatch event error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const returnEvent = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { returnNotes = "", returnedBy } = req.body || {};
+
+    const event = await Event.findById(id);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    event.status = "returned";
+    (event as any).returnedBy = returnedBy || (req as any)?.user?.id || null;
+    (event as any).returnedAt = new Date();
+    (event as any).returnNotes = String(returnNotes || "");
+
+    await event.save();
+
+    const populated = await Event.findById(event._id).populate("clientId");
+    res.json(populated);
+  } catch (error) {
+    console.error("Return event error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
