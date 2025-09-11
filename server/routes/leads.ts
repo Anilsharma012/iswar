@@ -188,3 +188,46 @@ export const convertLead = async (req: AuthRequest, res: Response) => {
     session.endSession();
   }
 };
+
+export const updateLeadStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const { status } = req.body as { status: 'hot' | 'cold' | 'new' | 'rejected' | 'callback' | 'converted' };
+    if (!status) return res.status(400).json({ error: 'status is required' });
+    const lead = await Lead.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    await AuditLog.create({ action: 'status', entity: 'Lead', entityId: lead._id, userId: req.adminId ? new mongoose.Types.ObjectId(req.adminId) : undefined, meta: { status } });
+    res.json(lead);
+  } catch (error) {
+    console.error('Update lead status error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const updateLeadStatusByClient = async (req: AuthRequest, res: Response) => {
+  try {
+    const { status } = req.body as { status: 'hot' | 'cold' };
+    if (!status) return res.status(400).json({ error: 'status is required' });
+    const client = await Client.findById(req.params.clientId);
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+
+    let lead = await Lead.findOne({ phone: client.phone });
+    if (!lead) {
+      lead = new Lead({ name: client.name, phone: client.phone, email: client.email, status });
+      await lead.save();
+    } else {
+      lead.status = status as any;
+      await lead.save();
+    }
+
+    await AuditLog.create({ action: 'status', entity: 'Lead', entityId: lead._id, userId: req.adminId ? new mongoose.Types.ObjectId(req.adminId) : undefined, meta: { status, clientId: client._id } });
+
+    res.json(lead);
+  } catch (error) {
+    console.error('Update lead status by client error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
