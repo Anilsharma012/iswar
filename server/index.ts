@@ -167,6 +167,7 @@ app.post('/api/stock/update', updateStock);
 app.get('/api/events', getEvents);
 app.get('/api/events/:id', getEvent);
 app.get('/api/events/:id/summary', getEventSummary);
+app.put('/api/events/:id/agreement', saveAgreement);
 app.post('/api/events', createEvent);
 app.put('/api/events/:id', updateEvent);
 app.delete('/api/events/:id', deleteEvent);
