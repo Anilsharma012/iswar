@@ -815,37 +815,52 @@ export default function Clients() {
                               </Button>
                             </div>
                           )}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="default" size="sm">
-                                Actions
+                          {leadPriority[client._id] !== 'cold' ? (
+                            <>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="default" size="sm">
+                                    Actions
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem
+                                    onClick={() => goTo(client, "agreement")}
+                                  >
+                                    Terms & Conditions
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => goTo(client, "dispatch")}
+                                  >
+                                    Stock Out
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => goTo(client, "return")}
+                                  >
+                                    Stock In
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(client)}
+                              >
+                                <Edit className="h-4 w-4" />
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem
-                                onClick={() => goTo(client, "agreement")}
+                            </>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm bg-gray-200 text-gray-600 px-2 py-1 rounded-full">Cold — actions disabled</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(client)}
                               >
-                                Terms & Conditions
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => goTo(client, "dispatch")}
-                              >
-                                Stock Out
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => goTo(client, "return")}
-                              >
-                                Stock In
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(client)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="sm">
