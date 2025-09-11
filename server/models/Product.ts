@@ -2,6 +2,7 @@ import { Schema, model, Document } from 'mongoose';
 
 export interface IProduct extends Document {
   name: string;
+  sku?: string;
   category: string;
   unitType: 'pcs' | 'meter' | 'sqft' | 'sqyd' | 'sqmt';
   buyPrice: number;
@@ -15,6 +16,12 @@ const productSchema = new Schema<IProduct>({
     type: String,
     required: true,
     trim: true
+  },
+  sku: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true
   },
   category: {
     type: String,
@@ -49,5 +56,7 @@ const productSchema = new Schema<IProduct>({
 }, {
   timestamps: true
 });
+
+productSchema.index({ sku: 1 }, { unique: true, sparse: true });
 
 export const Product = model<IProduct>('Product', productSchema);
