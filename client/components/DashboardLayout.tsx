@@ -136,8 +136,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
                 {item.badge && (
                   <span className={cn(
                     'ml-auto rounded-full px-2 py-0.5 text-xs font-medium',
-                    isActive 
-                      ? 'bg-white/20 text-white' 
+                    isActive
+                      ? 'bg-white/20 text-white'
                       : 'bg-blue-100 text-blue-700'
                   )}>
                     {item.badge}
@@ -146,6 +146,36 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
               </Link>
             );
           })}
+
+          {currentEventId && (
+            <div className="mt-4 space-y-1">
+              <Link
+                to={`/admin/events/${currentEventId}/agreement`}
+                onClick={onLinkClick}
+                className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  path.includes('/admin/events/') && path.endsWith('/agreement') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-100')}
+              >
+                <FileText className="h-4 w-4" />
+                <span>Terms & Conditions</span>
+              </Link>
+              <Link
+                to={`/admin/events/${currentEventId}/dispatch`}
+                onClick={onLinkClick}
+                className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors','text-gray-700 hover:bg-gray-100')}
+              >
+                <Warehouse className="h-4 w-4" />
+                <span>Stock Out</span>
+              </Link>
+              <Link
+                to={`/admin/events/${currentEventId}/return`}
+                onClick={onLinkClick}
+                className={cn('flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors','text-gray-700 hover:bg-gray-100')}
+              >
+                <Warehouse className="h-4 w-4" />
+                <span>Stock In</span>
+              </Link>
+            </div>
+          )}
         </div>
       </nav>
     </div>
