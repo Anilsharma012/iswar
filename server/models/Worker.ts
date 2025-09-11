@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import mongoose, { Schema, model, Document } from 'mongoose';
 
 export interface IWorker extends Document {
   name: string;
@@ -31,4 +31,4 @@ const workerSchema = new Schema<IWorker>({
   timestamps: true
 });
 
-export const Worker = model<IWorker>('Worker', workerSchema);
+export const Worker = (mongoose.models.Worker as any) || model<IWorker>('Worker', workerSchema);

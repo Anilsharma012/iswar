@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
 export interface IStockLedger extends Document {
   productId: Types.ObjectId;
@@ -42,4 +42,4 @@ const stockLedgerSchema = new Schema<IStockLedger>({
   timestamps: true
 });
 
-export const StockLedger = model<IStockLedger>('StockLedger', stockLedgerSchema);
+export const StockLedger = (mongoose.models.StockLedger as any) || model<IStockLedger>('StockLedger', stockLedgerSchema);

@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
 export interface IAttendance extends Document {
   workerId: Types.ObjectId;
@@ -43,4 +43,4 @@ attendanceSchema.index({ eventId: 1, date: 1 });
 // Index for date range queries
 attendanceSchema.index({ date: 1 });
 
-export const Attendance = model<IAttendance>('Attendance', attendanceSchema);
+export const Attendance = (mongoose.models.Attendance as any) || model<IAttendance>('Attendance', attendanceSchema);

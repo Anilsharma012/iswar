@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
 export interface IWorkerPayment extends Document {
   eventId: Types.ObjectId;
@@ -49,4 +49,4 @@ const workerPaymentSchema = new Schema<IWorkerPayment>({
   timestamps: true
 });
 
-export const WorkerPayment = model<IWorkerPayment>('WorkerPayment', workerPaymentSchema);
+export const WorkerPayment = (mongoose.models.WorkerPayment as any) || model<IWorkerPayment>('WorkerPayment', workerPaymentSchema);

@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
 export interface IIssueRegister extends Document {
   productId: Types.ObjectId;
@@ -43,4 +43,4 @@ const issueRegisterSchema = new Schema<IIssueRegister>({
   timestamps: true
 });
 
-export const IssueRegister = model<IIssueRegister>('IssueRegister', issueRegisterSchema);
+export const IssueRegister = (mongoose.models.IssueRegister as any) || model<IIssueRegister>('IssueRegister', issueRegisterSchema);

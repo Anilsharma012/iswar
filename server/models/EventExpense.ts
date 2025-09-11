@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
 export interface IEventExpense extends Document {
   eventId: Types.ObjectId;
@@ -43,4 +43,4 @@ const eventExpenseSchema = new Schema<IEventExpense>({
   timestamps: true
 });
 
-export const EventExpense = model<IEventExpense>('EventExpense', eventExpenseSchema);
+export const EventExpense = (mongoose.models.EventExpense as any) || model<IEventExpense>('EventExpense', eventExpenseSchema);

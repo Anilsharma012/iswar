@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
 export interface IEventWorker extends Document {
   eventId: Types.ObjectId;
@@ -61,4 +61,4 @@ eventWorkerSchema.pre('save', function(next) {
   next();
 });
 
-export const EventWorker = model<IEventWorker>('EventWorker', eventWorkerSchema);
+export const EventWorker = (mongoose.models.EventWorker as any) || model<IEventWorker>('EventWorker', eventWorkerSchema);

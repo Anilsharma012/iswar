@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
 export interface IIssueTxn extends Document {
   clientId: Types.ObjectId;
@@ -53,4 +53,4 @@ issueTxnSchema.index({ at: -1 });
 // Index for type-based queries
 issueTxnSchema.index({ type: 1 });
 
-export const IssueTxn = model<IIssueTxn>('IssueTxn', issueTxnSchema);
+export const IssueTxn = (mongoose.models.IssueTxn as any) || model<IIssueTxn>('IssueTxn', issueTxnSchema);

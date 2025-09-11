@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import mongoose, { Schema, model, Document } from "mongoose";
 
 export type LeadStatus = "new" | "rejected" | "callback" | "hot" | "converted";
 
@@ -50,4 +50,4 @@ const leadSchema = new Schema<ILead>(
 
 leadSchema.index({ status: 1, updatedAt: -1 });
 
-export const Lead = model<ILead>("Lead", leadSchema);
+export const Lead = (mongoose.models.Lead as any) || model<ILead>("Lead", leadSchema);

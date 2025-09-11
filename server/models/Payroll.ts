@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
 export interface IPayroll extends Document {
   month: string; // YYYY-MM format
@@ -52,4 +52,4 @@ const payrollSchema = new Schema<IPayroll>({
 // Compound index to ensure one payroll record per worker per month
 payrollSchema.index({ workerId: 1, month: 1 }, { unique: true });
 
-export const Payroll = model<IPayroll>('Payroll', payrollSchema);
+export const Payroll = (mongoose.models.Payroll as any) || model<IPayroll>('Payroll', payrollSchema);

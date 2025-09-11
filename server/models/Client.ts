@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import mongoose, { Schema, model, Document } from 'mongoose';
 
 export interface IClient extends Document {
   name: string;
@@ -38,4 +38,4 @@ const clientSchema = new Schema<IClient>({
   timestamps: true
 });
 
-export const Client = model<IClient>('Client', clientSchema);
+export const Client = (mongoose.models.Client as any) || model<IClient>('Client', clientSchema);

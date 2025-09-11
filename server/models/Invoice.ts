@@ -1,4 +1,4 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 
 export interface IInvoiceItem {
   productId: Types.ObjectId;
@@ -140,4 +140,4 @@ const invoiceSchema = new Schema<IInvoice>({
   timestamps: true
 });
 
-export const Invoice = model<IInvoice>('Invoice', invoiceSchema);
+export const Invoice = (mongoose.models.Invoice as any) || model<IInvoice>('Invoice', invoiceSchema);
