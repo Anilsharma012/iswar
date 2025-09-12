@@ -12,8 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { eventAPI, productAPI } from "@/lib/api";
+import { eventAPI, productAPI, api } from "@/lib/api";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 export default function EventDispatch() {
   const { id } = useParams<{ id: string }>();
@@ -92,6 +93,28 @@ export default function EventDispatch() {
     }
   };
 
+  const reserve = async () => {
+    try {
+      const items = rows
+        .filter((r) => r.qty > 0)
+        .map((r) => ({
+          productId: r._id,
+          name: r.name,
+          sku: r.sku,
+          unitType: r.unitType,
+          stockQty: r.stockQty,
+          qty: r.qty,
+          rate: r.rate,
+        }));
+      await api.post(`/events/${id}/dispatch?dryRun=1`, { items });
+      toast.success("Reserved");
+      window.location.href = `/admin/events/${id}/dispatch`;
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.response?.data?.error || "Failed to reserve");
+    }
+  };
+
   if (loading || !event)
     return (
       <div className="p-6">
@@ -104,7 +127,12 @@ export default function EventDispatch() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Stock Out (Dispatch)</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">Stock Out (Dispatch)</h1>
+          {event.status === "reserved" && (
+            <Badge variant="secondary" className="text-xs">Reserved</Badge>
+          )}
+        </div>
         <div className="text-sm text-muted-foreground">
           Advance: {formatINR(event.advance || 0)}
         </div>
@@ -191,6 +219,7 @@ export default function EventDispatch() {
         <Button variant="outline" onClick={() => window.history.back()}>
           Back
         </Button>
+        <Button variant="ghost" onClick={reserve}>Reserve & Proceed</Button>
         <Button onClick={submit}>Confirm Dispatch</Button>
       </div>
     </div>
