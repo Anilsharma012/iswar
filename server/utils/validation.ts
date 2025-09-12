@@ -58,8 +58,8 @@ export const invoiceSchema = Joi.object({
 
 export const eventSchema = Joi.object({
   name: Joi.string().required().trim(),
-  location: Joi.string().optional().trim(),
-  clientId: Joi.string().optional(),
+  location: Joi.string().optional().allow("").allow(null).trim(),
+  clientId: Joi.string().optional().allow("").allow(null),
   dateFrom: Joi.date().required(),
   dateTo: Joi.date().required().min(Joi.ref("dateFrom")),
   notes: Joi.string().optional().allow("").allow(null).trim(),
