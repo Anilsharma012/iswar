@@ -86,7 +86,7 @@ export default function EventDispatch() {
         }));
       await eventAPI.dispatch(id!, { items });
       toast.success("Dispatch recorded");
-      window.location.href = `/admin/events/${id}/dispatch`;
+      window.location.href = `/admin/events/${id}/agreement`;
     } catch (e: any) {
       console.error(e);
       toast.error(e.response?.data?.error || "Failed to dispatch");
