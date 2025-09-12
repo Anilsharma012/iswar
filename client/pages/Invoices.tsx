@@ -1159,10 +1159,14 @@ export default function Invoices() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusBadgeVariant(invoice.status)}>
-                          {invoice.status.charAt(0).toUpperCase() +
-                            invoice.status.slice(1)}
-                        </Badge>
+                        {(invoice.totals?.pending ?? 0) === 0 ? (
+                          <Badge variant="success">Paid</Badge>
+                        ) : (
+                          <Badge variant={getStatusBadgeVariant(invoice.status)}>
+                            {invoice.status.charAt(0).toUpperCase() +
+                              invoice.status.slice(1)}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
