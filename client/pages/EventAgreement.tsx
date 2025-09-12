@@ -211,10 +211,19 @@ export default function EventAgreement() {
           amount: Number((r.qtyToSend * r.rate).toFixed(2)),
         }));
       const payload = {
-        selections,
+        items: selections.map((s) => ({
+          itemId: s.productId,
+          name: s.name,
+          sku: s.sku,
+          uom: s.unitType,
+          qty: s.qtyToSend,
+          rate: s.rate,
+          amount: s.amount,
+        })),
         advance: Number(advance || 0),
         security: Number(security || 0),
-        agreementTerms: terms,
+        terms: terms,
+        grandTotal: Number((selections.reduce((sum, r) => sum + r.amount, 0) - Number(advance || 0) - Number(security || 0)).toFixed(2)),
       };
       const resp = await eventAPI.saveAgreement(id!, payload);
       setEvent(resp.data);
