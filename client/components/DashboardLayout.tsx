@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { eventAPI } from "@/lib/api";
 
 const sidebarItems = [
   {
@@ -97,6 +98,28 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const match =
     path.match(/admin\/events\/(.+?)\//) || path.match(/event-details\/(.+?)$/);
   const currentEventId = match?.[1];
+  const [hasAgreement, setHasAgreement] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        if (!currentEventId) {
+          setHasAgreement(false);
+          return;
+        }
+        const res = await eventAPI.getById(currentEventId);
+        if (!active) return;
+        setHasAgreement(Boolean(res.data?.agreementSnapshot?.items?.length));
+      } catch (e) {
+        setHasAgreement(false);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, [currentEventId]);
 
   return (
     <div className="flex h-full flex-col">
@@ -193,6 +216,21 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
               <Warehouse className="h-4 w-4" />
               <span>Stock Out</span>
             </Link>
+            {currentEventId && hasAgreement && (
+              <Link
+                to={`/admin/events/${currentEventId}/agreement/preview`}
+                onClick={onLinkClick}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-gray-700 hover:bg-gray-100",
+                  path.includes("/admin/events/") && path.endsWith("/agreement/preview")
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                    : undefined,
+                )}
+              >
+                <FileText className="h-4 w-4" />
+                <span>Agreement Preview</span>
+              </Link>
+            )}
             <Link
               to={
                 currentEventId ? `/admin/events/${currentEventId}/return` : `#`
