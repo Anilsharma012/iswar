@@ -216,96 +216,103 @@ export default function EventReturn() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Stock In (Return)</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Returned Items</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Expected</TableHead>
-                <TableHead>Returned</TableHead>
-                <TableHead>Shortage</TableHead>
-                <TableHead>Damages (₹)</TableHead>
-                <TableHead>Late Fee (₹)</TableHead>
-                <TableHead>Rate</TableHead>
-                <TableHead>Shortage Cost</TableHead>
-                <TableHead>Line Adjust</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r, i) => (
-                <TableRow key={i}>
-                  <TableCell>{r.name}</TableCell>
-                  <TableCell>{r.expected || "-"}</TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.returned}
-                      onChange={(e) =>
-                        updateRow(i, { returned: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.shortage}
-                      onChange={(e) =>
-                        updateRow(i, { shortage: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.damageAmount}
-                      onChange={(e) =>
-                        updateRow(i, { damageAmount: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.lateFee}
-                      onChange={(e) =>
-                        updateRow(i, { lateFee: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.rate || 0}
-                      onChange={(e) =>
-                        updateRow(i, { rate: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatINR(r.shortageCost || 0)}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatINR(r.lineAdjust || 0)}
-                  </TableCell>
+      {rows.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Returned Items</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Expected</TableHead>
+                  <TableHead>Returned</TableHead>
+                  <TableHead>Shortage</TableHead>
+                  <TableHead>Damages (₹)</TableHead>
+                  <TableHead>Late Fee (₹)</TableHead>
+                  <TableHead>Rate</TableHead>
+                  <TableHead>Shortage Cost</TableHead>
+                  <TableHead>Line Adjust</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r, i) => (
+                  <TableRow key={i}>
+                    <TableCell>{r.name}</TableCell>
+                    <TableCell>{r.expected || "-"}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.returned}
+                        onChange={(e) =>
+                          updateRow(i, { returned: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.shortage}
+                        onChange={(e) =>
+                          updateRow(i, { shortage: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.damageAmount}
+                        onChange={(e) =>
+                          updateRow(i, { damageAmount: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.lateFee}
+                        onChange={(e) =>
+                          updateRow(i, { lateFee: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.rate || 0}
+                        onChange={(e) =>
+                          updateRow(i, { rate: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatINR(r.shortageCost || 0)}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatINR(r.lineAdjust || 0)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
-          <div className="flex justify-end mt-4 text-lg font-semibold">
-            Total Adjustments: {formatINR(totalAdjust)}
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex justify-end mt-4 text-lg font-semibold">
+              Total Adjustments: {formatINR(totalAdjust)}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="p-6 bg-green-50 rounded">
+          <h3 className="text-lg font-semibold">All items returned</h3>
+          <p className="text-sm text-gray-600">This event has no outstanding items to return.</p>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => window.history.back()}>
