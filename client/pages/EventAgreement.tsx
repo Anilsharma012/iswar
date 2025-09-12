@@ -360,9 +360,14 @@ export default function EventAgreement() {
           Back
         </Button>
         <Button
-          onClick={() =>
-            window.open(`/admin/events/${id}/agreement/preview`, "_blank")
-          }
+          onClick={() => {
+            if ((event as any)?.agreementSnapshot?.items?.length) {
+              window.open(`/admin/events/${id}/agreement/preview`, "_blank");
+            } else {
+              toast.info("Save T&C first");
+            }
+          }}
+          disabled={!Boolean((event as any)?.agreementSnapshot?.items?.length)}
         >
           Preview
         </Button>
