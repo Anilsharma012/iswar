@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,7 @@ export default function EventAgreement() {
   const [advance, setAdvance] = useState<string>("0");
   const [security, setSecurity] = useState<string>("0");
   const [terms, setTerms] = useState<string>("");
+  const navigate = useNavigate();
 
   // Signatures
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -374,12 +375,13 @@ export default function EventAgreement() {
         <Button
           onClick={() => {
             if ((event as any)?.agreementSnapshot?.items?.length) {
-              window.open(`/admin/events/${id}/agreement/preview`, "_blank");
+              navigate(`/admin/events/${id}/agreement/preview`);
             } else {
               toast.info("Save T&C first");
             }
           }}
           disabled={!Boolean((event as any)?.agreementSnapshot?.items?.length)}
+          title={!Boolean((event as any)?.agreementSnapshot?.items?.length) ? "Save T&C first" : undefined}
         >
           Preview
         </Button>
