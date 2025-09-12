@@ -55,6 +55,7 @@ import {
   dispatchEvent,
   returnEvent,
   generateAgreementPDFRoute,
+  getLastReturnSummary,
 } from "./routes/events";
 import {
   getEventExpenses,
@@ -188,6 +189,7 @@ app.patch("/api/events/:id/agreement", saveAgreement);
 app.post("/api/events/:id/dispatch", dispatchEvent);
 app.post("/api/events/:id/return", returnEvent);
 app.get("/api/events/:id/agreement/pdf", generateAgreementPDFRoute);
+app.get("/api/events/:id/last-return-summary", getLastReturnSummary);
 app.post("/api/events", createEvent);
 app.put("/api/events/:id", updateEvent);
 app.delete("/api/events/:id", deleteEvent);

@@ -140,6 +140,8 @@ export const eventAPI = {
   return: (id: string, data: any) => api.post(`/events/${id}/return`, data),
   downloadAgreement: (id: string) =>
     api.get(`/events/${id}/agreement/pdf`, { responseType: "blob" }),
+  getLastReturnSummary: (id: string) =>
+    api.get(`/events/${id}/last-return-summary`),
 };
 
 // Leads API calls

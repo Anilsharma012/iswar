@@ -11,6 +11,7 @@ export const clientSchema = Joi.object({
   email: Joi.string().email().optional().allow("").allow(null),
   address: Joi.string().optional().allow("").allow(null),
   gstNumber: Joi.string().optional().allow("").allow(null),
+  eventName: Joi.string().optional().allow("").allow(null),
 });
 
 export const productSchema = Joi.object({

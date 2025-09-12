@@ -516,7 +516,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       session.startTransaction();
 
       const { id } = req.params;
-      const { items = [] } = req.body || {};
+      const { items = [], returnDue } = req.body || {};
 
       if (!Array.isArray(items)) {
         await session.abortTransaction();
@@ -534,12 +534,10 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       if (event.returnClosed) {
         await session.abortTransaction();
         session.endSession();
-        return res
-          .status(403)
-          .json({
-            error: "Event already fully returned",
-            code: "ALREADY_RETURNED",
-          });
+        return res.status(403).json({
+          error: "Event already fully returned",
+          code: "ALREADY_RETURNED",
+        });
       }
 
       // Cold lead guard
@@ -610,12 +608,10 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         if (matching.completed || remaining <= 0) {
           await session.abortTransaction();
           session.endSession();
-          return res
-            .status(409)
-            .json({
-              error: "Line already fully returned",
-              code: "ALREADY_RETURNED_LINE",
-            });
+          return res.status(409).json({
+            error: "Line already fully returned",
+            code: "ALREADY_RETURNED_LINE",
+          });
         }
 
         // Guard: allow return ONLY if returnedQty < dispatchedQty and not exceeding remaining
@@ -741,6 +737,27 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         (event as any).returnClosed = true;
       }
 
+      // compute return dues and persist summary
+      const computedDue = Number(
+        sanitized
+          .reduce((s, it) => s + Number(it.lineAdjust || 0), 0)
+          .toFixed(2),
+      );
+      const providedDue = Number((req.body || {}).returnDue);
+      const effectiveDue = Number.isFinite(providedDue)
+        ? Number(providedDue.toFixed(2))
+        : computedDue;
+
+      (event as any).lastReturnSummary = {
+        totals: {
+          shortage: Number(totalShortageCost.toFixed(2)),
+          damage: Number(totalDamage.toFixed(2)),
+          late: Number(totalLate.toFixed(2)),
+          returnDue: effectiveDue,
+        },
+        at: new Date(),
+      };
+
       await event.save({ session });
 
       await (mongoose.models.AuditLog as any).create(
@@ -754,7 +771,12 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
               : undefined,
             meta: {
               items: sanitized,
-              totals: { totalShortageCost, totalDamage, totalLate },
+              totals: {
+                totalShortageCost,
+                totalDamage,
+                totalLate,
+                returnDue: effectiveDue,
+              },
             },
           },
         ],
@@ -777,6 +799,9 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           lines: sanitized,
           allCompleted: allCompleted,
         },
+        returnDue: effectiveDue,
+        clientId: populatedEvent?.clientId?._id || populatedEvent?.clientId,
+        eventId: populatedEvent?._id,
       });
     } catch (error: any) {
       try {
@@ -815,6 +840,28 @@ export const generateAgreementPDFRoute = async (
     generateAgreementPDF(event, "en", res);
   } catch (error) {
     console.error("Generate agreement PDF error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getLastReturnSummary = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const event = await Event.findById(id).populate("clientId");
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    const summary = (event as any).lastReturnSummary || {
+      totals: { shortage: 0, damage: 0, late: 0, returnDue: 0 },
+      at: null,
+    };
+
+    return res.json({
+      eventId: event._id,
+      clientId: (event.clientId as any)?._id || event.clientId,
+      lastReturnSummary: summary,
+    });
+  } catch (error) {
+    console.error("Get last return summary error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -67,6 +67,7 @@ interface Client {
   email?: string;
   address?: string;
   gstNumber?: string;
+  eventName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -77,6 +78,7 @@ interface ClientFormData {
   email: string;
   address: string;
   gstNumber: string;
+  eventName: string;
 }
 
 const initialFormData: ClientFormData = {
@@ -85,6 +87,7 @@ const initialFormData: ClientFormData = {
   email: "",
   address: "",
   gstNumber: "",
+  eventName: "",
 };
 
 export default function Clients() {
@@ -227,13 +230,49 @@ export default function Clients() {
       clientData.gstNumber = formData.gstNumber.toUpperCase();
     }
 
+    if (formData.eventName && formData.eventName.trim()) {
+      clientData.eventName = formData.eventName.trim();
+    }
+
     try {
       if (editingClient) {
         await clientAPI.update(editingClient._id, clientData);
         toast.success("Client updated successfully");
       } else {
-        await clientAPI.create(clientData);
-        toast.success("Client created successfully");
+        const res = await clientAPI.create(clientData);
+        const newClient: Client = res.data;
+
+        if (formData.eventName && formData.eventName.trim()) {
+          try {
+            const today = new Date().toISOString().slice(0, 10);
+            const evRes = await eventAPI.create({
+              name: formData.eventName.trim(),
+              clientId: newClient._id,
+              dateFrom: today,
+              dateTo: today,
+              notes: "Draft",
+            });
+            const eventId = evRes?.data?._id;
+            toast.success("Client + Event created", {
+              description: "Open Event",
+              action: {
+                label: "Open Event",
+                onClick: () => {
+                  if (eventId)
+                    window.location.href = `/event-details/${eventId}`;
+                  else window.location.href = "/events";
+                },
+              },
+            } as any);
+          } catch (evErr: any) {
+            console.error("Auto-create event failed:", evErr);
+            toast.error(
+              evErr.response?.data?.error || "Failed to create event",
+            );
+          }
+        } else {
+          toast.success("Client created successfully");
+        }
       }
 
       setIsDialogOpen(false);
@@ -262,6 +301,7 @@ export default function Clients() {
       email: client.email || "",
       address: client.address || "",
       gstNumber: client.gstNumber || "",
+      eventName: client.eventName || "",
     });
     setIsDialogOpen(true);
   };
@@ -480,6 +520,18 @@ export default function Clients() {
                 </div>
 
                 <div>
+                  <Label htmlFor="eventName">Event Name</Label>
+                  <Input
+                    id="eventName"
+                    value={formData.eventName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, eventName: e.target.value })
+                    }
+                    placeholder="Enter related event name (optional)"
+                  />
+                </div>
+
+                <div>
                   <Label htmlFor="address">Address</Label>
                   <Textarea
                     id="address"
@@ -604,6 +656,11 @@ export default function Clients() {
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{client.name}</span>
+                              {client.eventName && (
+                                <span className="text-xs text-gray-500">
+                                  • {client.eventName}
+                                </span>
+                              )}
                               {leadPriority[client._id] && (
                                 <Badge
                                   style={{
