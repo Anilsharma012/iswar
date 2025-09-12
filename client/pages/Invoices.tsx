@@ -244,17 +244,17 @@ export default function Invoices() {
           const fallbackPid = baseItems[0]?.productId || (products[0]?._id || '');
           const adjustItems: InvoiceItem[] = [];
           if (damageSum > 0) {
-            adjustItems.push({ productId: fallbackPid, desc: 'Damage Total', unitType: 'pcs', qty: 1, rate: Number(damageSum.toFixed(2)), taxPct: 0 });
+            adjustItems.push({ productId: fallbackPid, desc: 'Damage Total', unitType: 'pcs', qty: 1, rate: Number(damageSum.toFixed(2)), taxPct: 0, isAdjustment: true });
           }
           if (shortageSum > 0) {
-            adjustItems.push({ productId: fallbackPid, desc: 'Shortage Total', unitType: 'pcs', qty: 1, rate: Number(shortageSum.toFixed(2)), taxPct: 0 });
+            adjustItems.push({ productId: fallbackPid, desc: 'Shortage Total', unitType: 'pcs', qty: 1, rate: Number(shortageSum.toFixed(2)), taxPct: 0, isAdjustment: true });
           }
           if (lateSum > 0) {
             // merge into Damage Total if damage exists, else add new
             if (damageSum > 0) {
               adjustItems[0].rate = Number((adjustItems[0].rate + lateSum).toFixed(2));
             } else {
-              adjustItems.push({ productId: fallbackPid, desc: 'Late Fee', unitType: 'pcs', qty: 1, rate: Number(lateSum.toFixed(2)), taxPct: 0 });
+              adjustItems.push({ productId: fallbackPid, desc: 'Late Fee', unitType: 'pcs', qty: 1, rate: Number(lateSum.toFixed(2)), taxPct: 0, isAdjustment: true });
             }
           }
 
@@ -268,6 +268,7 @@ export default function Invoices() {
             discount: 0,
           });
           setPrefillClientLocked(true);
+          setPrefillEventId(eventId);
           setIsDialogOpen(true);
         } catch (e) {
           console.error('Prefill invoice from event failed', e);
