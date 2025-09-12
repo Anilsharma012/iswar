@@ -516,7 +516,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       session.startTransaction();
 
       const { id } = req.params;
-      const { items = [] } = req.body || {};
+      const { items = [], returnDue } = req.body || {};
 
       if (!Array.isArray(items)) {
         await session.abortTransaction();
