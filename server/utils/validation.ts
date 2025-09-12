@@ -34,10 +34,12 @@ export const invoiceItemSchema = Joi.object({
   qty: Joi.number().min(0).required(),
   rate: Joi.number().min(0).required(),
   taxPct: Joi.number().min(0).max(100).optional(),
+  isAdjustment: Joi.boolean().optional(),
 });
 
 export const invoiceSchema = Joi.object({
   clientId: Joi.string().required(),
+  eventId: Joi.string().optional(),
   withGST: Joi.boolean().default(false),
   language: Joi.string().valid("en", "hi").default("en"),
   items: Joi.array().items(invoiceItemSchema).min(1).required(),

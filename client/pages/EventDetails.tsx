@@ -810,7 +810,14 @@ export default function EventDetails() {
         <TabsContent value="overview">
           <Card>
             <CardHeader>
-              <CardTitle>Event Details</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Event Details
+                {event?.status === "reserved" && (
+                  <Badge variant="secondary" className="text-xs">
+                    Reserved
+                  </Badge>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

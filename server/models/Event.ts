@@ -24,7 +24,14 @@ export interface IEvent extends Document {
   advance?: number;
   security?: number;
   agreementTerms?: string;
+  status?: "new" | "confirmed" | "reserved" | "dispatched" | "returned";
   dispatches?: Array<{
+    items: ISelectionItem[];
+    date: Date;
+    total: number;
+    note?: any;
+  }>;
+  dispatchDrafts?: Array<{
     items: ISelectionItem[];
     date: Date;
     total: number;
@@ -48,6 +55,8 @@ const selectionSchema = new Schema<ISelectionItem>({
   unitType: { type: String },
   stockQty: { type: Number },
   qtyToSend: { type: Number, required: true, min: 0 },
+  returnedQty: { type: Number, default: 0, min: 0 },
+  completed: { type: Boolean, default: false },
   rate: { type: Number, required: true, min: 0 },
   amount: { type: Number, required: true, min: 0 },
 });
@@ -93,7 +102,23 @@ const eventSchema = new Schema<IEvent>(
     agreementTerms: { type: String, trim: true },
     clientSign: { type: String, trim: true },
     companySign: { type: String, trim: true },
+    status: {
+      type: String,
+      enum: ["new", "confirmed", "reserved", "dispatched", "returned"],
+      default: "confirmed",
+    },
     dispatches: {
+      type: [
+        new Schema({
+          items: { type: [selectionSchema], default: [] },
+          date: { type: Date, default: Date.now },
+          total: { type: Number, default: 0 },
+          note: { type: Schema.Types.Mixed },
+        }),
+      ],
+      default: [],
+    },
+    dispatchDrafts: {
       type: [
         new Schema({
           items: { type: [selectionSchema], default: [] },

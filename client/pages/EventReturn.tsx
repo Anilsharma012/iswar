@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,22 +28,37 @@ export default function EventReturn() {
         const data = ev.data;
         setEvent(data);
         const lastDispatch = data.dispatches?.[data.dispatches.length - 1];
-        const items = lastDispatch?.items || data.selections || [];
+        const allItems = lastDispatch?.items || data.selections || [];
 
-        const mapped = items.map((x: any) => ({
-          productId: x.productId || x._id,
-          name: x.name,
-          sku: x.sku,
-          unitType: x.unitType,
-          expected: Number(x.qtyToSend || x.qty || 0),
-          returned: Number(x.qtyToSend || x.qty || 0),
-          shortage: 0,
-          damageAmount: 0,
-          lateFee: 0,
-          rate: Number(x.rate || 0),
-          buyPrice: Number(x.buyPrice || 0),
-          lossPrice: Number(x.lossPrice || 0),
-        }));
+        // Only show outstanding lines (where returnedQty < qtyToSend)
+        const outstanding = allItems.filter((x: any) => {
+          const dispatched = Number(x.qtyToSend || x.qty || 0);
+          const alreadyReturned = Number(x.returnedQty || 0);
+          return dispatched - alreadyReturned > 0;
+        });
+
+        const mapped = outstanding.map((x: any) => {
+          const dispatched = Number(x.qtyToSend || x.qty || 0);
+          const alreadyReturned = Number(x.returnedQty || 0);
+          const remaining = Math.max(0, dispatched - alreadyReturned);
+          return {
+            productId: x.productId || x._id,
+            name: x.name,
+            sku: x.sku,
+            unitType: x.unitType,
+            expected: dispatched,
+            alreadyReturned,
+            returned: remaining,
+            shortage: Math.max(0, dispatched - (alreadyReturned + remaining)),
+            damageAmount: 0,
+            lateFee: 0,
+            rate: Number(x.rate || 0),
+            buyPrice: Number(x.buyPrice || 0),
+            lossPrice: Number(x.lossPrice || 0),
+            shortageCost: 0,
+            lineAdjust: 0,
+          };
+        });
 
         // compute per-row late fee if event ended
         const end = new Date(data.dateTo).getTime();
@@ -55,9 +70,10 @@ export default function EventReturn() {
         mapped.forEach((r) => {
           r.shortage = Math.max(0, r.expected - r.returned);
           const lossPrice = r.lossPrice || r.buyPrice || r.rate || 0;
+          r.shortageCost = Number((r.shortage * lossPrice).toFixed(2));
           r.lineAdjust = Number(
             (
-              r.shortage * lossPrice +
+              r.shortageCost +
               Number(r.damageAmount || 0) +
               Number(r.lateFee || 0)
             ).toFixed(2),
@@ -82,14 +98,18 @@ export default function EventReturn() {
       const next = [...prev];
       const r = { ...next[i], ...patch };
       if (r.returned < 0) r.returned = 0;
-      if (r.returned > r.expected) r.returned = r.expected;
+      const maxReturnable = (r.expected || 0) - (r.alreadyReturned || 0);
+      if (r.returned > maxReturnable) r.returned = maxReturnable;
+
+      const totalReturned = (r.alreadyReturned || 0) + Number(r.returned || 0);
       r.shortage = Number(
-        patch.shortage ?? Math.max(0, r.expected - r.returned),
+        patch.shortage ?? Math.max(0, (r.expected || 0) - totalReturned),
       );
       const lossPrice = r.lossPrice || r.buyPrice || r.rate || 0;
+      r.shortageCost = Number((r.shortage * lossPrice).toFixed(2));
       r.lineAdjust = Number(
         (
-          r.shortage * lossPrice +
+          r.shortageCost +
           Number(r.damageAmount || 0) +
           Number(r.lateFee || 0)
         ).toFixed(2),
@@ -105,6 +125,7 @@ export default function EventReturn() {
   );
 
   const submit = async () => {
+    const prevRows = rows;
     try {
       const payloadItems = rows.map((r) => ({
         itemId: r.productId,
@@ -114,15 +135,72 @@ export default function EventReturn() {
         damageAmount: r.damageAmount,
         lateFee: r.lateFee,
         lossPrice: r.lossPrice || r.buyPrice || r.rate || 0,
+        shortageCost: r.shortageCost || 0,
+        lineAdjust: r.lineAdjust || 0,
         rate: r.rate,
       }));
 
-      await eventAPI.return(id!, { items: payloadItems });
+      // optimistic: remove rows that would be completed by this return locally
+      const optimistic = rows.filter((r) => {
+        const maxReturnable = (r.expected || 0) - (r.alreadyReturned || 0);
+        const newReturned = Number(r.returned || 0);
+        const totalReturned = (r.alreadyReturned || 0) + newReturned;
+        return totalReturned < (r.expected || 0);
+      });
+      setRows(optimistic);
+
+      const res = await eventAPI.return(id!, { items: payloadItems });
+      const data = res.data;
       toast.success("Return recorded");
-      window.location.href = `/admin/events/${id}/return`;
+
+      // Update local event and rows based on server response
+      if (data?.event) setEvent(data.event);
+      const summary = data?.summary;
+
+      if (summary?.allCompleted) {
+        // hide card by clearing rows and setting status
+        setRows([]);
+      } else if (data?.event) {
+        const lastDispatch =
+          data.event.dispatches?.[data.event.dispatches.length - 1];
+        const allItems = lastDispatch?.items || data.event.selections || [];
+        const outstanding = allItems.filter((x: any) => {
+          const dispatched = Number(x.qtyToSend || x.qty || 0);
+          const alreadyReturned = Number(x.returnedQty || 0);
+          return dispatched - alreadyReturned > 0;
+        });
+        const newRows = outstanding.map((x: any) => {
+          const dispatched = Number(x.qtyToSend || x.qty || 0);
+          const alreadyReturned = Number(x.returnedQty || 0);
+          const remaining = Math.max(0, dispatched - alreadyReturned);
+          return {
+            productId: x.productId || x._id,
+            name: x.name,
+            sku: x.sku,
+            unitType: x.unitType,
+            expected: dispatched,
+            alreadyReturned,
+            returned: remaining,
+            shortage: Math.max(0, dispatched - (alreadyReturned + remaining)),
+            damageAmount: 0,
+            lateFee: 0,
+            rate: Number(x.rate || 0),
+            buyPrice: Number(x.buyPrice || 0),
+            lossPrice: Number(x.lossPrice || 0),
+            shortageCost: 0,
+            lineAdjust: 0,
+          };
+        });
+        setRows(newRows);
+      }
+
+      // After processing, redirect to invoice modal
+      window.location.href = `/invoices?new=1&eventId=${id}`;
     } catch (e: any) {
       console.error(e);
       toast.error(e.response?.data?.error || "Failed to return");
+      // rollback optimistic
+      setRows(prevRows);
     }
   };
 
@@ -138,92 +216,105 @@ export default function EventReturn() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Stock In (Return)</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Returned Items</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Expected</TableHead>
-                <TableHead>Returned</TableHead>
-                <TableHead>Shortage</TableHead>
-                <TableHead>Damages (₹)</TableHead>
-                <TableHead>Late Fee (₹)</TableHead>
-                <TableHead>Rate</TableHead>
-                <TableHead>Line Adjust</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r, i) => (
-                <TableRow key={i}>
-                  <TableCell>{r.name}</TableCell>
-                  <TableCell>{r.expected || "-"}</TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.returned}
-                      onChange={(e) =>
-                        updateRow(i, { returned: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.shortage}
-                      onChange={(e) =>
-                        updateRow(i, { shortage: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.damageAmount}
-                      onChange={(e) =>
-                        updateRow(i, { damageAmount: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.lateFee}
-                      onChange={(e) =>
-                        updateRow(i, { lateFee: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.rate || 0}
-                      onChange={(e) =>
-                        updateRow(i, { rate: Number(e.target.value) })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatINR(r.lineAdjust || 0)}
-                  </TableCell>
+      {rows.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Returned Items</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Expected</TableHead>
+                  <TableHead>Returned</TableHead>
+                  <TableHead>Shortage</TableHead>
+                  <TableHead>Damages (₹)</TableHead>
+                  <TableHead>Late Fee (₹)</TableHead>
+                  <TableHead>Rate</TableHead>
+                  <TableHead>Shortage Cost</TableHead>
+                  <TableHead>Line Adjust</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r, i) => (
+                  <TableRow key={i}>
+                    <TableCell>{r.name}</TableCell>
+                    <TableCell>{r.expected || "-"}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.returned}
+                        onChange={(e) =>
+                          updateRow(i, { returned: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.shortage}
+                        onChange={(e) =>
+                          updateRow(i, { shortage: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.damageAmount}
+                        onChange={(e) =>
+                          updateRow(i, { damageAmount: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.lateFee}
+                        onChange={(e) =>
+                          updateRow(i, { lateFee: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.rate || 0}
+                        onChange={(e) =>
+                          updateRow(i, { rate: Number(e.target.value) })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatINR(r.shortageCost || 0)}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {formatINR(r.lineAdjust || 0)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
-          <div className="flex justify-end mt-4 text-lg font-semibold">
-            Total Adjustments: {formatINR(totalAdjust)}
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex justify-end mt-4 text-lg font-semibold">
+              Total Adjustments: {formatINR(totalAdjust)}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="p-6 bg-green-50 rounded">
+          <h3 className="text-lg font-semibold">All items returned</h3>
+          <p className="text-sm text-gray-600">
+            This event has no outstanding items to return.
+          </p>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => window.history.back()}>

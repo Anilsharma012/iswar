@@ -68,14 +68,28 @@ export default function EventAgreement() {
         setSecurity(String(ev.security ?? 0));
         setTerms(ev.agreementTerms || "");
 
-        // Prefer latest dispatch lines as source
+        // Prefer latest dispatchDraft (reserve) then dispatch lines as source
+        const lastDraft = ev.dispatchDrafts?.[ev.dispatchDrafts.length - 1];
         const lastDispatch = ev.dispatches?.[ev.dispatches.length - 1];
+        let source: any = null;
+        let sourceIsDraft = false;
         if (
+          lastDraft &&
+          Array.isArray(lastDraft.items) &&
+          lastDraft.items.length > 0
+        ) {
+          source = lastDraft;
+          sourceIsDraft = true;
+        } else if (
           lastDispatch &&
           Array.isArray(lastDispatch.items) &&
           lastDispatch.items.length > 0
         ) {
-          const rows: Row[] = lastDispatch.items.map((p: any) => ({
+          source = lastDispatch;
+        }
+
+        if (source) {
+          const rows: Row[] = source.items.map((p: any) => ({
             _id: p.productId,
             name: p.name,
             sku: p.sku,
@@ -90,7 +104,11 @@ export default function EventAgreement() {
               ),
             ),
           }));
+          // If the source is a draft (reserved), we want to show the values but not allow edits to qty/rate
           setItems(rows);
+          // attach a flag to the event object to indicate readonly source
+          (ev as any).__useDispatchDraft = sourceIsDraft;
+          setEvent(ev);
         } else {
           // fallback to product catalog and previous selections
           const prodRes = await productAPI.getAll({ limit: 1000 });
@@ -262,6 +280,9 @@ export default function EventAgreement() {
                         updateRow(idx, { qtyToSend: Number(e.target.value) })
                       }
                       className="w-24"
+                      readOnly={Boolean(
+                        event && (event as any).__useDispatchDraft,
+                      )}
                     />
                   </TableCell>
                   <TableCell>
@@ -274,6 +295,9 @@ export default function EventAgreement() {
                         updateRow(idx, { rate: Number(e.target.value) })
                       }
                       className="w-28"
+                      readOnly={Boolean(
+                        event && (event as any).__useDispatchDraft,
+                      )}
                     />
                   </TableCell>
                   <TableCell className="font-medium">

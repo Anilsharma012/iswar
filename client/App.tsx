@@ -19,6 +19,7 @@ import EventAgreementPreview from "@/pages/EventAgreementPreview";
 import EventAgreementSign from "@/pages/EventAgreementSign";
 import EventDispatch from "@/pages/EventDispatch";
 import EventReturn from "@/pages/EventReturn";
+import EventInvoice from "@/pages/EventInvoice";
 import Workers from "@/pages/Workers";
 import Attendance from "@/pages/Attendance";
 import Payroll from "@/pages/Payroll";
@@ -74,6 +75,14 @@ function App() {
               <Route
                 path="admin/events/:id/dispatch"
                 element={<EventDispatch />}
+              />
+              <Route
+                path="admin/events/:id/agreement"
+                element={<EventAgreement />}
+              />
+              <Route
+                path="admin/events/:id/invoice"
+                element={<EventInvoice />}
               />
               <Route path="admin/events/:id/return" element={<EventReturn />} />
               <Route path="workers" element={<Workers />} />

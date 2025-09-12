@@ -305,7 +305,11 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
       session.startTransaction();
 
       const { id } = req.params;
-      const { items = [] } = req.body || {};
+      const { items = [], dryRun: bodyDryRun } = req.body || {};
+      const dryRun =
+        req.query?.dryRun === "1" ||
+        req.query?.dryRun === "true" ||
+        !!bodyDryRun;
 
       if (!Array.isArray(items) || items.length === 0) {
         await session.abortTransaction();
@@ -367,8 +371,10 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
             .json({ error: `Insufficient stock for product ${product.name}` });
         }
 
-        product.stockQty = Number(product.stockQty) - qty;
-        await product.save({ session });
+        if (!dryRun) {
+          product.stockQty = Number(product.stockQty) - qty;
+          await product.save({ session });
+        }
 
         const amount = Number((qty * rate).toFixed(2));
         total += amount;
@@ -385,15 +391,26 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
         });
       }
 
-      event.dispatches = event.dispatches || [];
-      event.dispatches.push({ items: sanitized, date: new Date(), total });
-      event.status = "dispatched";
+      if (dryRun) {
+        event.dispatchDrafts = event.dispatchDrafts || [];
+        event.dispatchDrafts.push({
+          items: sanitized,
+          date: new Date(),
+          total,
+          note: { mode: "reserve" },
+        });
+        event.status = "reserved";
+      } else {
+        event.dispatches = event.dispatches || [];
+        event.dispatches.push({ items: sanitized, date: new Date(), total });
+        event.status = "dispatched";
+      }
       await event.save({ session });
 
       await (mongoose.models.AuditLog as any).create(
         [
           {
-            action: "dispatch",
+            action: dryRun ? "reserve" : "dispatch",
             entity: "Event",
             entityId: event._id,
             userId: req.adminId
@@ -480,11 +497,22 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         }
       }
 
-      let totalAdjust = 0;
+      // Work against the last confirmed dispatch if available, else selections
+      const lastDispatch =
+        event.dispatches && event.dispatches.length
+          ? event.dispatches[event.dispatches.length - 1]
+          : null;
+      const targetItems = lastDispatch
+        ? lastDispatch.items
+        : event.selections || [];
+
       const sanitized: any[] = [];
+      let totalShortageCost = 0;
+      let totalDamage = 0;
+      let totalLate = 0;
 
       for (const it of items) {
-        // Expect each item: { productId, expected, returned, shortage, damageAmount, lateFee, lossPrice?, rate }
+        // Expect each item: { itemId, expected, returned, shortage, damageAmount, lateFee, lossPrice?, rate }
         const pid = it.productId || it.itemId || it._id || null;
         const expected = Number(it.expected || 0);
         const returned = Number(it.returned || 0);
@@ -513,17 +541,60 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         product.stockQty = Number(product.stockQty) + returned;
         await product.save({ session });
 
+        // Create stock ledger entry for this return
+        await (mongoose.models.StockLedger as any).create(
+          [
+            {
+              productId: product._id,
+              qtyChange: returned,
+              reason: "return",
+              refType: "Return",
+              refId: event._id,
+              at: new Date(),
+            },
+          ],
+          { session },
+        );
+
+        // Create an inventory txn (issue txn) record
+        await (mongoose.models.IssueTxn as any).create(
+          [
+            {
+              clientId: event.clientId,
+              productId: product._id,
+              qty: returned,
+              type: "return",
+              ref: `Event:${event._id}`,
+              at: new Date(),
+            },
+          ],
+          { session },
+        );
+
         // Determine loss price: prefer provided lossPrice, then buyPrice, then rate, else 0
         const lossPrice = Number(
           it.lossPrice ?? product.buyPrice ?? it.rate ?? 0,
         );
-
+        const shortageCost = Number((shortage * lossPrice).toFixed(2));
         const lineAdjust = Number(
-          (shortage * lossPrice + damageAmount + lateFee).toFixed(2),
+          (shortageCost + damageAmount + lateFee).toFixed(2),
         );
-        totalAdjust += lineAdjust;
 
-        const qtyToSend = expected; // preserve original expected as qtyToSend
+        totalShortageCost += shortageCost;
+        totalDamage += damageAmount;
+        totalLate += lateFee;
+
+        // Update dispatched/selection line returnedQty and completed flag
+        const matching = targetItems.find(
+          (ti: any) => String(ti.productId) === String(product._id),
+        );
+        if (matching) {
+          matching.returnedQty = (matching.returnedQty || 0) + returned;
+          matching.completed = Boolean(
+            matching.returnedQty >= (matching.qtyToSend || matching.qty || 0),
+          );
+        }
+
         const rate = Number(
           it.rate ?? product.sellPrice ?? product.buyPrice ?? 0,
         );
@@ -535,28 +606,44 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           sku: product.sku,
           unitType: product.unitType,
           stockQty: product.stockQty,
-          qtyToSend,
+          qtyToSend: expected,
           qtyReturned: returned,
           shortage,
           damageAmount,
           lateFee,
           lossPrice,
+          shortageCost,
           rate,
           amount,
           lineAdjust,
         });
       }
 
+      // persist changes to event dispatch items
+      if (lastDispatch) {
+        // replace lastDispatch items with updated targetItems
+        lastDispatch.items = targetItems;
+      } else {
+        event.selections = targetItems;
+      }
+
       event.returns = event.returns || [];
       event.returns.push({
         items: sanitized,
         date: new Date(),
-        total: Number(totalAdjust.toFixed(2)),
+        total: Number((totalShortageCost + totalDamage + totalLate).toFixed(2)),
         shortages: sanitized.reduce((s, it) => s + it.shortage, 0),
         damages: sanitized.reduce((s, it) => s + it.damageAmount, 0),
         lateFee: sanitized.reduce((s, it) => s + it.lateFee, 0),
       });
-      event.status = "returned";
+
+      // determine if all dispatch lines completed
+      const allCompleted =
+        targetItems.length === 0 ||
+        targetItems.every((ti: any) => Boolean(ti.completed));
+      if (allCompleted) {
+        event.status = "returned";
+      }
 
       await event.save({ session });
 
@@ -569,7 +656,10 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
             userId: req.adminId
               ? new mongoose.Types.ObjectId(req.adminId)
               : undefined,
-            meta: { items: sanitized, totalAdjust },
+            meta: {
+              items: sanitized,
+              totals: { totalShortageCost, totalDamage, totalLate },
+            },
           },
         ],
         { session },
@@ -581,7 +671,17 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       const populatedEvent = await Event.findById(event._id).populate(
         "clientId",
       );
-      return res.json(populatedEvent);
+
+      return res.json({
+        event: populatedEvent,
+        summary: {
+          totalShortageCost: Number(totalShortageCost.toFixed(2)),
+          totalDamage: Number(totalDamage.toFixed(2)),
+          totalLate: Number(totalLate.toFixed(2)),
+          lines: sanitized,
+          allCompleted: allCompleted,
+        },
+      });
     } catch (error: any) {
       try {
         await session.abortTransaction();
