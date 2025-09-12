@@ -305,7 +305,8 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
       session.startTransaction();
 
       const { id } = req.params;
-      const { items = [] } = req.body || {};
+      const { items = [], dryRun: bodyDryRun } = req.body || {};
+      const dryRun = (req.query?.dryRun === "1" || req.query?.dryRun === "true") || !!bodyDryRun;
 
       if (!Array.isArray(items) || items.length === 0) {
         await session.abortTransaction();
@@ -367,8 +368,10 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
             .json({ error: `Insufficient stock for product ${product.name}` });
         }
 
-        product.stockQty = Number(product.stockQty) - qty;
-        await product.save({ session });
+        if (!dryRun) {
+          product.stockQty = Number(product.stockQty) - qty;
+          await product.save({ session });
+        }
 
         const amount = Number((qty * rate).toFixed(2));
         total += amount;
@@ -385,15 +388,21 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
         });
       }
 
-      event.dispatches = event.dispatches || [];
-      event.dispatches.push({ items: sanitized, date: new Date(), total });
-      event.status = "dispatched";
+      if (dryRun) {
+        event.dispatchDrafts = event.dispatchDrafts || [];
+        event.dispatchDrafts.push({ items: sanitized, date: new Date(), total, note: { mode: "reserve" } });
+        event.status = "reserved";
+      } else {
+        event.dispatches = event.dispatches || [];
+        event.dispatches.push({ items: sanitized, date: new Date(), total });
+        event.status = "dispatched";
+      }
       await event.save({ session });
 
       await (mongoose.models.AuditLog as any).create(
         [
           {
-            action: "dispatch",
+            action: dryRun ? "reserve" : "dispatch",
             entity: "Event",
             entityId: event._id,
             userId: req.adminId
