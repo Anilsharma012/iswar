@@ -4,6 +4,8 @@ export type PaymentMode = "cash" | "upi" | "card" | "bank" | "cheque";
 
 export interface IPayment extends Document {
   invoiceId: Types.ObjectId;
+  eventId?: Types.ObjectId;
+  clientId?: Types.ObjectId;
   amount: number;
   mode: PaymentMode;
   ref?: string;
@@ -14,6 +16,8 @@ export interface IPayment extends Document {
 const paymentSchema = new Schema<IPayment>(
   {
     invoiceId: { type: Schema.Types.ObjectId, ref: "Invoice", required: true },
+    eventId: { type: Schema.Types.ObjectId, ref: "Event" },
+    clientId: { type: Schema.Types.ObjectId, ref: "Client" },
     amount: { type: Number, required: true, min: 0 },
     mode: {
       type: String,
