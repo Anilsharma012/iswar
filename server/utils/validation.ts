@@ -149,6 +149,16 @@ export const leadSchema = Joi.object({
   notes: Joi.string().optional().allow("").allow(null),
 });
 
+export const invoicePaymentSchema = Joi.object({
+  invoiceId: Joi.string().required(),
+  eventId: Joi.string().optional().allow("").allow(null),
+  clientId: Joi.string().optional().allow("").allow(null),
+  amount: Joi.number().min(0.01).required(),
+  mode: Joi.string().valid("cash", "upi", "card", "bank", "cheque").required(),
+  ref: Joi.string().optional().allow("").allow(null).trim(),
+  at: Joi.date().required(),
+});
+
 export const callLogSchema = Joi.object({
   outcome: Joi.string()
     .valid("answered", "missed", "voicemail", "connected")
