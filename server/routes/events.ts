@@ -531,6 +531,17 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         return res.status(404).json({ error: "Event not found" });
       }
 
+      if (event.returnClosed) {
+        await session.abortTransaction();
+        session.endSession();
+        return res
+          .status(403)
+          .json({
+            error: "Event already fully returned",
+            code: "ALREADY_RETURNED",
+          });
+      }
+
       // Cold lead guard
       const populated = await Event.findById(id).populate("clientId");
       const client = populated?.clientId as any;
@@ -577,6 +588,43 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           await session.abortTransaction();
           session.endSession();
           return res.status(400).json({ error: "Invalid item payload" });
+        }
+
+        const matching = targetItems.find(
+          (ti: any) => String(ti.productId) === String(pid),
+        );
+        if (!matching) {
+          await session.abortTransaction();
+          session.endSession();
+          return res
+            .status(404)
+            .json({ error: `Item ${pid} not found in dispatch` });
+        }
+        const dispatchedQty = Number(
+          matching.qtyToSend || matching.qty || expected || 0,
+        );
+        const alreadyReturned = Number(matching.returnedQty || 0);
+        const remaining = Math.max(0, dispatchedQty - alreadyReturned);
+
+        // Idempotency per-line: completed
+        if (matching.completed || remaining <= 0) {
+          await session.abortTransaction();
+          session.endSession();
+          return res
+            .status(409)
+            .json({
+              error: "Line already fully returned",
+              code: "ALREADY_RETURNED_LINE",
+            });
+        }
+
+        // Guard: allow return ONLY if returnedQty < dispatchedQty and not exceeding remaining
+        if (returned <= 0 || returned > remaining) {
+          await session.abortTransaction();
+          session.endSession();
+          return res
+            .status(400)
+            .json({ error: "Invalid return quantity for item" });
         }
 
         const product = await (mongoose.models.Product as any)
@@ -635,16 +683,12 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         totalDamage += damageAmount;
         totalLate += lateFee;
 
-        // Update dispatched/selection line returnedQty and completed flag
-        const matching = targetItems.find(
-          (ti: any) => String(ti.productId) === String(product._id),
-        );
-        if (matching) {
-          matching.returnedQty = (matching.returnedQty || 0) + returned;
-          matching.completed = Boolean(
-            matching.returnedQty >= (matching.qtyToSend || matching.qty || 0),
-          );
-        }
+        // Update dispatched/selection line returnedQty and completed flags
+        matching.returnedQty = alreadyReturned + returned;
+        const nowCompleted = matching.returnedQty >= dispatchedQty;
+        matching.completed = Boolean(nowCompleted);
+        if (nowCompleted && !matching.completedAt)
+          matching.completedAt = new Date();
 
         const rate = Number(
           it.rate ?? product.sellPrice ?? product.buyPrice ?? 0,
@@ -657,7 +701,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           sku: product.sku,
           unitType: product.unitType,
           stockQty: product.stockQty,
-          qtyToSend: expected,
+          qtyToSend: dispatchedQty,
           qtyReturned: returned,
           shortage,
           damageAmount,
@@ -694,6 +738,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         targetItems.every((ti: any) => Boolean(ti.completed));
       if (allCompleted) {
         event.status = "returned";
+        (event as any).returnClosed = true;
       }
 
       await event.save({ session });

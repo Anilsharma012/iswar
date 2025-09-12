@@ -27,6 +27,17 @@ export default function EventReturn() {
         const ev = await eventAPI.getById(id!);
         const data = ev.data;
         setEvent(data);
+
+        // Hard guard: redirect if already closed
+        if (data.returnClosed === true) {
+          toast.error("Already returned", {
+            description: "This event is closed for returns.",
+            duration: 3000,
+          });
+          window.history.back();
+          return;
+        }
+
         const lastDispatch = data.dispatches?.[data.dispatches.length - 1];
         const allItems = lastDispatch?.items || data.selections || [];
 
@@ -36,6 +47,15 @@ export default function EventReturn() {
           const alreadyReturned = Number(x.returnedQty || 0);
           return dispatched - alreadyReturned > 0;
         });
+
+        if (outstanding.length === 0) {
+          toast.error("Already returned", {
+            description: "No outstanding items remain.",
+            duration: 3000,
+          });
+          window.history.back();
+          return;
+        }
 
         const mapped = outstanding.map((x: any) => {
           const dispatched = Number(x.qtyToSend || x.qty || 0);
@@ -151,16 +171,18 @@ export default function EventReturn() {
 
       const res = await eventAPI.return(id!, { items: payloadItems });
       const data = res.data;
-      toast.success("Return recorded");
-
-      // Update local event and rows based on server response
-      if (data?.event) setEvent(data.event);
       const summary = data?.summary;
 
       if (summary?.allCompleted) {
-        // hide card by clearing rows and setting status
-        setRows([]);
-      } else if (data?.event) {
+        toast.success("All items returned");
+        window.location.href = `/invoices`;
+        return;
+      }
+
+      toast.success("Return recorded");
+      // Update local event and rows based on server response
+      if (data?.event) setEvent(data.event);
+      if (data?.event) {
         const lastDispatch =
           data.event.dispatches?.[data.event.dispatches.length - 1];
         const allItems = lastDispatch?.items || data.event.selections || [];
@@ -194,12 +216,73 @@ export default function EventReturn() {
         setRows(newRows);
       }
 
-      // After processing, redirect to invoice modal
-      window.location.href = `/invoices?new=1&eventId=${id}`;
+      // After processing, redirect to invoices (no modal)
+      window.location.href = `/invoices`;
     } catch (e: any) {
+      const status = e?.response?.status;
+      const code = e?.response?.data?.code;
+
+      // Expected client-side errors: show appropriate toast and navigate away
+      if (status === 403 && code === "ALREADY_RETURNED") {
+        toast.error("Already returned");
+        window.history.back();
+        return;
+      }
+
+      if (
+        status === 409 &&
+        (code === "ALREADY_RETURNED_LINE" || code === "ALREADY_RETURNED")
+      ) {
+        // Partial conflict: notify user and refresh the page state
+        toast.error(
+          e.response?.data?.error || "Some lines were already returned",
+        );
+        // refresh event to update UI
+        try {
+          const refreshed = await eventAPI.getById(id!);
+          if (refreshed?.data) setEvent(refreshed.data);
+          // compute outstanding rows again
+          const lastDispatch =
+            refreshed.data.dispatches?.[refreshed.data.dispatches.length - 1];
+          const allItems =
+            lastDispatch?.items || refreshed.data.selections || [];
+          const outstanding = allItems.filter((x: any) => {
+            const dispatched = Number(x.qtyToSend || x.qty || 0);
+            const alreadyReturned = Number(x.returnedQty || 0);
+            return dispatched - alreadyReturned > 0;
+          });
+          const newRows = outstanding.map((x: any) => {
+            const dispatched = Number(x.qtyToSend || x.qty || 0);
+            const alreadyReturned = Number(x.returnedQty || 0);
+            const remaining = Math.max(0, dispatched - alreadyReturned);
+            return {
+              productId: x.productId || x._id,
+              name: x.name,
+              sku: x.sku,
+              unitType: x.unitType,
+              expected: dispatched,
+              alreadyReturned,
+              returned: remaining,
+              shortage: Math.max(0, dispatched - (alreadyReturned + remaining)),
+              damageAmount: 0,
+              lateFee: 0,
+              rate: Number(x.rate || 0),
+              buyPrice: Number(x.buyPrice || 0),
+              lossPrice: Number(x.lossPrice || 0),
+              shortageCost: 0,
+              lineAdjust: 0,
+            };
+          });
+          setRows(newRows);
+        } catch (refreshErr) {
+          console.error("Failed to refresh event after conflict", refreshErr);
+        }
+        return;
+      }
+
+      // Unexpected errors: log and rollback optimistic
       console.error(e);
       toast.error(e.response?.data?.error || "Failed to return");
-      // rollback optimistic
       setRows(prevRows);
     }
   };

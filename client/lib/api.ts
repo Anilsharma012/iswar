@@ -123,6 +123,7 @@ export const stockAPI = {
   getCurrent: (params?: any) => api.get("/stock/current", { params }),
   getLedger: (params?: any) => api.get("/stock/ledger", { params }),
   getIssueRegister: (params?: any) => api.get("/issue-register", { params }),
+  getReturnable: () => api.get("/stock/returnable"),
   updateStock: (data: any) => api.post("/stock/update", data),
 };
 
