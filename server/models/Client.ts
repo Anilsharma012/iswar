@@ -6,6 +6,7 @@ export interface IClient extends Document {
   email?: string;
   address?: string;
   gstNumber?: string;
+  eventName?: string;
 }
 
 const clientSchema = new Schema<IClient>(
@@ -34,6 +35,10 @@ const clientSchema = new Schema<IClient>(
       type: String,
       trim: true,
       sparse: true,
+    },
+    eventName: {
+      type: String,
+      trim: true,
     },
   },
   {
