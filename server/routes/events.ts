@@ -247,6 +247,8 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       security = 0,
       agreementTerms = "",
       grandTotal,
+      clientSign,
+      companySign,
     } = req.body || {};
 
     // choose source array: items (new) or selections (legacy)
