@@ -62,7 +62,7 @@ export const eventSchema = Joi.object({
   clientId: Joi.string().optional(),
   dateFrom: Joi.date().required(),
   dateTo: Joi.date().required().min(Joi.ref("dateFrom")),
-  notes: Joi.string().optional().trim(),
+  notes: Joi.string().optional().allow("").allow(null).trim(),
   budget: Joi.number().min(0).optional(),
   estimate: Joi.number().min(0).optional(),
 });
