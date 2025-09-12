@@ -813,7 +813,9 @@ export default function EventDetails() {
               <CardTitle className="flex items-center gap-2">
                 Event Details
                 {event?.status === "reserved" && (
-                  <Badge variant="secondary" className="text-xs">Reserved</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Reserved
+                  </Badge>
                 )}
               </CardTitle>
             </CardHeader>

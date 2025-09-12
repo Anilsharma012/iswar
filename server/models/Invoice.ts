@@ -127,7 +127,7 @@ const invoiceSchema = new Schema<IInvoice>(
       default: "en",
     },
     items: [invoiceItemSchema],
-    eventId: { type: Schema.Types.ObjectId, ref: 'Event', required: false },
+    eventId: { type: Schema.Types.ObjectId, ref: "Event", required: false },
     totals: {
       type: invoiceTotalsSchema,
       required: true,

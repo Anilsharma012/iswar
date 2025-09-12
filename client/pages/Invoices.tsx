@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -19,14 +19,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,10 +37,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import {
   Plus,
   Search,
@@ -54,9 +60,9 @@ import {
   Eye,
   FileText,
   Calculator,
-} from 'lucide-react';
-import { invoiceAPI, clientAPI, productAPI, eventAPI } from '@/lib/api';
-import { useLocation } from 'react-router-dom';
+} from "lucide-react";
+import { invoiceAPI, clientAPI, productAPI, eventAPI } from "@/lib/api";
+import { useLocation } from "react-router-dom";
 
 interface Client {
   _id: string;
@@ -70,7 +76,7 @@ interface Product {
   _id: string;
   name: string;
   category: string;
-  unitType: 'pcs' | 'meter' | 'sqft' | 'sqyd' | 'sqmt';
+  unitType: "pcs" | "meter" | "sqft" | "sqyd" | "sqmt";
   sellPrice: number;
   stockQty: number;
 }
@@ -78,7 +84,7 @@ interface Product {
 interface InvoiceItem {
   productId: string;
   desc?: string;
-  unitType: 'pcs' | 'meter' | 'sqft' | 'sqyd' | 'sqmt';
+  unitType: "pcs" | "meter" | "sqft" | "sqyd" | "sqmt";
   qty: number;
   rate: number;
   taxPct?: number;
@@ -91,7 +97,7 @@ interface Invoice {
   clientId: Client;
   date: string;
   withGST: boolean;
-  language: 'en' | 'hi';
+  language: "en" | "hi";
   items: InvoiceItem[];
   totals?: {
     subTotal: number;
@@ -102,32 +108,32 @@ interface Invoice {
     paid: number;
     pending: number;
   };
-  status: 'draft' | 'final' | 'returned';
+  status: "draft" | "final" | "returned";
   createdAt: string;
 }
 
 interface InvoiceFormData {
   clientId: string;
   withGST: boolean;
-  language: 'en' | 'hi';
+  language: "en" | "hi";
   items: InvoiceItem[];
   paid: number;
   discount: number;
 }
 
 const initialFormData: InvoiceFormData = {
-  clientId: '',
+  clientId: "",
   withGST: false,
-  language: 'en',
+  language: "en",
   items: [],
   paid: 0,
   discount: 0,
 };
 
 const initialItem: InvoiceItem = {
-  productId: '',
-  desc: '',
-  unitType: 'pcs',
+  productId: "",
+  desc: "",
+  unitType: "pcs",
   qty: 1,
   rate: 0,
   taxPct: 0,
@@ -143,8 +149,8 @@ export default function Invoices() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [prefillClientLocked, setPrefillClientLocked] = useState(false);
   const [prefillEventId, setPrefillEventId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -159,20 +165,22 @@ export default function Invoices() {
         page: pagination.page,
         limit: pagination.limit,
         search: searchTerm,
-        status: statusFilter === 'all' ? '' : statusFilter,
+        status: statusFilter === "all" ? "" : statusFilter,
       };
-      
+
       const response = await invoiceAPI.getAll(params);
       setInvoices(response.data.invoices || []);
-      setPagination(response.data.pagination || {
-        page: 1,
-        limit: 10,
-        total: 0,
-        pages: 0,
-      });
+      setPagination(
+        response.data.pagination || {
+          page: 1,
+          limit: 10,
+          total: 0,
+          pages: 0,
+        },
+      );
     } catch (error: any) {
-      console.error('Fetch invoices error:', error);
-      toast.error('Failed to load invoices');
+      console.error("Fetch invoices error:", error);
+      toast.error("Failed to load invoices");
     } finally {
       setLoading(false);
     }
@@ -183,7 +191,7 @@ export default function Invoices() {
       const response = await clientAPI.getAll();
       setClients(response.data.clients || []);
     } catch (error) {
-      console.error('Fetch clients error:', error);
+      console.error("Fetch clients error:", error);
     }
   };
 
@@ -192,7 +200,7 @@ export default function Invoices() {
       const response = await productAPI.getAll();
       setProducts(response.data.products || []);
     } catch (error) {
-      console.error('Fetch products error:', error);
+      console.error("Fetch products error:", error);
     }
   };
 
@@ -209,9 +217,9 @@ export default function Invoices() {
   const location = useLocation();
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const shouldNew = params.get('new');
-    const eventId = params.get('eventId');
-    if (shouldNew === '1' && eventId) {
+    const shouldNew = params.get("new");
+    const eventId = params.get("eventId");
+    if (shouldNew === "1" && eventId) {
       (async () => {
         try {
           // fetch event and products if needed
@@ -219,19 +227,29 @@ export default function Invoices() {
           const ev = evRes.data;
 
           // base lines = last confirmed dispatch
-          const lastDispatch = ev.dispatches && ev.dispatches.length ? ev.dispatches[ev.dispatches.length - 1] : null;
-          const base = (lastDispatch && lastDispatch.items) || ev.selections || [];
-          const baseItems = base.map((it: any) => ({
-            productId: String(it.productId || it._id || ''),
-            desc: it.name || '',
-            unitType: it.unitType || 'pcs',
-            qty: Number(it.qtyToSend || it.qty || 0),
-            rate: Number(it.rate || 0),
-            taxPct: 0,
-          } as InvoiceItem));
+          const lastDispatch =
+            ev.dispatches && ev.dispatches.length
+              ? ev.dispatches[ev.dispatches.length - 1]
+              : null;
+          const base =
+            (lastDispatch && lastDispatch.items) || ev.selections || [];
+          const baseItems = base.map(
+            (it: any) =>
+              ({
+                productId: String(it.productId || it._id || ""),
+                desc: it.name || "",
+                unitType: it.unitType || "pcs",
+                qty: Number(it.qtyToSend || it.qty || 0),
+                rate: Number(it.rate || 0),
+                taxPct: 0,
+              }) as InvoiceItem,
+          );
 
           // adjustments from last return
-          const lastReturn = ev.returns && ev.returns.length ? ev.returns[ev.returns.length - 1] : null;
+          const lastReturn =
+            ev.returns && ev.returns.length
+              ? ev.returns[ev.returns.length - 1]
+              : null;
           let damageSum = 0;
           let shortageSum = 0;
           let lateSum = 0;
@@ -243,13 +261,13 @@ export default function Invoices() {
             });
           }
 
-          const fallbackPid = baseItems[0]?.productId || (products[0]?._id || '');
+          const fallbackPid = baseItems[0]?.productId || products[0]?._id || "";
           const adjustItems: InvoiceItem[] = [];
 
           // Create per-item shortage and damage adjustment lines
           if (lastReturn && Array.isArray(lastReturn.items)) {
             lastReturn.items.forEach((r: any) => {
-              const itemName = r.name || r.desc || 'Item';
+              const itemName = r.name || r.desc || "Item";
               const shortageCost = Number(r.shortageCost || 0);
               const damageAmount = Number(r.damageAmount || 0);
 
@@ -257,7 +275,7 @@ export default function Invoices() {
                 adjustItems.push({
                   productId: fallbackPid,
                   desc: `Shortage – ${itemName}`,
-                  unitType: 'pcs',
+                  unitType: "pcs",
                   qty: 1,
                   rate: Number(shortageCost.toFixed(2)),
                   taxPct: 0,
@@ -269,7 +287,7 @@ export default function Invoices() {
                 adjustItems.push({
                   productId: fallbackPid,
                   desc: `Damage – ${itemName}`,
-                  unitType: 'pcs',
+                  unitType: "pcs",
                   qty: 1,
                   rate: Number(damageAmount.toFixed(2)),
                   taxPct: 0,
@@ -283,8 +301,8 @@ export default function Invoices() {
           if (lateSum > 0) {
             adjustItems.push({
               productId: fallbackPid,
-              desc: 'Late Fee',
-              unitType: 'pcs',
+              desc: "Late Fee",
+              unitType: "pcs",
               qty: 1,
               rate: Number(lateSum.toFixed(2)),
               taxPct: 0,
@@ -294,9 +312,9 @@ export default function Invoices() {
 
           // prefill form
           setFormData({
-            clientId: ev.clientId?._id || ev.clientId || '',
+            clientId: ev.clientId?._id || ev.clientId || "",
             withGST: false,
-            language: 'en',
+            language: "en",
             items: [...baseItems, ...adjustItems],
             paid: Number(ev.advance || 0),
             discount: 0,
@@ -305,17 +323,24 @@ export default function Invoices() {
           setPrefillEventId(eventId);
           setIsDialogOpen(true);
         } catch (e) {
-          console.error('Prefill invoice from event failed', e);
+          console.error("Prefill invoice from event failed", e);
         }
       })();
     }
   }, [location.search, products]);
 
-  const calculateTotals = (items: InvoiceItem[], discount: number = 0, withGST: boolean = false) => {
-    const subTotal = items.reduce((total, item) => total + (item.qty * item.rate), 0);
+  const calculateTotals = (
+    items: InvoiceItem[],
+    discount: number = 0,
+    withGST: boolean = false,
+  ) => {
+    const subTotal = items.reduce(
+      (total, item) => total + item.qty * item.rate,
+      0,
+    );
     const discountAmount = (subTotal * discount) / 100;
     const discountedSubTotal = subTotal - discountAmount;
-    
+
     let tax = 0;
     if (withGST) {
       tax = items.reduce((total, item) => {
@@ -324,11 +349,11 @@ export default function Invoices() {
         return total + itemTax;
       }, 0);
     }
-    
+
     const grandTotal = discountedSubTotal + tax;
     const roundOff = Math.round(grandTotal) - grandTotal;
     const finalTotal = Math.round(grandTotal);
-    
+
     return {
       subTotal,
       tax,
@@ -352,15 +377,15 @@ export default function Invoices() {
 
   const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
     const newItems = [...formData.items];
-    
-    if (field === 'productId' && value) {
-      const product = products.find(p => p._id === value);
+
+    if (field === "productId" && value) {
+      const product = products.find((p) => p._id === value);
       if (product) {
         newItems[index] = {
           ...newItems[index],
           productId: value,
-          desc: product.name || '',
-          unitType: product.unitType || 'pcs',
+          desc: product.name || "",
+          unitType: product.unitType || "pcs",
           rate: product.sellPrice || 0,
           taxPct: formData.withGST ? 18 : 0,
         };
@@ -368,37 +393,44 @@ export default function Invoices() {
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
     }
-    
+
     setFormData({ ...formData, items: newItems });
   };
 
-  const handleSubmit = async (e: React.FormEvent, finalize: boolean = false) => {
+  const handleSubmit = async (
+    e: React.FormEvent,
+    finalize: boolean = false,
+  ) => {
     e.preventDefault();
 
     if (!formData.clientId) {
-      toast.error('Please select a client');
+      toast.error("Please select a client");
       return;
     }
 
     if (formData.items.length === 0) {
-      toast.error('Please add at least one item');
+      toast.error("Please add at least one item");
       return;
     }
 
-    const totals = calculateTotals(formData.items, formData.discount, formData.withGST);
+    const totals = calculateTotals(
+      formData.items,
+      formData.discount,
+      formData.withGST,
+    );
     const pending = totals.grandTotal - formData.paid;
 
     const invoiceData: any = {
       clientId: formData.clientId,
       withGST: formData.withGST,
       language: formData.language,
-      items: formData.items.map(it => ({ ...it })),
+      items: formData.items.map((it) => ({ ...it })),
       totals: {
         ...totals,
         paid: formData.paid,
         pending,
       },
-      status: finalize ? 'final' : 'draft',
+      status: finalize ? "final" : "draft",
     };
 
     if (prefillEventId) invoiceData.eventId = prefillEventId;
@@ -406,38 +438,43 @@ export default function Invoices() {
     try {
       if (editingInvoice) {
         await invoiceAPI.update(editingInvoice._id, invoiceData);
-        toast.success(`Invoice ${finalize ? 'finalized' : 'updated'} successfully`);
+        toast.success(
+          `Invoice ${finalize ? "finalized" : "updated"} successfully`,
+        );
       } else {
         await invoiceAPI.create(invoiceData);
-        toast.success(`Invoice ${finalize ? 'created and finalized' : 'saved as draft'} successfully`);
+        toast.success(
+          `Invoice ${finalize ? "created and finalized" : "saved as draft"} successfully`,
+        );
       }
-      
+
       setIsDialogOpen(false);
       setFormData(initialFormData);
       setEditingInvoice(null);
       fetchInvoices();
     } catch (error: any) {
-      console.error('Save invoice error:', error);
-      toast.error(error.response?.data?.error || 'Failed to save invoice');
+      console.error("Save invoice error:", error);
+      toast.error(error.response?.data?.error || "Failed to save invoice");
     }
   };
 
   const handleEdit = (invoice: Invoice) => {
-    if (invoice.status === 'final') {
-      toast.error('Cannot edit finalized invoices');
+    if (invoice.status === "final") {
+      toast.error("Cannot edit finalized invoices");
       return;
     }
-    
+
     setEditingInvoice(invoice);
     setFormData({
-      clientId: invoice.clientId?._id || '',
+      clientId: invoice.clientId?._id || "",
       withGST: invoice.withGST || false,
-      language: invoice.language || 'en',
+      language: invoice.language || "en",
       items: invoice.items || [],
       paid: invoice.totals?.paid || 0,
-      discount: invoice.totals?.discount && invoice.totals?.subTotal
-        ? ((invoice.totals.discount || 0) / invoice.totals.subTotal) * 100
-        : 0,
+      discount:
+        invoice.totals?.discount && invoice.totals?.subTotal
+          ? ((invoice.totals.discount || 0) / invoice.totals.subTotal) * 100
+          : 0,
     });
     setIsDialogOpen(true);
   };
@@ -445,44 +482,48 @@ export default function Invoices() {
   const handleDelete = async (id: string) => {
     try {
       await invoiceAPI.delete(id);
-      toast.success('Invoice deleted successfully');
+      toast.success("Invoice deleted successfully");
       fetchInvoices();
     } catch (error: any) {
-      console.error('Delete invoice error:', error);
-      toast.error(error.response?.data?.error || 'Failed to delete invoice');
+      console.error("Delete invoice error:", error);
+      toast.error(error.response?.data?.error || "Failed to delete invoice");
     }
   };
 
   const handleReturn = async (id: string) => {
     try {
       await invoiceAPI.return(id);
-      toast.success('Invoice returned successfully');
+      toast.success("Invoice returned successfully");
       fetchInvoices();
     } catch (error: any) {
-      console.error('Return invoice error:', error);
-      toast.error(error.response?.data?.error || 'Failed to return invoice');
+      console.error("Return invoice error:", error);
+      toast.error(error.response?.data?.error || "Failed to return invoice");
     }
   };
 
   const handleDownloadPDF = async (invoice: Invoice) => {
     try {
-      const response = await invoiceAPI.downloadPDF(invoice._id, invoice.language, invoice.withGST);
-      
+      const response = await invoiceAPI.downloadPDF(
+        invoice._id,
+        invoice.language,
+        invoice.withGST,
+      );
+
       // Create blob and download
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `Invoice-${invoice.number}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
-      toast.success('PDF downloaded successfully');
+
+      toast.success("PDF downloaded successfully");
     } catch (error: any) {
-      console.error('Download PDF error:', error);
-      toast.error('Failed to download PDF');
+      console.error("Download PDF error:", error);
+      toast.error("Failed to download PDF");
     }
   };
 
@@ -494,14 +535,22 @@ export default function Invoices() {
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'draft': return 'secondary';
-      case 'final': return 'default';
-      case 'returned': return 'destructive';
-      default: return 'default';
+      case "draft":
+        return "secondary";
+      case "final":
+        return "default";
+      case "returned":
+        return "destructive";
+      default:
+        return "default";
     }
   };
 
-  const totals = calculateTotals(formData.items, formData.discount, formData.withGST);
+  const totals = calculateTotals(
+    formData.items,
+    formData.discount,
+    formData.withGST,
+  );
 
   return (
     <div className="space-y-6">
@@ -509,7 +558,9 @@ export default function Invoices() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-          <p className="text-gray-600">Create and manage invoices with GST support</p>
+          <p className="text-gray-600">
+            Create and manage invoices with GST support
+          </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -521,13 +572,12 @@ export default function Invoices() {
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
+                {editingInvoice ? "Edit Invoice" : "Create New Invoice"}
               </DialogTitle>
               <DialogDescription>
-                {editingInvoice 
-                  ? 'Update the invoice information below.'
-                  : 'Create a new invoice for your client.'
-                }
+                {editingInvoice
+                  ? "Update the invoice information below."
+                  : "Create a new invoice for your client."}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={(e) => handleSubmit(e, false)}>
@@ -538,7 +588,9 @@ export default function Invoices() {
                     <Label htmlFor="clientId">Client</Label>
                     <Select
                       value={formData.clientId}
-                      onValueChange={(value) => setFormData({ ...formData, clientId: value })}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, clientId: value })
+                      }
                       disabled={prefillClientLocked}
                     >
                       <SelectTrigger>
@@ -553,12 +605,14 @@ export default function Invoices() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="language">Language</Label>
                     <Select
                       value={formData.language}
-                      onValueChange={(value: 'en' | 'hi') => setFormData({ ...formData, language: value })}
+                      onValueChange={(value: "en" | "hi") =>
+                        setFormData({ ...formData, language: value })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -569,19 +623,19 @@ export default function Invoices() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2 pt-6">
                     <Switch
                       id="withGST"
                       checked={formData.withGST}
                       onCheckedChange={(checked) => {
-                        setFormData({ 
-                          ...formData, 
+                        setFormData({
+                          ...formData,
                           withGST: checked,
-                          items: formData.items.map(item => ({
+                          items: formData.items.map((item) => ({
                             ...item,
-                            taxPct: checked ? (item.taxPct || 18) : 0
-                          }))
+                            taxPct: checked ? item.taxPct || 18 : 0,
+                          })),
                         });
                       }}
                     />
@@ -592,13 +646,15 @@ export default function Invoices() {
                 {/* Items Section */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <Label className="text-base font-semibold">Invoice Items</Label>
+                    <Label className="text-base font-semibold">
+                      Invoice Items
+                    </Label>
                     <Button type="button" variant="outline" onClick={addItem}>
                       <Plus className="mr-2 h-4 w-4" />
                       Add Item
                     </Button>
                   </div>
-                  
+
                   <div className="border rounded-lg overflow-hidden">
                     <Table>
                       <TableHeader>
@@ -618,15 +674,21 @@ export default function Invoices() {
                             <TableCell>
                               <Select
                                 value={item.productId}
-                                onValueChange={(value) => updateItem(index, 'productId', value)}
+                                onValueChange={(value) =>
+                                  updateItem(index, "productId", value)
+                                }
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select product" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {products.map((product) => (
-                                    <SelectItem key={product._id} value={product._id}>
-                                      {product.name} ({product.stockQty} {product.unitType})
+                                    <SelectItem
+                                      key={product._id}
+                                      value={product._id}
+                                    >
+                                      {product.name} ({product.stockQty}{" "}
+                                      {product.unitType})
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -634,8 +696,10 @@ export default function Invoices() {
                             </TableCell>
                             <TableCell>
                               <Input
-                                value={item.desc || ''}
-                                onChange={(e) => updateItem(index, 'desc', e.target.value)}
+                                value={item.desc || ""}
+                                onChange={(e) =>
+                                  updateItem(index, "desc", e.target.value)
+                                }
                                 placeholder="Description"
                               />
                             </TableCell>
@@ -643,7 +707,13 @@ export default function Invoices() {
                               <Input
                                 type="number"
                                 value={item.qty}
-                                onChange={(e) => updateItem(index, 'qty', parseFloat(e.target.value) || 0)}
+                                onChange={(e) =>
+                                  updateItem(
+                                    index,
+                                    "qty",
+                                    parseFloat(e.target.value) || 0,
+                                  )
+                                }
                                 min="0"
                                 step="0.01"
                               />
@@ -652,7 +722,13 @@ export default function Invoices() {
                               <Input
                                 type="number"
                                 value={item.rate}
-                                onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
+                                onChange={(e) =>
+                                  updateItem(
+                                    index,
+                                    "rate",
+                                    parseFloat(e.target.value) || 0,
+                                  )
+                                }
                                 min="0"
                                 step="0.01"
                               />
@@ -662,7 +738,13 @@ export default function Invoices() {
                                 <Input
                                   type="number"
                                   value={item.taxPct || 0}
-                                  onChange={(e) => updateItem(index, 'taxPct', parseFloat(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    updateItem(
+                                      index,
+                                      "taxPct",
+                                      parseFloat(e.target.value) || 0,
+                                    )
+                                  }
                                   min="0"
                                   max="100"
                                 />
@@ -697,7 +779,12 @@ export default function Invoices() {
                         id="discount"
                         type="number"
                         value={formData.discount}
-                        onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            discount: parseFloat(e.target.value) || 0,
+                          })
+                        }
                         min="0"
                         max="100"
                         step="0.01"
@@ -709,13 +796,18 @@ export default function Invoices() {
                         id="paid"
                         type="number"
                         value={formData.paid}
-                        onChange={(e) => setFormData({ ...formData, paid: parseFloat(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            paid: parseFloat(e.target.value) || 0,
+                          })
+                        }
                         min="0"
                         step="0.01"
                       />
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
@@ -749,12 +841,14 @@ export default function Invoices() {
                     </div>
                     <div className="flex justify-between font-semibold">
                       <span>Pending:</span>
-                      <span>₹{(totals.grandTotal - formData.paid).toFixed(2)}</span>
+                      <span>
+                        ₹{(totals.grandTotal - formData.paid).toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={resetDialog}>
                   Cancel
@@ -765,7 +859,7 @@ export default function Invoices() {
                 </Button>
                 <Button type="button" onClick={(e) => handleSubmit(e, true)}>
                   <Calculator className="mr-2 h-4 w-4" />
-                  {editingInvoice ? 'Update & Finalize' : 'Create & Finalize'}
+                  {editingInvoice ? "Update & Finalize" : "Create & Finalize"}
                 </Button>
               </DialogFooter>
             </form>
@@ -817,9 +911,7 @@ export default function Invoices() {
             <Receipt className="h-5 w-5" />
             Invoices ({pagination.total})
           </CardTitle>
-          <CardDescription>
-            Manage your invoices and billing
-          </CardDescription>
+          <CardDescription>Manage your invoices and billing</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -829,12 +921,13 @@ export default function Invoices() {
           ) : invoices.length === 0 ? (
             <div className="text-center py-12">
               <Receipt className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No invoices found</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No invoices found
+              </h3>
               <p className="text-gray-500 mb-4">
-                {searchTerm || statusFilter !== 'all'
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'Get started by creating your first invoice.'
-                }
+                {searchTerm || statusFilter !== "all"
+                  ? "Try adjusting your search or filter criteria."
+                  : "Get started by creating your first invoice."}
               </p>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
@@ -866,26 +959,42 @@ export default function Invoices() {
                       <TableCell>
                         <div className="font-medium">{invoice.number}</div>
                         <div className="text-sm text-gray-500">
-                          {invoice.withGST ? 'With GST' : 'No GST'} • {invoice.language.toUpperCase()}
+                          {invoice.withGST ? "With GST" : "No GST"} •{" "}
+                          {invoice.language.toUpperCase()}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="font-medium">{invoice.clientId?.name}</div>
-                        <div className="text-sm text-gray-500">{invoice.clientId?.phone}</div>
+                        <div className="font-medium">
+                          {invoice.clientId?.name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {invoice.clientId?.phone}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {new Date(invoice.date).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>₹{(invoice.totals?.grandTotal ?? 0).toFixed(2)}</TableCell>
-                      <TableCell>₹{(invoice.totals?.paid ?? 0).toFixed(2)}</TableCell>
                       <TableCell>
-                        <span className={(invoice.totals?.pending ?? 0) > 0 ? 'text-red-600 font-medium' : ''}>
+                        ₹{(invoice.totals?.grandTotal ?? 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        ₹{(invoice.totals?.paid ?? 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={
+                            (invoice.totals?.pending ?? 0) > 0
+                              ? "text-red-600 font-medium"
+                              : ""
+                          }
+                        >
                           ₹{(invoice.totals?.pending ?? 0).toFixed(2)}
                         </span>
                       </TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(invoice.status)}>
-                          {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                          {invoice.status.charAt(0).toUpperCase() +
+                            invoice.status.slice(1)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -897,8 +1006,8 @@ export default function Invoices() {
                           >
                             <Download className="h-4 w-4" />
                           </Button>
-                          
-                          {invoice.status === 'draft' && (
+
+                          {invoice.status === "draft" && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -907,8 +1016,8 @@ export default function Invoices() {
                               <Edit className="h-4 w-4" />
                             </Button>
                           )}
-                          
-                          {invoice.status === 'final' && (
+
+                          {invoice.status === "final" && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -917,8 +1026,8 @@ export default function Invoices() {
                               <RotateCcw className="h-4 w-4" />
                             </Button>
                           )}
-                          
-                          {invoice.status === 'draft' && (
+
+                          {invoice.status === "draft" && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="sm">
@@ -927,14 +1036,20 @@ export default function Invoices() {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    Delete Invoice
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to delete invoice "{invoice.number}"? This action cannot be undone.
+                                    Are you sure you want to delete invoice "
+                                    {invoice.number}"? This action cannot be
+                                    undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(invoice._id)}>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(invoice._id)}
+                                  >
                                     Delete
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -952,16 +1067,24 @@ export default function Invoices() {
               {pagination.pages > 1 && (
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-500">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                    {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                    {pagination.total} invoices
+                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+                    {Math.min(
+                      pagination.page * pagination.limit,
+                      pagination.total,
+                    )}{" "}
+                    of {pagination.total} invoices
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       disabled={pagination.page === 1}
-                      onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                      onClick={() =>
+                        setPagination({
+                          ...pagination,
+                          page: pagination.page - 1,
+                        })
+                      }
                     >
                       Previous
                     </Button>
@@ -972,7 +1095,12 @@ export default function Invoices() {
                       variant="outline"
                       size="sm"
                       disabled={pagination.page === pagination.pages}
-                      onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                      onClick={() =>
+                        setPagination({
+                          ...pagination,
+                          page: pagination.page + 1,
+                        })
+                      }
                     >
                       Next
                     </Button>

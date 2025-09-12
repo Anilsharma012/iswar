@@ -76,8 +76,14 @@ function App() {
                 path="admin/events/:id/dispatch"
                 element={<EventDispatch />}
               />
-              <Route path="admin/events/:id/agreement" element={<EventAgreement />} />
-              <Route path="admin/events/:id/invoice" element={<EventInvoice />} />
+              <Route
+                path="admin/events/:id/agreement"
+                element={<EventAgreement />}
+              />
+              <Route
+                path="admin/events/:id/invoice"
+                element={<EventInvoice />}
+              />
               <Route path="admin/events/:id/return" element={<EventReturn />} />
               <Route path="workers" element={<Workers />} />
               <Route path="attendance" element={<Attendance />} />

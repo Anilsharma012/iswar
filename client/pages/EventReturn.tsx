@@ -27,7 +27,7 @@ export default function EventReturn() {
         const ev = await eventAPI.getById(id!);
         const data = ev.data;
         setEvent(data);
-            const lastDispatch = data.dispatches?.[data.dispatches.length - 1];
+        const lastDispatch = data.dispatches?.[data.dispatches.length - 1];
         const allItems = lastDispatch?.items || data.selections || [];
 
         // Only show outstanding lines (where returnedQty < qtyToSend)
@@ -161,7 +161,8 @@ export default function EventReturn() {
         // hide card by clearing rows and setting status
         setRows([]);
       } else if (data?.event) {
-        const lastDispatch = data.event.dispatches?.[data.event.dispatches.length - 1];
+        const lastDispatch =
+          data.event.dispatches?.[data.event.dispatches.length - 1];
         const allItems = lastDispatch?.items || data.event.selections || [];
         const outstanding = allItems.filter((x: any) => {
           const dispatched = Number(x.qtyToSend || x.qty || 0);
@@ -309,7 +310,9 @@ export default function EventReturn() {
       ) : (
         <div className="p-6 bg-green-50 rounded">
           <h3 className="text-lg font-semibold">All items returned</h3>
-          <p className="text-sm text-gray-600">This event has no outstanding items to return.</p>
+          <p className="text-sm text-gray-600">
+            This event has no outstanding items to return.
+          </p>
         </div>
       )}
 

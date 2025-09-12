@@ -306,7 +306,10 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
 
       const { id } = req.params;
       const { items = [], dryRun: bodyDryRun } = req.body || {};
-      const dryRun = (req.query?.dryRun === "1" || req.query?.dryRun === "true") || !!bodyDryRun;
+      const dryRun =
+        req.query?.dryRun === "1" ||
+        req.query?.dryRun === "true" ||
+        !!bodyDryRun;
 
       if (!Array.isArray(items) || items.length === 0) {
         await session.abortTransaction();
@@ -390,7 +393,12 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
 
       if (dryRun) {
         event.dispatchDrafts = event.dispatchDrafts || [];
-        event.dispatchDrafts.push({ items: sanitized, date: new Date(), total, note: { mode: "reserve" } });
+        event.dispatchDrafts.push({
+          items: sanitized,
+          date: new Date(),
+          total,
+          note: { mode: "reserve" },
+        });
         event.status = "reserved";
       } else {
         event.dispatches = event.dispatches || [];
@@ -490,10 +498,13 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       }
 
       // Work against the last confirmed dispatch if available, else selections
-      const lastDispatch = (event.dispatches && event.dispatches.length)
-        ? event.dispatches[event.dispatches.length - 1]
-        : null;
-      const targetItems = lastDispatch ? lastDispatch.items : event.selections || [];
+      const lastDispatch =
+        event.dispatches && event.dispatches.length
+          ? event.dispatches[event.dispatches.length - 1]
+          : null;
+      const targetItems = lastDispatch
+        ? lastDispatch.items
+        : event.selections || [];
 
       const sanitized: any[] = [];
       let totalShortageCost = 0;
@@ -505,7 +516,9 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         const pid = it.productId || it.itemId || it._id || null;
         const expected = Number(it.expected || 0);
         const returned = Number(it.returned || 0);
-        const shortage = Number(it.shortage ?? Math.max(0, expected - returned));
+        const shortage = Number(
+          it.shortage ?? Math.max(0, expected - returned),
+        );
         const damageAmount = Number(it.damageAmount || 0);
         const lateFee = Number(it.lateFee || 0);
 
@@ -534,8 +547,8 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
             {
               productId: product._id,
               qtyChange: returned,
-              reason: 'return',
-              refType: 'Return',
+              reason: "return",
+              refType: "Return",
               refId: event._id,
               at: new Date(),
             },
@@ -550,7 +563,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
               clientId: event.clientId,
               productId: product._id,
               qty: returned,
-              type: 'return',
+              type: "return",
               ref: `Event:${event._id}`,
               at: new Date(),
             },
@@ -559,22 +572,32 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         );
 
         // Determine loss price: prefer provided lossPrice, then buyPrice, then rate, else 0
-        const lossPrice = Number(it.lossPrice ?? product.buyPrice ?? it.rate ?? 0);
+        const lossPrice = Number(
+          it.lossPrice ?? product.buyPrice ?? it.rate ?? 0,
+        );
         const shortageCost = Number((shortage * lossPrice).toFixed(2));
-        const lineAdjust = Number((shortageCost + damageAmount + lateFee).toFixed(2));
+        const lineAdjust = Number(
+          (shortageCost + damageAmount + lateFee).toFixed(2),
+        );
 
         totalShortageCost += shortageCost;
         totalDamage += damageAmount;
         totalLate += lateFee;
 
         // Update dispatched/selection line returnedQty and completed flag
-        const matching = targetItems.find((ti: any) => String(ti.productId) === String(product._id));
+        const matching = targetItems.find(
+          (ti: any) => String(ti.productId) === String(product._id),
+        );
         if (matching) {
           matching.returnedQty = (matching.returnedQty || 0) + returned;
-          matching.completed = Boolean(matching.returnedQty >= (matching.qtyToSend || matching.qty || 0));
+          matching.completed = Boolean(
+            matching.returnedQty >= (matching.qtyToSend || matching.qty || 0),
+          );
         }
 
-        const rate = Number(it.rate ?? product.sellPrice ?? product.buyPrice ?? 0);
+        const rate = Number(
+          it.rate ?? product.sellPrice ?? product.buyPrice ?? 0,
+        );
         const amount = Number((returned * rate).toFixed(2));
 
         sanitized.push({
@@ -615,9 +638,11 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       });
 
       // determine if all dispatch lines completed
-      const allCompleted = (targetItems.length === 0) || targetItems.every((ti: any) => Boolean(ti.completed));
+      const allCompleted =
+        targetItems.length === 0 ||
+        targetItems.every((ti: any) => Boolean(ti.completed));
       if (allCompleted) {
-        event.status = 'returned';
+        event.status = "returned";
       }
 
       await event.save({ session });
@@ -625,11 +650,16 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       await (mongoose.models.AuditLog as any).create(
         [
           {
-            action: 'return',
-            entity: 'Event',
+            action: "return",
+            entity: "Event",
             entityId: event._id,
-            userId: req.adminId ? new mongoose.Types.ObjectId(req.adminId) : undefined,
-            meta: { items: sanitized, totals: { totalShortageCost, totalDamage, totalLate } },
+            userId: req.adminId
+              ? new mongoose.Types.ObjectId(req.adminId)
+              : undefined,
+            meta: {
+              items: sanitized,
+              totals: { totalShortageCost, totalDamage, totalLate },
+            },
           },
         ],
         { session },
@@ -638,7 +668,9 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       await session.commitTransaction();
       session.endSession();
 
-      const populatedEvent = await Event.findById(event._id).populate('clientId');
+      const populatedEvent = await Event.findById(event._id).populate(
+        "clientId",
+      );
 
       return res.json({
         event: populatedEvent,
@@ -660,8 +692,8 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
 
       const isTransient =
         error &&
-        (error.errorLabelSet?.has('TransientTransactionError') ||
-          error.codeName === 'WriteConflict');
+        (error.errorLabelSet?.has("TransientTransactionError") ||
+          error.codeName === "WriteConflict");
 
       console.error(`Return event error (attempt ${attempt}):`, error);
 
@@ -670,7 +702,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         continue;
       }
 
-      return res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: "Internal server error" });
     }
   }
 };

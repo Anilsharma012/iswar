@@ -73,10 +73,18 @@ export default function EventAgreement() {
         const lastDispatch = ev.dispatches?.[ev.dispatches.length - 1];
         let source: any = null;
         let sourceIsDraft = false;
-        if (lastDraft && Array.isArray(lastDraft.items) && lastDraft.items.length > 0) {
+        if (
+          lastDraft &&
+          Array.isArray(lastDraft.items) &&
+          lastDraft.items.length > 0
+        ) {
           source = lastDraft;
           sourceIsDraft = true;
-        } else if (lastDispatch && Array.isArray(lastDispatch.items) && lastDispatch.items.length > 0) {
+        } else if (
+          lastDispatch &&
+          Array.isArray(lastDispatch.items) &&
+          lastDispatch.items.length > 0
+        ) {
           source = lastDispatch;
         }
 
@@ -90,7 +98,11 @@ export default function EventAgreement() {
             sellPrice: Number(p.rate || 0),
             qtyToSend: Number(p.qtyToSend || p.qty || 0),
             rate: Number(p.rate || 0),
-            amount: Number(((Number(p.qtyToSend || p.qty || 0) * Number(p.rate || 0))).toFixed(2)),
+            amount: Number(
+              (Number(p.qtyToSend || p.qty || 0) * Number(p.rate || 0)).toFixed(
+                2,
+              ),
+            ),
           }));
           // If the source is a draft (reserved), we want to show the values but not allow edits to qty/rate
           setItems(rows);
@@ -110,7 +122,9 @@ export default function EventAgreement() {
 
           if (Array.isArray(ev.selections) && ev.selections.length > 0) {
             ev.selections.forEach((s: any) => {
-              const i = rows.findIndex((r) => r._id === s.productId || r.sku === s.sku);
+              const i = rows.findIndex(
+                (r) => r._id === s.productId || r.sku === s.sku,
+              );
               if (i >= 0) {
                 rows[i].qtyToSend = Number(s.qtyToSend || 0);
                 rows[i].rate = Number(s.rate || rows[i].rate || 0);
@@ -266,7 +280,9 @@ export default function EventAgreement() {
                         updateRow(idx, { qtyToSend: Number(e.target.value) })
                       }
                       className="w-24"
-                      readOnly={Boolean(event && (event as any).__useDispatchDraft)}
+                      readOnly={Boolean(
+                        event && (event as any).__useDispatchDraft,
+                      )}
                     />
                   </TableCell>
                   <TableCell>
@@ -279,7 +295,9 @@ export default function EventAgreement() {
                         updateRow(idx, { rate: Number(e.target.value) })
                       }
                       className="w-28"
-                      readOnly={Boolean(event && (event as any).__useDispatchDraft)}
+                      readOnly={Boolean(
+                        event && (event as any).__useDispatchDraft,
+                      )}
                     />
                   </TableCell>
                   <TableCell className="font-medium">

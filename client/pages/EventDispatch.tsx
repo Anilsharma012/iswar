@@ -130,7 +130,9 @@ export default function EventDispatch() {
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">Stock Out (Dispatch)</h1>
           {event.status === "reserved" && (
-            <Badge variant="secondary" className="text-xs">Reserved</Badge>
+            <Badge variant="secondary" className="text-xs">
+              Reserved
+            </Badge>
           )}
         </div>
         <div className="text-sm text-muted-foreground">
@@ -219,7 +221,9 @@ export default function EventDispatch() {
         <Button variant="outline" onClick={() => window.history.back()}>
           Back
         </Button>
-        <Button variant="ghost" onClick={reserve}>Reserve & Proceed</Button>
+        <Button variant="ghost" onClick={reserve}>
+          Reserve & Proceed
+        </Button>
         <Button onClick={submit}>Confirm Dispatch</Button>
       </div>
     </div>
