@@ -27,25 +27,37 @@ export default function EventReturn() {
         const ev = await eventAPI.getById(id!);
         const data = ev.data;
         setEvent(data);
-        const lastDispatch = data.dispatches?.[data.dispatches.length - 1];
-        const items = lastDispatch?.items || data.selections || [];
+            const lastDispatch = data.dispatches?.[data.dispatches.length - 1];
+        const allItems = lastDispatch?.items || data.selections || [];
 
-        const mapped = items.map((x: any) => ({
-          productId: x.productId || x._id,
-          name: x.name,
-          sku: x.sku,
-          unitType: x.unitType,
-          expected: Number(x.qtyToSend || x.qty || 0),
-          returned: Number(x.qtyToSend || x.qty || 0),
-          shortage: 0,
-          damageAmount: 0,
-          lateFee: 0,
-          rate: Number(x.rate || 0),
-          buyPrice: Number(x.buyPrice || 0),
-          lossPrice: Number(x.lossPrice || 0),
-          shortageCost: 0,
-          lineAdjust: 0,
-        }));
+        // Only show outstanding lines (where returnedQty < qtyToSend)
+        const outstanding = allItems.filter((x: any) => {
+          const dispatched = Number(x.qtyToSend || x.qty || 0);
+          const alreadyReturned = Number(x.returnedQty || 0);
+          return dispatched - alreadyReturned > 0;
+        });
+
+        const mapped = outstanding.map((x: any) => {
+          const dispatched = Number(x.qtyToSend || x.qty || 0);
+          const alreadyReturned = Number(x.returnedQty || 0);
+          const remaining = Math.max(0, dispatched - alreadyReturned);
+          return {
+            productId: x.productId || x._id,
+            name: x.name,
+            sku: x.sku,
+            unitType: x.unitType,
+            expected: dispatched,
+            returned: remaining,
+            shortage: Math.max(0, dispatched - remaining),
+            damageAmount: 0,
+            lateFee: 0,
+            rate: Number(x.rate || 0),
+            buyPrice: Number(x.buyPrice || 0),
+            lossPrice: Number(x.lossPrice || 0),
+            shortageCost: 0,
+            lineAdjust: 0,
+          };
+        });
 
         // compute per-row late fee if event ended
         const end = new Date(data.dateTo).getTime();
