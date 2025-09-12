@@ -253,7 +253,8 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
     } = req.body || {};
 
     // choose source array: items (new) or selections (legacy)
-    const rawArray: any[] = Array.isArray(items) && items.length ? items : selections;
+    const rawArray: any[] =
+      Array.isArray(items) && items.length ? items : selections;
 
     // Basic validation
     if (!Array.isArray(rawArray)) {
@@ -283,7 +284,14 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       stockQty: Number(s.stockQty || 0),
       qtyToSend: Number(s.qtyToSend ?? s.qty ?? 0),
       rate: Number(s.rate || 0),
-      amount: Number(s.amount ?? Number(((Number(s.qtyToSend ?? s.qty ?? 0)) * Number(s.rate || 0)).toFixed(2))),
+      amount: Number(
+        s.amount ??
+          Number(
+            (Number(s.qtyToSend ?? s.qty ?? 0) * Number(s.rate || 0)).toFixed(
+              2,
+            ),
+          ),
+      ),
     }));
 
     const hasAgreementPayload =
@@ -294,12 +302,17 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       Object.prototype.hasOwnProperty.call(req.body || {}, "terms") ||
       Object.prototype.hasOwnProperty.call(req.body || {}, "grandTotal");
 
-    const subTotal = sanitized.reduce((s: number, it: any) => s + Number(it.amount || 0), 0);
+    const subTotal = sanitized.reduce(
+      (s: number, it: any) => s + Number(it.amount || 0),
+      0,
+    );
     const advNum = Number(advance || 0);
     const secNum = Number(security || 0);
     const computedGrand = Number((subTotal - advNum - secNum).toFixed(2));
     const providedGrand = Number(grandTotal);
-    const gt = Number.isFinite(providedGrand) ? Number(providedGrand.toFixed(2)) : computedGrand;
+    const gt = Number.isFinite(providedGrand)
+      ? Number(providedGrand.toFixed(2))
+      : computedGrand;
     const termsText = String(terms ?? agreementTerms ?? "");
 
     const updateDoc: any = {};
@@ -323,7 +336,9 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
     if (typeof clientSign !== "undefined") updateDoc.clientSign = clientSign;
     if (typeof companySign !== "undefined") updateDoc.companySign = companySign;
 
-    const event = await Event.findByIdAndUpdate(id, updateDoc, { new: true }).populate("clientId");
+    const event = await Event.findByIdAndUpdate(id, updateDoc, {
+      new: true,
+    }).populate("clientId");
 
     res.json(event);
   } catch (error) {
