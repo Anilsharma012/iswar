@@ -368,7 +368,9 @@ export default function EventDetails() {
         : `/events/${id}/expenses`;
       const method = editingExpense ? "PUT" : "POST";
 
-      const amountNum = Number(String(expenseFormData.amount).replace(/[,\s₹]/g, ""));
+      const amountNum = Number(
+        String(expenseFormData.amount).replace(/[,\s₹]/g, ""),
+      );
       if (!Number.isFinite(amountNum) || amountNum < 0) {
         toast.error("Enter a valid amount");
         setLoading(false);
@@ -399,7 +401,10 @@ export default function EventDetails() {
       }
     } catch (error: any) {
       console.error("Error saving expense:", error);
-      const msg = error?.response?.data?.error || error?.message || "Failed to save expense";
+      const msg =
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to save expense";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -421,7 +426,10 @@ export default function EventDetails() {
         amount: parseFloat(paymentFormData.amount),
       };
 
-      const res = await api.post(`/events/${id}/workers/${selectedWorker._id}/payments`, payload);
+      const res = await api.post(
+        `/events/${id}/workers/${selectedWorker._id}/payments`,
+        payload,
+      );
       if (res.status >= 200 && res.status < 300) {
         toast.success("Payment recorded successfully");
         setShowPaymentModal(false);

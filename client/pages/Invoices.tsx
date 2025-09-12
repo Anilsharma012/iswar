@@ -61,7 +61,13 @@ import {
   FileText,
   Calculator,
 } from "lucide-react";
-import { invoiceAPI, clientAPI, productAPI, eventAPI, paymentsAPI } from "@/lib/api";
+import {
+  invoiceAPI,
+  clientAPI,
+  productAPI,
+  eventAPI,
+  paymentsAPI,
+} from "@/lib/api";
 import { useLocation } from "react-router-dom";
 
 interface Client {
@@ -163,8 +169,12 @@ export default function Invoices() {
   const [isPayOpen, setIsPayOpen] = useState(false);
   const [payInvoice, setPayInvoice] = useState<Invoice | null>(null);
   const [payAmount, setPayAmount] = useState<number>(0);
-  const [payDate, setPayDate] = useState<string>(new Date().toISOString().slice(0, 16));
-  const [payMode, setPayMode] = useState<"cash" | "upi" | "card" | "bank">("cash");
+  const [payDate, setPayDate] = useState<string>(
+    new Date().toISOString().slice(0, 16),
+  );
+  const [payMode, setPayMode] = useState<"cash" | "upi" | "card" | "bank">(
+    "cash",
+  );
   const [payRef, setPayRef] = useState<string>("");
   const [payLoading, setPayLoading] = useState(false);
 
@@ -672,7 +682,14 @@ export default function Invoices() {
           const grand = Number(x.totals?.grandTotal ?? 0);
           const newPaid = Math.min(grand, Number(paid.toFixed(2)));
           const newPending = Math.max(0, Number((grand - newPaid).toFixed(2)));
-          return { ...x, totals: { ...(x.totals as any), paid: newPaid, pending: newPending } } as Invoice;
+          return {
+            ...x,
+            totals: {
+              ...(x.totals as any),
+              paid: newPaid,
+              pending: newPending,
+            },
+          } as Invoice;
         }),
       );
 
@@ -1162,7 +1179,9 @@ export default function Invoices() {
                         {(invoice.totals?.pending ?? 0) === 0 ? (
                           <Badge variant="success">Paid</Badge>
                         ) : (
-                          <Badge variant={getStatusBadgeVariant(invoice.status)}>
+                          <Badge
+                            variant={getStatusBadgeVariant(invoice.status)}
+                          >
                             {invoice.status.charAt(0).toUpperCase() +
                               invoice.status.slice(1)}
                           </Badge>
@@ -1228,7 +1247,11 @@ export default function Invoices() {
                             </AlertDialog>
                           )}
                           {(invoice.totals?.pending ?? 0) > 0 && (
-                            <Button variant="outline" size="sm" onClick={() => openSettle(invoice)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openSettle(invoice)}
+                            >
                               ₹ Settle
                             </Button>
                           )}
@@ -1344,10 +1367,17 @@ export default function Invoices() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPayOpen(false)} disabled={payLoading}>
+            <Button
+              variant="outline"
+              onClick={() => setIsPayOpen(false)}
+              disabled={payLoading}
+            >
               Cancel
             </Button>
-            <Button onClick={recordPayment} disabled={payLoading || !payInvoice || payAmount <= 0}>
+            <Button
+              onClick={recordPayment}
+              disabled={payLoading || !payInvoice || payAmount <= 0}
+            >
               {payLoading ? "Recording..." : "Record Payment"}
             </Button>
           </DialogFooter>

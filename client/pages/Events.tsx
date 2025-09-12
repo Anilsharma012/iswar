@@ -103,7 +103,8 @@ export default function Events() {
       if (searchTerm) params.search = searchTerm;
       if (fromDate) params.fromDate = fromDate;
       if (toDate) params.toDate = toDate;
-      if (selectedClientId && selectedClientId !== "ALL") params.clientId = selectedClientId;
+      if (selectedClientId && selectedClientId !== "ALL")
+        params.clientId = selectedClientId;
 
       const res = await eventAPI.getAll(params);
       const data = res.data;

@@ -20,7 +20,8 @@ export const createInvoicePayment = async (req: AuthRequest, res: Response) => {
     const grand = Number(invoice.totals?.grandTotal || 0);
     const pendingBefore = Math.max(0, grand - currentPaid);
 
-    if (amount <= 0) return res.status(400).json({ error: "Amount must be > 0" });
+    if (amount <= 0)
+      return res.status(400).json({ error: "Amount must be > 0" });
 
     const credit = Math.min(Number(amount), pendingBefore);
 
