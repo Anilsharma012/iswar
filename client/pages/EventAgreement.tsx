@@ -68,14 +68,20 @@ export default function EventAgreement() {
         setSecurity(String(ev.security ?? 0));
         setTerms(ev.agreementTerms || "");
 
-        // Prefer latest dispatch lines as source
+        // Prefer latest dispatchDraft (reserve) then dispatch lines as source
+        const lastDraft = ev.dispatchDrafts?.[ev.dispatchDrafts.length - 1];
         const lastDispatch = ev.dispatches?.[ev.dispatches.length - 1];
-        if (
-          lastDispatch &&
-          Array.isArray(lastDispatch.items) &&
-          lastDispatch.items.length > 0
-        ) {
-          const rows: Row[] = lastDispatch.items.map((p: any) => ({
+        let source: any = null;
+        let sourceIsDraft = false;
+        if (lastDraft && Array.isArray(lastDraft.items) && lastDraft.items.length > 0) {
+          source = lastDraft;
+          sourceIsDraft = true;
+        } else if (lastDispatch && Array.isArray(lastDispatch.items) && lastDispatch.items.length > 0) {
+          source = lastDispatch;
+        }
+
+        if (source) {
+          const rows: Row[] = source.items.map((p: any) => ({
             _id: p.productId,
             name: p.name,
             sku: p.sku,
@@ -84,13 +90,12 @@ export default function EventAgreement() {
             sellPrice: Number(p.rate || 0),
             qtyToSend: Number(p.qtyToSend || p.qty || 0),
             rate: Number(p.rate || 0),
-            amount: Number(
-              (Number(p.qtyToSend || p.qty || 0) * Number(p.rate || 0)).toFixed(
-                2,
-              ),
-            ),
+            amount: Number(((Number(p.qtyToSend || p.qty || 0) * Number(p.rate || 0))).toFixed(2)),
           }));
+          // If the source is a draft (reserved), we want to show the values but not allow edits to qty/rate
           setItems(rows);
+          // attach a flag to the event object to indicate readonly source
+          (ev as any).__useDispatchDraft = sourceIsDraft;
         } else {
           // fallback to product catalog and previous selections
           const prodRes = await productAPI.getAll({ limit: 1000 });
@@ -104,9 +109,7 @@ export default function EventAgreement() {
 
           if (Array.isArray(ev.selections) && ev.selections.length > 0) {
             ev.selections.forEach((s: any) => {
-              const i = rows.findIndex(
-                (r) => r._id === s.productId || r.sku === s.sku,
-              );
+              const i = rows.findIndex((r) => r._id === s.productId || r.sku === s.sku);
               if (i >= 0) {
                 rows[i].qtyToSend = Number(s.qtyToSend || 0);
                 rows[i].rate = Number(s.rate || rows[i].rate || 0);
