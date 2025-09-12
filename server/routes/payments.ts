@@ -11,7 +11,15 @@ export const createInvoicePayment = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    const { invoiceId, amount, mode, ref, at, eventId: bodyEventId, clientId: bodyClientId } = value as any;
+    const {
+      invoiceId,
+      amount,
+      mode,
+      ref,
+      at,
+      eventId: bodyEventId,
+      clientId: bodyClientId,
+    } = value as any;
 
     const invoice = await Invoice.findById(invoiceId);
     if (!invoice) return res.status(404).json({ error: "Invoice not found" });

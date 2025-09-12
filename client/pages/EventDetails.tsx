@@ -137,8 +137,22 @@ export default function EventDetails() {
   // Financials
   const [financials, setFinancials] = useState<{
     totals: { billed: number; paid: number; pending: number };
-    invoices: { _id: string; number: string; date: string; total: number; paid: number; pending: number }[];
-    payments: { _id: string; at: string; amount: number; mode: string; ref: string; invoiceId: string }[];
+    invoices: {
+      _id: string;
+      number: string;
+      date: string;
+      total: number;
+      paid: number;
+      pending: number;
+    }[];
+    payments: {
+      _id: string;
+      at: string;
+      amount: number;
+      mode: string;
+      ref: string;
+      invoiceId: string;
+    }[];
   } | null>(null);
 
   // Worker modal state
@@ -203,7 +217,8 @@ export default function EventDetails() {
       }
     };
     window.addEventListener("payments:updated", onPaymentsUpdated);
-    return () => window.removeEventListener("payments:updated", onPaymentsUpdated);
+    return () =>
+      window.removeEventListener("payments:updated", onPaymentsUpdated);
   }, [id]);
 
   const fetchEventDetails = async () => {

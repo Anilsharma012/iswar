@@ -708,7 +708,10 @@ export default function Invoices() {
       try {
         window.dispatchEvent(
           new CustomEvent("payments:updated", {
-            detail: { eventId: (payInvoice as any).eventId, invoiceId: payInvoice._id },
+            detail: {
+              eventId: (payInvoice as any).eventId,
+              invoiceId: payInvoice._id,
+            },
           }),
         );
       } catch {}
