@@ -56,6 +56,7 @@ import {
   Calculator,
 } from 'lucide-react';
 import { invoiceAPI, clientAPI, productAPI, eventAPI } from '@/lib/api';
+import { useLocation } from 'react-router-dom';
 
 interface Client {
   _id: string;
