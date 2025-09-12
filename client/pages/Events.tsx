@@ -39,7 +39,7 @@ import {
   DollarSign,
   Receipt,
 } from "lucide-react";
-import { getAuthToken } from "@/lib/api";
+import { getAuthToken, eventAPI } from "@/lib/api";
 
 interface Event {
   _id: string;
@@ -99,32 +99,21 @@ export default function Events() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (searchTerm) params.append("search", searchTerm);
-      if (fromDate) params.append("fromDate", fromDate);
-      if (toDate) params.append("toDate", toDate);
+      const params: any = {};
+      if (searchTerm) params.search = searchTerm;
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
       if (selectedClientId && selectedClientId !== "ALL")
-        params.append("clientId", selectedClientId);
+        params.clientId = selectedClientId;
 
-      const response = await fetch(`/api/events?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.events) {
-        setEvents(data.events);
-      }
-    } catch (error) {
+      const res = await eventAPI.getAll(params);
+      const data = res.data;
+      if (data.events) setEvents(data.events);
+    } catch (error: any) {
       console.error("Error fetching events:", error);
-      if (error.message?.includes("503") || error.response?.status === 503) {
+      if (error.response?.status === 503) {
         toast.error("Database connection unavailable. Please try again later.");
-      } else if (error.message?.includes("Failed to fetch")) {
+      } else if (error.message?.includes("Network Error")) {
         toast.error("Network connection error. Please check your connection.");
       } else {
         toast.error("Failed to fetch events");

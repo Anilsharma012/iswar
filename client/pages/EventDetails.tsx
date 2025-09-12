@@ -54,7 +54,7 @@ import {
   Filter,
   ChevronDown,
 } from "lucide-react";
-import { getAuthToken } from "@/lib/api";
+import api, { getAuthToken } from "@/lib/api";
 import { useParams, useSearchParams } from "react-router-dom";
 
 interface Event {
@@ -134,6 +134,27 @@ export default function EventDetails() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
 
+  // Financials
+  const [financials, setFinancials] = useState<{
+    totals: { billed: number; paid: number; pending: number };
+    invoices: {
+      _id: string;
+      number: string;
+      date: string;
+      total: number;
+      paid: number;
+      pending: number;
+    }[];
+    payments: {
+      _id: string;
+      at: string;
+      amount: number;
+      mode: string;
+      ref: string;
+      invoiceId: string;
+    }[];
+  } | null>(null);
+
   // Worker modal state
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [editingWorker, setEditingWorker] = useState<EventWorker | null>(null);
@@ -182,20 +203,28 @@ export default function EventDetails() {
     if (id) {
       fetchEventDetails();
       fetchEventSummary();
+      fetchFinancials();
       if (activeTab === "workers") fetchWorkers();
       if (activeTab === "expenses") fetchExpenses();
     }
   }, [id, activeTab]);
 
+  useEffect(() => {
+    const onPaymentsUpdated = (e: any) => {
+      if (!id) return;
+      if (!e?.detail?.eventId || String(e.detail.eventId) === String(id)) {
+        fetchFinancials();
+      }
+    };
+    window.addEventListener("payments:updated", onPaymentsUpdated);
+    return () =>
+      window.removeEventListener("payments:updated", onPaymentsUpdated);
+  }, [id]);
+
   const fetchEventDetails = async () => {
     try {
-      const response = await fetch(`/api/events/${id}`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setEvent(data);
-      }
+      const res = await api.get(`/events/${id}`);
+      setEvent(res.data);
     } catch (error) {
       console.error("Error fetching event details:", error);
       toast.error("Failed to fetch event details");
@@ -204,28 +233,27 @@ export default function EventDetails() {
 
   const fetchEventSummary = async () => {
     try {
-      const response = await fetch(`/api/events/${id}/summary`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSummary(data.summary);
-      }
+      const res = await api.get(`/events/${id}/summary`);
+      setSummary(res.data.summary);
     } catch (error) {
       console.error("Error fetching event summary:", error);
+    }
+  };
+
+  const fetchFinancials = async () => {
+    try {
+      const res = await api.get(`/events/${id}/financials`);
+      setFinancials(res.data);
+    } catch (e) {
+      console.error("Error fetching financials", e);
     }
   };
 
   const fetchWorkers = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/events/${id}/workers`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setWorkers(data.workers);
-      }
+      const res = await api.get(`/events/${id}/workers`);
+      setWorkers(res.data.workers);
     } catch (error) {
       console.error("Error fetching workers:", error);
       toast.error("Failed to fetch workers");
@@ -237,13 +265,8 @@ export default function EventDetails() {
   const fetchExpenses = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/events/${id}/expenses`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setExpenses(data.expenses);
-      }
+      const res = await api.get(`/events/${id}/expenses`);
+      setExpenses(res.data.expenses);
     } catch (error) {
       console.error("Error fetching expenses:", error);
       toast.error("Failed to fetch expenses");
@@ -341,8 +364,8 @@ export default function EventDetails() {
     setLoading(true);
     try {
       const url = editingWorker
-        ? `/api/events/${id}/workers/${editingWorker._id}`
-        : `/api/events/${id}/workers`;
+        ? `/events/${id}/workers/${editingWorker._id}`
+        : `/events/${id}/workers`;
       const method = editingWorker ? "PUT" : "POST";
 
       const payload = {
@@ -353,16 +376,8 @@ export default function EventDetails() {
           : undefined,
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
+      const res = await api({ method, url, data: payload });
+      if (res.status >= 200 && res.status < 300) {
         toast.success(
           `Worker ${editingWorker ? "updated" : "created"} successfully`,
         );
@@ -371,8 +386,7 @@ export default function EventDetails() {
         fetchWorkers();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to save worker");
+        toast.error(res.data?.error || "Failed to save worker");
       }
     } catch (error) {
       console.error("Error saving worker:", error);
@@ -393,25 +407,31 @@ export default function EventDetails() {
     setLoading(true);
     try {
       const url = editingExpense
-        ? `/api/events/${id}/expenses/${editingExpense._id}`
-        : `/api/events/${id}/expenses`;
+        ? `/events/${id}/expenses/${editingExpense._id}`
+        : `/events/${id}/expenses`;
       const method = editingExpense ? "PUT" : "POST";
 
+      const amountNum = Number(
+        String(expenseFormData.amount).replace(/[,\s₹]/g, ""),
+      );
+      if (!Number.isFinite(amountNum) || amountNum < 0) {
+        toast.error("Enter a valid amount");
+        setLoading(false);
+        return;
+      }
+
+      const dateIso = new Date(expenseFormData.date).toISOString();
+
       const payload = {
-        ...expenseFormData,
-        amount: parseFloat(expenseFormData.amount),
+        category: expenseFormData.category,
+        amount: Number(amountNum.toFixed(2)),
+        notes: expenseFormData.notes || undefined,
+        date: dateIso,
+        billImage: expenseFormData.billImage || undefined,
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
+      const res = await api({ method, url, data: payload });
+      if (res.status >= 200 && res.status < 300) {
         toast.success(
           `Expense ${editingExpense ? "updated" : "created"} successfully`,
         );
@@ -420,12 +440,15 @@ export default function EventDetails() {
         fetchExpenses();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to save expense");
+        toast.error(res.data?.error || "Failed to save expense");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving expense:", error);
-      toast.error("Failed to save expense");
+      const msg =
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to save expense";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -446,27 +469,18 @@ export default function EventDetails() {
         amount: parseFloat(paymentFormData.amount),
       };
 
-      const response = await fetch(
-        `/api/events/${id}/workers/${selectedWorker._id}/payments`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getAuthToken()}`,
-          },
-          body: JSON.stringify(payload),
-        },
+      const res = await api.post(
+        `/events/${id}/workers/${selectedWorker._id}/payments`,
+        payload,
       );
-
-      if (response.ok) {
+      if (res.status >= 200 && res.status < 300) {
         toast.success("Payment recorded successfully");
         setShowPaymentModal(false);
         resetPaymentForm();
         fetchWorkers();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to record payment");
+        toast.error(res.data?.error || "Failed to record payment");
       }
     } catch (error) {
       console.error("Error recording payment:", error);
@@ -485,18 +499,13 @@ export default function EventDetails() {
       return;
 
     try {
-      const response = await fetch(`/api/events/${id}/workers/${workerId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-
-      if (response.ok) {
+      const res = await api.delete(`/events/${id}/workers/${workerId}`);
+      if (res.status >= 200 && res.status < 300) {
         toast.success("Worker deleted successfully");
         fetchWorkers();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to delete worker");
+        toast.error(res.data?.error || "Failed to delete worker");
       }
     } catch (error) {
       console.error("Error deleting worker:", error);
@@ -508,18 +517,13 @@ export default function EventDetails() {
     if (!confirm("Are you sure you want to delete this expense?")) return;
 
     try {
-      const response = await fetch(`/api/events/${id}/expenses/${expenseId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-
-      if (response.ok) {
+      const res = await api.delete(`/events/${id}/expenses/${expenseId}`);
+      if (res.status >= 200 && res.status < 300) {
         toast.success("Expense deleted successfully");
         fetchExpenses();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to delete expense");
+        toast.error(res.data?.error || "Failed to delete expense");
       }
     } catch (error) {
       console.error("Error deleting expense:", error);

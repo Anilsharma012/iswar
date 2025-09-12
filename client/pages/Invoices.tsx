@@ -61,7 +61,13 @@ import {
   FileText,
   Calculator,
 } from "lucide-react";
-import { invoiceAPI, clientAPI, productAPI, eventAPI } from "@/lib/api";
+import {
+  invoiceAPI,
+  clientAPI,
+  productAPI,
+  eventAPI,
+  paymentsAPI,
+} from "@/lib/api";
 import { useLocation } from "react-router-dom";
 
 interface Client {
@@ -95,6 +101,7 @@ interface Invoice {
   _id: string;
   number: string;
   clientId: Client;
+  eventId?: string;
   date: string;
   withGST: boolean;
   language: "en" | "hi";
@@ -158,6 +165,19 @@ export default function Invoices() {
     total: 0,
     pages: 0,
   });
+
+  // Payment modal state
+  const [isPayOpen, setIsPayOpen] = useState(false);
+  const [payInvoice, setPayInvoice] = useState<Invoice | null>(null);
+  const [payAmount, setPayAmount] = useState<number>(0);
+  const [payDate, setPayDate] = useState<string>(
+    new Date().toISOString().slice(0, 16),
+  );
+  const [payMode, setPayMode] = useState<"cash" | "upi" | "card" | "bank">(
+    "cash",
+  );
+  const [payRef, setPayRef] = useState<string>("");
+  const [payLoading, setPayLoading] = useState(false);
 
   const fetchInvoices = async () => {
     try {
@@ -642,6 +662,72 @@ export default function Invoices() {
     }
   };
 
+  const openSettle = (inv: Invoice) => {
+    setPayInvoice(inv);
+    const pending = Number(inv.totals?.pending ?? 0);
+    setPayAmount(Number(pending.toFixed(2)));
+    setPayDate(new Date().toISOString().slice(0, 16));
+    setPayMode("cash");
+    setPayRef("");
+    setIsPayOpen(true);
+  };
+
+  const recordPayment = async () => {
+    if (!payInvoice) return;
+    try {
+      setPayLoading(true);
+      setInvoices((prev) =>
+        prev.map((x) => {
+          if (x._id !== payInvoice._id) return x;
+          const paid = Number(x.totals?.paid ?? 0) + Number(payAmount || 0);
+          const grand = Number(x.totals?.grandTotal ?? 0);
+          const newPaid = Math.min(grand, Number(paid.toFixed(2)));
+          const newPending = Math.max(0, Number((grand - newPaid).toFixed(2)));
+          return {
+            ...x,
+            totals: {
+              ...(x.totals as any),
+              paid: newPaid,
+              pending: newPending,
+            },
+          } as Invoice;
+        }),
+      );
+
+      await paymentsAPI.create({
+        invoiceId: payInvoice._id,
+        eventId: (payInvoice as any).eventId,
+        clientId: payInvoice.clientId?._id,
+        amount: Number(payAmount),
+        mode: payMode,
+        ref: payRef || undefined,
+        at: new Date(payDate).toISOString(),
+      });
+
+      // notify other pages (event details) to refetch financials
+      try {
+        window.dispatchEvent(
+          new CustomEvent("payments:updated", {
+            detail: {
+              eventId: (payInvoice as any).eventId,
+              invoiceId: payInvoice._id,
+            },
+          }),
+        );
+      } catch {}
+
+      setIsPayOpen(false);
+      setPayInvoice(null);
+      toast.success("Payment recorded");
+      fetchInvoices();
+    } catch (e: any) {
+      await fetchInvoices();
+      toast.error(e?.response?.data?.error || "Failed to record payment");
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
   const totals = calculateTotals(
     formData.items,
     formData.discount,
@@ -1104,10 +1190,16 @@ export default function Invoices() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusBadgeVariant(invoice.status)}>
-                          {invoice.status.charAt(0).toUpperCase() +
-                            invoice.status.slice(1)}
-                        </Badge>
+                        {(invoice.totals?.pending ?? 0) === 0 ? (
+                          <Badge variant="success">Paid</Badge>
+                        ) : (
+                          <Badge
+                            variant={getStatusBadgeVariant(invoice.status)}
+                          >
+                            {invoice.status.charAt(0).toUpperCase() +
+                              invoice.status.slice(1)}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -1168,6 +1260,15 @@ export default function Invoices() {
                               </AlertDialogContent>
                             </AlertDialog>
                           )}
+                          {(invoice.totals?.pending ?? 0) > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openSettle(invoice)}
+                            >
+                              ₹ Settle
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1223,6 +1324,79 @@ export default function Invoices() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Modal */}
+      <Dialog open={isPayOpen} onOpenChange={setIsPayOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+            <DialogDescription>
+              Settle dues for invoice {payInvoice?.number}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Amount (₹)</Label>
+              <Input
+                type="number"
+                value={payAmount}
+                onChange={(e) =>
+                  setPayAmount(Number(Number(e.target.value || 0).toFixed(2)))
+                }
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <Label>Payment Date & Time</Label>
+              <Input
+                type="datetime-local"
+                value={payDate}
+                onChange={(e) => setPayDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Mode</Label>
+              <Select value={payMode} onValueChange={(v: any) => setPayMode(v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="bank">Bank</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Ref (optional)</Label>
+              <Input
+                value={payRef}
+                onChange={(e) => setPayRef(e.target.value)}
+                placeholder="Txn ID / Notes"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsPayOpen(false)}
+              disabled={payLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={recordPayment}
+              disabled={payLoading || !payInvoice || payAmount <= 0}
+            >
+              {payLoading ? "Recording..." : "Record Payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

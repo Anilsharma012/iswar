@@ -118,6 +118,11 @@ export const invoiceAPI = {
   },
 };
 
+// Payments API calls
+export const paymentsAPI = {
+  create: (data: any) => api.post("/payments", data),
+};
+
 // Stock API calls
 export const stockAPI = {
   getCurrent: (params?: any) => api.get("/stock/current", { params }),
@@ -142,6 +147,7 @@ export const eventAPI = {
     api.get(`/events/${id}/agreement/pdf`, { responseType: "blob" }),
   getLastReturnSummary: (id: string) =>
     api.get(`/events/${id}/last-return-summary`),
+  getFinancials: (id: string) => api.get(`/events/${id}/financials`),
 };
 
 // Leads API calls
