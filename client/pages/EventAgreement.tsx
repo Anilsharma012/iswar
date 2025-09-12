@@ -29,6 +29,7 @@ interface EventType {
   dispatches?: any[];
   dispatchDrafts?: any[];
   agreementSnapshot?: { items: any[] } | null;
+  status?: "new" | "confirmed" | "reserved" | "dispatched" | "returned";
 }
 
 interface ProductType {
