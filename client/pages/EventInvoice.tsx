@@ -108,19 +108,27 @@ export default function EventInvoice() {
     if (id) load();
   }, [id]);
 
-  const subTotal = useMemo(() => {
-    const s = [...items, ...manualLines].reduce(
-      (sum, it) => sum + (Number(it.qty || 0) * Number(it.rate || 0)),
-      0,
-    );
-    return Number(s.toFixed(2));
-  }, [items, manualLines]);
+  // compute totals: base subtotal and adjustments separated
+  const baseCount = (event?.dispatches?.[event.dispatches.length - 1]?.items?.length) || (event?.selections?.length || 0);
 
-  const discountAmount = Number(((discount / 100) * subTotal).toFixed(2));
+  const baseItemsMemo = useMemo(() => items.slice(0, baseCount), [items, baseCount]);
+  const adjustItemsMemo = useMemo(() => items.slice(baseCount), [items, baseCount]);
+
+  const baseSubtotal = useMemo(() => {
+    const s = (baseItemsMemo || []).reduce((sum, it) => sum + (Number(it.qty || 0) * Number(it.rate || 0)), 0);
+    return Number(s.toFixed(2));
+  }, [baseItemsMemo]);
+
+  const adjustmentsTotal = useMemo(() => {
+    const s = (adjustItemsMemo || []).reduce((sum, it) => sum + (Number(it.qty || 0) * Number(it.rate || 0)), 0);
+    return Number(s.toFixed(2));
+  }, [adjustItemsMemo]);
+
+  const discountAmount = Number(((discount / 100) * baseSubtotal).toFixed(2));
   const advancePaid = Number(event?.advance || 0);
   const securityAmt = Number(event?.security || 0);
   const paid = Number((advancePaid + (includeSecurity ? securityAmt : 0)).toFixed(2));
-  const grandTotal = Number((subTotal - discountAmount).toFixed(2));
+  const grandTotal = Number(((baseSubtotal - discountAmount) + adjustmentsTotal).toFixed(2));
   const pending = Number(Math.max(0, grandTotal - paid).toFixed(2));
 
   const formatINR = (n: number) => `₹${n.toFixed(2)}`;
