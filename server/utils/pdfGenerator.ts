@@ -63,7 +63,7 @@ const translations = {
     grandTotal: "कुल योग",
     paid: "भुगतान",
     pending: "बकाया",
-    thankYou: "आपके व्यापार के लिए धन्यवाद!",
+    thankYou: "आपके व्यापार के लिए धन्यव���द!",
   },
 };
 
@@ -270,15 +270,17 @@ export const generateAgreementPDF = (
 
   // Terms text
   doc.fontSize(12).font("Helvetica-Bold").text("Terms:");
-  const termsText = event.agreementTerms || "";
+  const termsText = event.agreementSnapshot?.terms || event.agreementTerms || "";
   doc.font("Helvetica").text(termsText, { align: "left" });
   doc.moveDown();
 
-  // Products table
+  // Products table (prefer saved snapshot)
   const rows =
-    event.dispatches && event.dispatches.length
-      ? event.dispatches[event.dispatches.length - 1].items
-      : event.selections || [];
+    (event.agreementSnapshot?.items && event.agreementSnapshot.items.length)
+      ? event.agreementSnapshot.items
+      : (event.dispatches && event.dispatches.length
+          ? event.dispatches[event.dispatches.length - 1].items
+          : event.selections || []);
 
   const tableTop = doc.y + 10;
   const colX = { name: 50, uom: 260, qty: 340, rate: 420, amount: 500 };
