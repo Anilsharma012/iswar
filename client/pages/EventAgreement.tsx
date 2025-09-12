@@ -72,12 +72,20 @@ export default function EventAgreement() {
         setSecurity(String(ev.security ?? 0));
         setTerms(ev.agreementTerms || "");
 
-        // Prefer latest dispatchDraft (reserve) then dispatch lines as source
+        // Prefer confirmed dispatch if available, otherwise draft if reserved
         const lastDraft = ev.dispatchDrafts?.[ev.dispatchDrafts.length - 1];
         const lastDispatch = ev.dispatches?.[ev.dispatches.length - 1];
         let source: any = null;
         let sourceIsDraft = false;
         if (
+          ev.status === "dispatched" &&
+          lastDispatch &&
+          Array.isArray(lastDispatch.items) &&
+          lastDispatch.items.length > 0
+        ) {
+          source = lastDispatch;
+        } else if (
+          ev.status === "reserved" &&
           lastDraft &&
           Array.isArray(lastDraft.items) &&
           lastDraft.items.length > 0
@@ -90,6 +98,13 @@ export default function EventAgreement() {
           lastDispatch.items.length > 0
         ) {
           source = lastDispatch;
+        } else if (
+          lastDraft &&
+          Array.isArray(lastDraft.items) &&
+          lastDraft.items.length > 0
+        ) {
+          source = lastDraft;
+          sourceIsDraft = true;
         }
 
         if (source) {
