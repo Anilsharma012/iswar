@@ -56,6 +56,15 @@ export interface IEvent extends Document {
     damages?: number;
     lateFee?: number;
   }>;
+  lastReturnSummary?: {
+    totals: {
+      shortage: number;
+      damage: number;
+      late: number;
+      returnDue: number;
+    };
+    at: Date;
+  };
   returnClosed?: boolean;
   createdAt: Date;
 }
@@ -168,6 +177,24 @@ const eventSchema = new Schema<IEvent>(
         }),
       ],
       default: [],
+    },
+    lastReturnSummary: {
+      type: new Schema(
+        {
+          totals: new Schema(
+            {
+              shortage: { type: Number, default: 0 },
+              damage: { type: Number, default: 0 },
+              late: { type: Number, default: 0 },
+              returnDue: { type: Number, default: 0 },
+            },
+            { _id: false },
+          ),
+          at: { type: Date, default: Date.now },
+        },
+        { _id: false },
+      ),
+      default: undefined,
     },
     returnClosed: { type: Boolean, default: false },
   },
