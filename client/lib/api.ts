@@ -118,6 +118,11 @@ export const invoiceAPI = {
   },
 };
 
+// Payments API calls
+export const paymentsAPI = {
+  create: (data: any) => api.post("/payments", data),
+};
+
 // Stock API calls
 export const stockAPI = {
   getCurrent: (params?: any) => api.get("/stock/current", { params }),
