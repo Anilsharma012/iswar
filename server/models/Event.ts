@@ -6,7 +6,10 @@ export interface ISelectionItem {
   sku?: string;
   unitType?: string;
   stockQty?: number;
-  qtyToSend: number;
+  qtyToSend: number; // dispatched quantity
+  returnedQty?: number;
+  completed?: boolean;
+  completedAt?: Date;
   rate: number;
   amount: number;
 }
@@ -45,6 +48,7 @@ export interface IEvent extends Document {
     damages?: number;
     lateFee?: number;
   }>;
+  returnClosed?: boolean;
   createdAt: Date;
 }
 
@@ -57,6 +61,7 @@ const selectionSchema = new Schema<ISelectionItem>({
   qtyToSend: { type: Number, required: true, min: 0 },
   returnedQty: { type: Number, default: 0, min: 0 },
   completed: { type: Boolean, default: false },
+  completedAt: { type: Date },
   rate: { type: Number, required: true, min: 0 },
   amount: { type: Number, required: true, min: 0 },
 });
@@ -142,6 +147,7 @@ const eventSchema = new Schema<IEvent>(
       ],
       default: [],
     },
+    returnClosed: { type: Boolean, default: false },
   },
   {
     timestamps: true,
