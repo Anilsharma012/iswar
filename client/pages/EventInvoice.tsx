@@ -114,13 +114,15 @@ export default function EventInvoice() {
         clientId: event.clientId?._id || event.clientId,
         withGST: false,
         language: "en",
-        items: [...items, ...manualLines].map((it) => ({
-          productId: it.productId,
-          desc: it.desc,
-          unitType: it.unitType || "pcs",
-          qty: Number(it.qty || 0),
-          rate: Number(it.rate || 0),
-        })),
+        items: [...items, ...manualLines]
+          .filter((it) => it.productId)
+          .map((it) => ({
+            productId: String(it.productId),
+            desc: it.desc,
+            unitType: it.unitType || "pcs",
+            qty: Number(it.qty || 0),
+            rate: Number(it.rate || 0),
+          })),
         totals: {
           subTotal,
           tax: 0,
@@ -148,13 +150,15 @@ export default function EventInvoice() {
         clientId: event.clientId?._id || event.clientId,
         withGST: false,
         language: "en",
-        items: [...items, ...manualLines].map((it) => ({
-          productId: it.productId,
-          desc: it.desc,
-          unitType: it.unitType || "pcs",
-          qty: Number(it.qty || 0),
-          rate: Number(it.rate || 0),
-        })),
+        items: [...items, ...manualLines]
+          .filter((it) => it.productId)
+          .map((it) => ({
+            productId: String(it.productId),
+            desc: it.desc,
+            unitType: it.unitType || "pcs",
+            qty: Number(it.qty || 0),
+            rate: Number(it.rate || 0),
+          })),
         totals: {
           subTotal,
           tax: 0,
