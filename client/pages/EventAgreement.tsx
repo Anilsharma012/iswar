@@ -288,7 +288,7 @@ export default function EventAgreement() {
                 <TableHead>SKU</TableHead>
                 <TableHead>UOM</TableHead>
                 <TableHead>Stock</TableHead>
-                <TableHead>Qty To Send</TableHead>
+                <TableHead>{(event as any)?.__useConfirmedDispatch ? "Qty" : "Qty To Send"}</TableHead>
                 <TableHead>Rate</TableHead>
                 <TableHead>Amount</TableHead>
               </TableRow>
