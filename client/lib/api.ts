@@ -147,6 +147,7 @@ export const eventAPI = {
     api.get(`/events/${id}/agreement/pdf`, { responseType: "blob" }),
   getLastReturnSummary: (id: string) =>
     api.get(`/events/${id}/last-return-summary`),
+  getFinancials: (id: string) => api.get(`/events/${id}/financials`),
 };
 
 // Leads API calls
