@@ -169,8 +169,7 @@ export default function EventReturn() {
 
       if (summary?.allCompleted) {
         toast.success("All items returned");
-        // navigate away to event details
-        window.location.href = `/event-details/${id}`;
+        window.location.href = `/invoices`;
         return;
       }
 
@@ -211,8 +210,8 @@ export default function EventReturn() {
         setRows(newRows);
       }
 
-      // After processing, redirect to invoice modal
-      window.location.href = `/invoices?new=1&eventId=${id}`;
+      // After processing, redirect to invoices (no modal)
+      window.location.href = `/invoices`;
     } catch (e: any) {
       const status = e?.response?.status;
       const code = e?.response?.data?.code;
