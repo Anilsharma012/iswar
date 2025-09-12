@@ -134,6 +134,13 @@ export default function EventDetails() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
 
+  // Financials
+  const [financials, setFinancials] = useState<{
+    totals: { billed: number; paid: number; pending: number };
+    invoices: { _id: string; number: string; date: string; total: number; paid: number; pending: number }[];
+    payments: { _id: string; at: string; amount: number; mode: string; ref: string; invoiceId: string }[];
+  } | null>(null);
+
   // Worker modal state
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [editingWorker, setEditingWorker] = useState<EventWorker | null>(null);
