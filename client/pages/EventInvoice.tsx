@@ -307,7 +307,8 @@ export default function EventInvoice() {
 
           <div className="flex justify-end mt-4 text-lg font-semibold">
             <div className="text-right">
-              <div>SubTotal: {formatINR(subTotal)}</div>
+              <div>SubTotal: {formatINR(baseSubtotal)}</div>
+              <div>Adjustments: {formatINR(adjustmentsTotal)}</div>
               <div>Discount: {formatINR(discountAmount)}</div>
               <div>Grand Total: {formatINR(grandTotal)}</div>
               <div>Advance Paid: {formatINR(advancePaid)}</div>
