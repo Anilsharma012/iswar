@@ -651,6 +651,52 @@ export default function Invoices() {
     }
   };
 
+  const openSettle = (inv: Invoice) => {
+    setPayInvoice(inv);
+    const pending = Number(inv.totals?.pending ?? 0);
+    setPayAmount(Number(pending.toFixed(2)));
+    setPayDate(new Date().toISOString().slice(0, 16));
+    setPayMode("cash");
+    setPayRef("");
+    setIsPayOpen(true);
+  };
+
+  const recordPayment = async () => {
+    if (!payInvoice) return;
+    try {
+      setPayLoading(true);
+      setInvoices((prev) =>
+        prev.map((x) => {
+          if (x._id !== payInvoice._id) return x;
+          const paid = Number(x.totals?.paid ?? 0) + Number(payAmount || 0);
+          const grand = Number(x.totals?.grandTotal ?? 0);
+          const newPaid = Math.min(grand, Number(paid.toFixed(2)));
+          const newPending = Math.max(0, Number((grand - newPaid).toFixed(2)));
+          return { ...x, totals: { ...(x.totals as any), paid: newPaid, pending: newPending } } as Invoice;
+        }),
+      );
+
+      await paymentsAPI.create({
+        invoiceId: payInvoice._id,
+        clientId: payInvoice.clientId?._id,
+        amount: Number(payAmount),
+        mode: payMode,
+        ref: payRef || undefined,
+        at: new Date(payDate).toISOString(),
+      });
+
+      setIsPayOpen(false);
+      setPayInvoice(null);
+      toast.success("Payment recorded");
+      fetchInvoices();
+    } catch (e: any) {
+      await fetchInvoices();
+      toast.error(e?.response?.data?.error || "Failed to record payment");
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
   const totals = calculateTotals(
     formData.items,
     formData.discount,
