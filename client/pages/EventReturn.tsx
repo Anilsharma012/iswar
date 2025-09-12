@@ -43,6 +43,8 @@ export default function EventReturn() {
           rate: Number(x.rate || 0),
           buyPrice: Number(x.buyPrice || 0),
           lossPrice: Number(x.lossPrice || 0),
+          shortageCost: 0,
+          lineAdjust: 0,
         }));
 
         // compute per-row late fee if event ended
