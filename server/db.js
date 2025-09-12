@@ -6,7 +6,10 @@ dotenv.config();
 async function connect() {
   try {
     console.log("🔄 Connecting to MongoDB...");
-    const hasUri = Boolean(process.env.MONGO_URI);
+    const raw = process.env.MONGO_URI;
+    const uri =
+      typeof raw === "string" ? raw.trim().replace(/^['"]|['"]$/g, "") : "";
+    const hasUri = uri.length > 0;
     console.log("URI:", hasUri ? "SET" : "NOT SET");
 
     if (!hasUri) {
@@ -14,7 +17,7 @@ async function connect() {
       return;
     }
 
-    await mongoose.connect(process.env.MONGO_URI, {
+    await mongoose.connect(uri, {
       dbName: "mannat",
       serverSelectionTimeoutMS: 8000,
     });

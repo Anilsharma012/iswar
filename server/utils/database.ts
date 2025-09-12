@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
-const MONGO_URI = process.env.MONGO_URI || '';
+const RAW_MONGO_URI = process.env.MONGO_URI || '';
+const MONGO_URI = RAW_MONGO_URI.trim().replace(/^['"]|['"]$/g, '');
 
 export const connectDatabase = async (): Promise<void> => {
   try {
