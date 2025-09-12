@@ -6,9 +6,9 @@ dotenv.config();
 async function connect() {
   try {
     console.log("🔄 Connecting to MongoDB...");
-    const raw = process.env.MONGO_URI;
-    const uri =
-      typeof raw === "string" ? raw.trim().replace(/^['"]|['"]$/g, "") : "";
+    const pick = (v) => (typeof v === "string" ? v : "");
+    const raw = pick(process.env.MONGO_URI) || pick(process.env.MONGODB_URI);
+    const uri = raw.trim().replace(/^['"]|['"]$/g, "");
     const hasUri = uri.length > 0;
     console.log("URI:", hasUri ? "SET" : "NOT SET");
 
