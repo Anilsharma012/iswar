@@ -368,9 +368,21 @@ export default function EventDetails() {
         : `/events/${id}/expenses`;
       const method = editingExpense ? "PUT" : "POST";
 
+      const amountNum = Number(String(expenseFormData.amount).replace(/[,\s₹]/g, ""));
+      if (!Number.isFinite(amountNum) || amountNum < 0) {
+        toast.error("Enter a valid amount");
+        setLoading(false);
+        return;
+      }
+
+      const dateIso = new Date(expenseFormData.date).toISOString();
+
       const payload = {
-        ...expenseFormData,
-        amount: parseFloat(expenseFormData.amount),
+        category: expenseFormData.category,
+        amount: Number(amountNum.toFixed(2)),
+        notes: expenseFormData.notes || undefined,
+        date: dateIso,
+        billImage: expenseFormData.billImage || undefined,
       };
 
       const res = await api({ method, url, data: payload });
