@@ -741,6 +741,25 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         (event as any).returnClosed = true;
       }
 
+      // compute return dues and persist summary
+      const computedDue = Number(
+        sanitized.reduce((s, it) => s + Number(it.lineAdjust || 0), 0).toFixed(2),
+      );
+      const providedDue = Number((req.body || {}).returnDue);
+      const effectiveDue = Number.isFinite(providedDue)
+        ? Number(providedDue.toFixed(2))
+        : computedDue;
+
+      (event as any).lastReturnSummary = {
+        totals: {
+          shortage: Number(totalShortageCost.toFixed(2)),
+          damage: Number(totalDamage.toFixed(2)),
+          late: Number(totalLate.toFixed(2)),
+          returnDue: effectiveDue,
+        },
+        at: new Date(),
+      };
+
       await event.save({ session });
 
       await (mongoose.models.AuditLog as any).create(
@@ -754,7 +773,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
               : undefined,
             meta: {
               items: sanitized,
-              totals: { totalShortageCost, totalDamage, totalLate },
+              totals: { totalShortageCost, totalDamage, totalLate, returnDue: effectiveDue },
             },
           },
         ],
@@ -777,6 +796,9 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           lines: sanitized,
           allCompleted: allCompleted,
         },
+        returnDue: effectiveDue,
+        clientId: populatedEvent?.clientId?._id || populatedEvent?.clientId,
+        eventId: populatedEvent?._id,
       });
     } catch (error: any) {
       try {
