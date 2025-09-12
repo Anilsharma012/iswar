@@ -225,6 +225,15 @@ export default function EventDetails() {
     }
   };
 
+  const fetchFinancials = async () => {
+    try {
+      const res = await api.get(`/events/${id}/financials`);
+      setFinancials(res.data);
+    } catch (e) {
+      console.error("Error fetching financials", e);
+    }
+  };
+
   const fetchWorkers = async () => {
     setLoading(true);
     try {
