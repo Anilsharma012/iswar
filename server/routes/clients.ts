@@ -30,6 +30,7 @@ export const getClients = async (req: AuthRequest, res: Response) => {
             { email: { $regex: search, $options: "i" } },
             { address: { $regex: search, $options: "i" } },
             { gstNumber: { $regex: search, $options: "i" } },
+            { eventName: { $regex: search, $options: "i" } },
           ],
         }
       : {};
