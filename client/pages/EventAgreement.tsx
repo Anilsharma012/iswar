@@ -213,7 +213,8 @@ export default function EventAgreement() {
         security: Number(security || 0),
         agreementTerms: terms,
       };
-      await eventAPI.saveAgreement(id!, payload);
+      const resp = await eventAPI.saveAgreement(id!, payload);
+      setEvent(resp.data);
       toast.success("Agreement saved");
     } catch (e: any) {
       console.error(e);
