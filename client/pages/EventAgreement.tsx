@@ -278,6 +278,7 @@ export default function EventAgreement() {
                         updateRow(idx, { rate: Number(e.target.value) })
                       }
                       className="w-28"
+                      readOnly={Boolean(event && (event as any).__useDispatchDraft)}
                     />
                   </TableCell>
                   <TableCell className="font-medium">
