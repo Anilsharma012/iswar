@@ -27,6 +27,14 @@ export default function EventReturn() {
         const ev = await eventAPI.getById(id!);
         const data = ev.data;
         setEvent(data);
+
+        // Hard guard: redirect if already closed
+        if (data.returnClosed === true) {
+          toast.error("Already returned", { description: "This event is closed for returns.", duration: 3000 });
+          window.history.back();
+          return;
+        }
+
         const lastDispatch = data.dispatches?.[data.dispatches.length - 1];
         const allItems = lastDispatch?.items || data.selections || [];
 
@@ -36,6 +44,12 @@ export default function EventReturn() {
           const alreadyReturned = Number(x.returnedQty || 0);
           return dispatched - alreadyReturned > 0;
         });
+
+        if (outstanding.length === 0) {
+          toast.error("Already returned", { description: "No outstanding items remain.", duration: 3000 });
+          window.history.back();
+          return;
+        }
 
         const mapped = outstanding.map((x: any) => {
           const dispatched = Number(x.qtyToSend || x.qty || 0);
