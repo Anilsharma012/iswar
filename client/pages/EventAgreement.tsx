@@ -401,6 +401,29 @@ export default function EventAgreement() {
           Preview
         </Button>
         <Button
+          variant="secondary"
+          onClick={async () => {
+            try {
+              const resp = await eventAPI.downloadAgreement(id!);
+              const url = window.URL.createObjectURL(new Blob([resp.data], { type: "application/pdf" }));
+              const a = document.createElement("a");
+              a.href = url;
+              const clientName = event?.clientId?.name?.replace(/\s+/g, "_") || "client";
+              const dateStr = new Date().toISOString().slice(0, 10);
+              a.download = `agreement-${clientName}-${dateStr}.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            } catch (e: any) {
+              console.error(e);
+              toast.error(e.response?.data?.error || "Failed to download PDF");
+            }
+          }}
+        >
+          Print/PDF
+        </Button>
+        <Button
           onClick={() =>
             (window.location.href = `/admin/events/${id}/agreement/sign`)
           }
