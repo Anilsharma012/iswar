@@ -61,7 +61,7 @@ import {
   FileText,
   Calculator,
 } from "lucide-react";
-import { invoiceAPI, clientAPI, productAPI, eventAPI } from "@/lib/api";
+import { invoiceAPI, clientAPI, productAPI, eventAPI, paymentsAPI } from "@/lib/api";
 import { useLocation } from "react-router-dom";
 
 interface Client {
