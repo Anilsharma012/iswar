@@ -125,6 +125,7 @@ export default function EventReturn() {
   );
 
   const submit = async () => {
+    const prevRows = rows;
     try {
       const payloadItems = rows.map((r) => ({
         itemId: r.productId,
@@ -139,12 +140,66 @@ export default function EventReturn() {
         rate: r.rate,
       }));
 
-      await eventAPI.return(id!, { items: payloadItems });
+      // optimistic: remove rows that would be completed by this return locally
+      const optimistic = rows.filter((r) => {
+        const maxReturnable = (r.expected || 0) - (r.alreadyReturned || 0);
+        const newReturned = Number(r.returned || 0);
+        const totalReturned = (r.alreadyReturned || 0) + newReturned;
+        return totalReturned < (r.expected || 0);
+      });
+      setRows(optimistic);
+
+      const res = await eventAPI.return(id!, { items: payloadItems });
+      const data = res.data;
       toast.success("Return recorded");
+
+      // Update local event and rows based on server response
+      if (data?.event) setEvent(data.event);
+      const summary = data?.summary;
+
+      if (summary?.allCompleted) {
+        // hide card by clearing rows and setting status
+        setRows([]);
+      } else if (data?.event) {
+        const lastDispatch = data.event.dispatches?.[data.event.dispatches.length - 1];
+        const allItems = lastDispatch?.items || data.event.selections || [];
+        const outstanding = allItems.filter((x: any) => {
+          const dispatched = Number(x.qtyToSend || x.qty || 0);
+          const alreadyReturned = Number(x.returnedQty || 0);
+          return dispatched - alreadyReturned > 0;
+        });
+        const newRows = outstanding.map((x: any) => {
+          const dispatched = Number(x.qtyToSend || x.qty || 0);
+          const alreadyReturned = Number(x.returnedQty || 0);
+          const remaining = Math.max(0, dispatched - alreadyReturned);
+          return {
+            productId: x.productId || x._id,
+            name: x.name,
+            sku: x.sku,
+            unitType: x.unitType,
+            expected: dispatched,
+            alreadyReturned,
+            returned: remaining,
+            shortage: Math.max(0, dispatched - (alreadyReturned + remaining)),
+            damageAmount: 0,
+            lateFee: 0,
+            rate: Number(x.rate || 0),
+            buyPrice: Number(x.buyPrice || 0),
+            lossPrice: Number(x.lossPrice || 0),
+            shortageCost: 0,
+            lineAdjust: 0,
+          };
+        });
+        setRows(newRows);
+      }
+
+      // After processing, redirect to invoice modal
       window.location.href = `/invoices?new=1&eventId=${id}`;
     } catch (e: any) {
       console.error(e);
       toast.error(e.response?.data?.error || "Failed to return");
+      // rollback optimistic
+      setRows(prevRows);
     }
   };
 
