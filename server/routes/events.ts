@@ -527,8 +527,9 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           it.lossPrice ?? product.buyPrice ?? it.rate ?? 0,
         );
 
+        const shortageCost = Number((shortage * lossPrice).toFixed(2));
         const lineAdjust = Number(
-          (shortage * lossPrice + damageAmount + lateFee).toFixed(2),
+          (shortageCost + damageAmount + lateFee).toFixed(2),
         );
         totalAdjust += lineAdjust;
 
@@ -550,6 +551,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           damageAmount,
           lateFee,
           lossPrice,
+          shortageCost,
           rate,
           amount,
           lineAdjust,
