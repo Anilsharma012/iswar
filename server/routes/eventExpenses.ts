@@ -40,6 +40,7 @@ export const createEventExpense = async (req: AuthRequest, res: Response) => {
 
     const { error, value } = eventExpenseSchema.validate(req.body);
     if (error) {
+      console.error('Event expense validation failed (create). Body:', req.body, 'Details:', error.details);
       return res.status(400).json({ error: error.details[0].message });
     }
 
@@ -63,6 +64,7 @@ export const updateEventExpense = async (req: AuthRequest, res: Response) => {
     
     const { error, value } = eventExpenseSchema.validate(req.body);
     if (error) {
+      console.error('Event expense validation failed (update). Body:', req.body, 'Details:', error.details);
       return res.status(400).json({ error: error.details[0].message });
     }
 
