@@ -149,6 +149,7 @@ export default function Invoices() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [prefillClientLocked, setPrefillClientLocked] = useState(false);
   const [prefillEventId, setPrefillEventId] = useState<string | null>(null);
+  const [returnDues, setReturnDues] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [pagination, setPagination] = useState({
@@ -212,6 +213,69 @@ export default function Invoices() {
     fetchClients();
     fetchProducts();
   }, []);
+
+  // Auto-open invoice creation when a recent return due exists (<= 2h)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("lastReturnDue");
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (!data?.eventId || !data?.clientId) return;
+      const ageMs = Date.now() - Number(data.ts || 0);
+      const within2h = ageMs >= 0 && ageMs <= 2 * 60 * 60 * 1000;
+
+      (async () => {
+        try {
+          const evRes = await eventAPI.getById(data.eventId);
+          const ev = evRes.data;
+          const lastDispatch =
+            ev.dispatches && ev.dispatches.length
+              ? ev.dispatches[ev.dispatches.length - 1]
+              : null;
+          const base = (lastDispatch && lastDispatch.items) || ev.selections || [];
+          const baseItems = base.map(
+            (it: any) =>
+              ({
+                productId: String(it.productId || it._id || ""),
+                desc: it.name || "",
+                unitType: it.unitType || "pcs",
+                qty: Number(it.qtyToSend || it.qty || 0),
+                rate: Number(it.rate || 0),
+                taxPct: 0,
+              }) as InvoiceItem,
+          );
+
+          setFormData({
+            clientId: ev.clientId?._id || ev.clientId || data.clientId,
+            withGST: false,
+            language: "en",
+            items: baseItems,
+            paid: 0,
+            discount: 0,
+          });
+          setPrefillClientLocked(true);
+          setPrefillEventId(String(data.eventId));
+
+          if (within2h) {
+            setReturnDues(Number(Number(data.amount || 0).toFixed(2)) || 0);
+          } else {
+            try {
+              const s = await eventAPI.getLastReturnSummary(String(data.eventId));
+              const amt = Number(
+                s?.data?.lastReturnSummary?.totals?.returnDue ?? 0,
+              );
+              setReturnDues(Number(amt.toFixed(2)) || 0);
+            } catch (e) {
+              /* ignore */
+            }
+          }
+          setIsDialogOpen(true);
+        } catch (e) {
+          console.error("Failed to prefill from lastReturnDue", e);
+        }
+      })();
+    } catch (_) {}
+  }, [products.length]);
 
   // Auto-open invoice modal when redirected from return flow
   const location = useLocation();
@@ -333,6 +397,7 @@ export default function Invoices() {
     items: InvoiceItem[],
     discount: number = 0,
     withGST: boolean = false,
+    extraCharge: number = 0,
   ) => {
     const subTotal = items.reduce(
       (total, item) => total + item.qty * item.rate,
@@ -350,9 +415,9 @@ export default function Invoices() {
       }, 0);
     }
 
-    const grandTotal = discountedSubTotal + tax;
-    const roundOff = Math.round(grandTotal) - grandTotal;
-    const finalTotal = Math.round(grandTotal);
+    const grandTotalRaw = discountedSubTotal + tax + (extraCharge || 0);
+    const roundOff = Math.round(grandTotalRaw) - grandTotalRaw;
+    const finalTotal = Math.round(grandTotalRaw);
 
     return {
       subTotal,
@@ -413,10 +478,27 @@ export default function Invoices() {
       return;
     }
 
+    // Build items payload, appending Return Dues as a line if applicable
+    const itemsForPayload = formData.items.map((it) => ({ ...it }));
+    if (returnDues > 0) {
+      const fallbackPid =
+        itemsForPayload[0]?.productId || products[0]?._id || "";
+      itemsForPayload.push({
+        productId: String(fallbackPid),
+        desc: "Return Dues",
+        unitType: "pcs",
+        qty: 1,
+        rate: Number(returnDues.toFixed(2)),
+        taxPct: 0,
+        isAdjustment: true,
+      });
+    }
+
     const totals = calculateTotals(
-      formData.items,
+      itemsForPayload,
       formData.discount,
       formData.withGST,
+      0,
     );
     const pending = totals.grandTotal - formData.paid;
 
@@ -424,7 +506,7 @@ export default function Invoices() {
       clientId: formData.clientId,
       withGST: formData.withGST,
       language: formData.language,
-      items: formData.items.map((it) => ({ ...it })),
+      items: itemsForPayload,
       totals: {
         ...totals,
         paid: formData.paid,
@@ -448,9 +530,16 @@ export default function Invoices() {
         );
       }
 
+      if (finalize) {
+        try {
+          localStorage.removeItem("lastReturnDue");
+        } catch (_) {}
+      }
+
       setIsDialogOpen(false);
       setFormData(initialFormData);
       setEditingInvoice(null);
+      setReturnDues(0);
       fetchInvoices();
     } catch (error: any) {
       console.error("Save invoice error:", error);
@@ -476,6 +565,7 @@ export default function Invoices() {
           ? ((invoice.totals.discount || 0) / invoice.totals.subTotal) * 100
           : 0,
     });
+    setReturnDues(0);
     setIsDialogOpen(true);
   };
 
@@ -531,6 +621,9 @@ export default function Invoices() {
     setIsDialogOpen(false);
     setFormData(initialFormData);
     setEditingInvoice(null);
+    try {
+      localStorage.removeItem("lastReturnDue");
+    } catch (_) {}
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -550,6 +643,7 @@ export default function Invoices() {
     formData.items,
     formData.discount,
     formData.withGST,
+    returnDues,
   );
 
   return (
@@ -801,6 +895,21 @@ export default function Invoices() {
                             ...formData,
                             paid: parseFloat(e.target.value) || 0,
                           })
+                        }
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="returnDues">Return Dues (₹)</Label>
+                      <Input
+                        id="returnDues"
+                        type="number"
+                        value={returnDues}
+                        onChange={(e) =>
+                          setReturnDues(
+                            Number(Number(e.target.value || 0).toFixed(2)) || 0,
+                          )
                         }
                         min="0"
                         step="0.01"
