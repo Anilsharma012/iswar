@@ -246,6 +246,7 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       advance = 0,
       security = 0,
       agreementTerms = "",
+      terms,
       grandTotal,
       clientSign,
       companySign,
@@ -285,29 +286,40 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       amount: Number(s.amount ?? Number(((Number(s.qtyToSend ?? s.qty ?? 0)) * Number(s.rate || 0)).toFixed(2))),
     }));
 
+    const hasAgreementPayload =
+      rawArray.length > 0 ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "advance") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "security") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "agreementTerms") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "terms") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "grandTotal");
+
     const subTotal = sanitized.reduce((s: number, it: any) => s + Number(it.amount || 0), 0);
     const advNum = Number(advance || 0);
     const secNum = Number(security || 0);
     const computedGrand = Number((subTotal - advNum - secNum).toFixed(2));
     const providedGrand = Number(grandTotal);
     const gt = Number.isFinite(providedGrand) ? Number(providedGrand.toFixed(2)) : computedGrand;
+    const termsText = String(terms ?? agreementTerms ?? "");
 
-    const snapshot = {
-      items: sanitized,
-      advance: advNum,
-      security: secNum,
-      terms: String(agreementTerms || ""),
-      grandTotal: gt,
-      savedAt: new Date(),
-    };
+    const updateDoc: any = {};
 
-    const updateDoc: any = {
-      advance: advNum,
-      security: secNum,
-      agreementTerms: String(agreementTerms || ""),
-      agreementSnapshot: snapshot,
-    };
-    if (rawArray.length > 0) updateDoc.selections = sanitized;
+    if (hasAgreementPayload) {
+      const snapshot = {
+        items: sanitized,
+        advance: advNum,
+        security: secNum,
+        terms: termsText,
+        grandTotal: gt,
+        savedAt: new Date(),
+      };
+      updateDoc.agreementSnapshot = snapshot;
+      updateDoc.agreementTerms = termsText;
+      updateDoc.advance = advNum;
+      updateDoc.security = secNum;
+      if (rawArray.length > 0) updateDoc.selections = sanitized;
+    }
+
     if (typeof clientSign !== "undefined") updateDoc.clientSign = clientSign;
     if (typeof companySign !== "undefined") updateDoc.companySign = companySign;
 
