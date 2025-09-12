@@ -355,11 +355,11 @@ export default function Invoices() {
     const totals = calculateTotals(formData.items, formData.discount, formData.withGST);
     const pending = totals.grandTotal - formData.paid;
 
-    const invoiceData = {
+    const invoiceData: any = {
       clientId: formData.clientId,
       withGST: formData.withGST,
       language: formData.language,
-      items: formData.items,
+      items: formData.items.map(it => ({ ...it })),
       totals: {
         ...totals,
         paid: formData.paid,
@@ -367,6 +367,8 @@ export default function Invoices() {
       },
       status: finalize ? 'final' : 'draft',
     };
+
+    if (prefillEventId) invoiceData.eventId = prefillEventId;
 
     try {
       if (editingInvoice) {
