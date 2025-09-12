@@ -55,6 +55,8 @@ const selectionSchema = new Schema<ISelectionItem>({
   unitType: { type: String },
   stockQty: { type: Number },
   qtyToSend: { type: Number, required: true, min: 0 },
+  returnedQty: { type: Number, default: 0, min: 0 },
+  completed: { type: Boolean, default: false },
   rate: { type: Number, required: true, min: 0 },
   amount: { type: Number, required: true, min: 0 },
 });
