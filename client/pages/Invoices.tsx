@@ -55,7 +55,7 @@ import {
   FileText,
   Calculator,
 } from 'lucide-react';
-import { invoiceAPI, clientAPI, productAPI } from '@/lib/api';
+import { invoiceAPI, clientAPI, productAPI, eventAPI } from '@/lib/api';
 
 interface Client {
   _id: string;
