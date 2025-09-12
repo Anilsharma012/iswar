@@ -108,7 +108,7 @@ export default function EventDispatch() {
         }));
       await api.post(`/events/${id}/dispatch?dryRun=1`, { items });
       toast.success("Reserved");
-      window.location.href = `/admin/events/${id}/dispatch`;
+      window.location.href = `/admin/events/${id}/agreement`;
     } catch (e: any) {
       console.error(e);
       toast.error(e.response?.data?.error || "Failed to reserve");
