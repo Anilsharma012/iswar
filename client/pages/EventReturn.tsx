@@ -57,9 +57,10 @@ export default function EventReturn() {
         mapped.forEach((r) => {
           r.shortage = Math.max(0, r.expected - r.returned);
           const lossPrice = r.lossPrice || r.buyPrice || r.rate || 0;
+          r.shortageCost = Number((r.shortage * lossPrice).toFixed(2));
           r.lineAdjust = Number(
             (
-              r.shortage * lossPrice +
+              r.shortageCost +
               Number(r.damageAmount || 0) +
               Number(r.lateFee || 0)
             ).toFixed(2),
@@ -89,9 +90,10 @@ export default function EventReturn() {
         patch.shortage ?? Math.max(0, r.expected - r.returned),
       );
       const lossPrice = r.lossPrice || r.buyPrice || r.rate || 0;
+      r.shortageCost = Number((r.shortage * lossPrice).toFixed(2));
       r.lineAdjust = Number(
         (
-          r.shortage * lossPrice +
+          r.shortageCost +
           Number(r.damageAmount || 0) +
           Number(r.lateFee || 0)
         ).toFixed(2),
