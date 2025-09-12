@@ -242,14 +242,19 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const {
       selections = [],
+      items = [],
       advance = 0,
       security = 0,
       agreementTerms = "",
+      grandTotal,
     } = req.body || {};
 
+    // choose source array: items (new) or selections (legacy)
+    const rawArray: any[] = Array.isArray(items) && items.length ? items : selections;
+
     // Basic validation
-    if (!Array.isArray(selections)) {
-      return res.status(400).json({ error: "selections must be an array" });
+    if (!Array.isArray(rawArray)) {
+      return res.status(400).json({ error: "items must be an array" });
     }
 
     // Check cold lead
@@ -267,26 +272,27 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    const sanitized = selections.map((s: any) => ({
-      productId: s.productId,
+    const sanitized = rawArray.map((s: any) => ({
+      productId: s.productId || s.itemId,
       name: s.name,
       sku: s.sku,
-      unitType: s.unitType,
+      unitType: s.unitType || s.uom,
       stockQty: Number(s.stockQty || 0),
-      qtyToSend: Number(s.qtyToSend || 0),
+      qtyToSend: Number(s.qtyToSend ?? s.qty ?? 0),
       rate: Number(s.rate || 0),
-      amount: Number(s.amount || 0),
+      amount: Number(s.amount ?? Number(((Number(s.qtyToSend ?? s.qty ?? 0)) * Number(s.rate || 0)).toFixed(2))),
     }));
 
     const subTotal = sanitized.reduce((s: number, it: any) => s + Number(it.amount || 0), 0);
     const advNum = Number(advance || 0);
     const secNum = Number(security || 0);
+    const computedGrand = Number((subTotal - advNum - secNum).toFixed(2));
     const snapshot = {
       items: sanitized,
       advance: advNum,
       security: secNum,
       terms: String(agreementTerms || ""),
-      grandTotal: Number((subTotal - advNum - secNum).toFixed(2)),
+      grandTotal: Number((grandTotal ?? computedGrand).toFixed ? (grandTotal as number) : computedGrand),
       savedAt: new Date(),
     };
 
