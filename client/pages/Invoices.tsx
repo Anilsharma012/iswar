@@ -695,12 +695,22 @@ export default function Invoices() {
 
       await paymentsAPI.create({
         invoiceId: payInvoice._id,
+        eventId: (payInvoice as any).eventId,
         clientId: payInvoice.clientId?._id,
         amount: Number(payAmount),
         mode: payMode,
         ref: payRef || undefined,
         at: new Date(payDate).toISOString(),
       });
+
+      // notify other pages (event details) to refetch financials
+      try {
+        window.dispatchEvent(
+          new CustomEvent("payments:updated", {
+            detail: { eventId: (payInvoice as any).eventId, invoiceId: payInvoice._id },
+          }),
+        );
+      } catch {}
 
       setIsPayOpen(false);
       setPayInvoice(null);
