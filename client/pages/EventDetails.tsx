@@ -189,13 +189,8 @@ export default function EventDetails() {
 
   const fetchEventDetails = async () => {
     try {
-      const response = await fetch(`/api/events/${id}`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setEvent(data);
-      }
+      const res = await api.get(`/events/${id}`);
+      setEvent(res.data);
     } catch (error) {
       console.error("Error fetching event details:", error);
       toast.error("Failed to fetch event details");
@@ -204,13 +199,8 @@ export default function EventDetails() {
 
   const fetchEventSummary = async () => {
     try {
-      const response = await fetch(`/api/events/${id}/summary`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSummary(data.summary);
-      }
+      const res = await api.get(`/events/${id}/summary`);
+      setSummary(res.data.summary);
     } catch (error) {
       console.error("Error fetching event summary:", error);
     }
@@ -219,13 +209,8 @@ export default function EventDetails() {
   const fetchWorkers = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/events/${id}/workers`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setWorkers(data.workers);
-      }
+      const res = await api.get(`/events/${id}/workers`);
+      setWorkers(res.data.workers);
     } catch (error) {
       console.error("Error fetching workers:", error);
       toast.error("Failed to fetch workers");
@@ -237,13 +222,8 @@ export default function EventDetails() {
   const fetchExpenses = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/events/${id}/expenses`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setExpenses(data.expenses);
-      }
+      const res = await api.get(`/events/${id}/expenses`);
+      setExpenses(res.data.expenses);
     } catch (error) {
       console.error("Error fetching expenses:", error);
       toast.error("Failed to fetch expenses");
@@ -353,16 +333,8 @@ export default function EventDetails() {
           : undefined,
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
+      const res = await api({ method, url, data: payload });
+      if (res.status >= 200 && res.status < 300) {
         toast.success(
           `Worker ${editingWorker ? "updated" : "created"} successfully`,
         );
@@ -371,8 +343,7 @@ export default function EventDetails() {
         fetchWorkers();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to save worker");
+        toast.error(res.data?.error || "Failed to save worker");
       }
     } catch (error) {
       console.error("Error saving worker:", error);
@@ -402,16 +373,8 @@ export default function EventDetails() {
         amount: parseFloat(expenseFormData.amount),
       };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
+      const res = await api({ method, url, data: payload });
+      if (res.status >= 200 && res.status < 300) {
         toast.success(
           `Expense ${editingExpense ? "updated" : "created"} successfully`,
         );
@@ -420,8 +383,7 @@ export default function EventDetails() {
         fetchExpenses();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to save expense");
+        toast.error(res.data?.error || "Failed to save expense");
       }
     } catch (error) {
       console.error("Error saving expense:", error);
@@ -446,27 +408,15 @@ export default function EventDetails() {
         amount: parseFloat(paymentFormData.amount),
       };
 
-      const response = await fetch(
-        `/api/events/${id}/workers/${selectedWorker._id}/payments`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getAuthToken()}`,
-          },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      if (response.ok) {
+      const res = await api.post(`/events/${id}/workers/${selectedWorker._id}/payments`, payload);
+      if (res.status >= 200 && res.status < 300) {
         toast.success("Payment recorded successfully");
         setShowPaymentModal(false);
         resetPaymentForm();
         fetchWorkers();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to record payment");
+        toast.error(res.data?.error || "Failed to record payment");
       }
     } catch (error) {
       console.error("Error recording payment:", error);
@@ -485,18 +435,13 @@ export default function EventDetails() {
       return;
 
     try {
-      const response = await fetch(`/api/events/${id}/workers/${workerId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-
-      if (response.ok) {
+      const res = await api.delete(`/events/${id}/workers/${workerId}`);
+      if (res.status >= 200 && res.status < 300) {
         toast.success("Worker deleted successfully");
         fetchWorkers();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to delete worker");
+        toast.error(res.data?.error || "Failed to delete worker");
       }
     } catch (error) {
       console.error("Error deleting worker:", error);
@@ -508,18 +453,13 @@ export default function EventDetails() {
     if (!confirm("Are you sure you want to delete this expense?")) return;
 
     try {
-      const response = await fetch(`/api/events/${id}/expenses/${expenseId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
-      });
-
-      if (response.ok) {
+      const res = await api.delete(`/events/${id}/expenses/${expenseId}`);
+      if (res.status >= 200 && res.status < 300) {
         toast.success("Expense deleted successfully");
         fetchExpenses();
         fetchEventSummary();
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to delete expense");
+        toast.error(res.data?.error || "Failed to delete expense");
       }
     } catch (error) {
       console.error("Error deleting expense:", error);
