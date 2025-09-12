@@ -159,6 +159,15 @@ export default function Invoices() {
     pages: 0,
   });
 
+  // Payment modal state
+  const [isPayOpen, setIsPayOpen] = useState(false);
+  const [payInvoice, setPayInvoice] = useState<Invoice | null>(null);
+  const [payAmount, setPayAmount] = useState<number>(0);
+  const [payDate, setPayDate] = useState<string>(new Date().toISOString().slice(0, 16));
+  const [payMode, setPayMode] = useState<"cash" | "upi" | "card" | "bank">("cash");
+  const [payRef, setPayRef] = useState<string>("");
+  const [payLoading, setPayLoading] = useState(false);
+
   const fetchInvoices = async () => {
     try {
       setLoading(true);
