@@ -118,6 +118,8 @@ export default function EventReturn() {
         damageAmount: r.damageAmount,
         lateFee: r.lateFee,
         lossPrice: r.lossPrice || r.buyPrice || r.rate || 0,
+        shortageCost: r.shortageCost || 0,
+        lineAdjust: r.lineAdjust || 0,
         rate: r.rate,
       }));
 
