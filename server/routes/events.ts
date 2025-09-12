@@ -522,6 +522,21 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         product.stockQty = Number(product.stockQty) + returned;
         await product.save({ session });
 
+        // Create stock ledger entry for this return
+        await (mongoose.models.StockLedger as any).create(
+          [
+            {
+              productId: product._id,
+              qtyChange: returned,
+              reason: 'return',
+              refType: 'Return',
+              refId: event._id,
+              at: new Date(),
+            },
+          ],
+          { session },
+        );
+
         // Determine loss price: prefer provided lossPrice, then buyPrice, then rate, else 0
         const lossPrice = Number(
           it.lossPrice ?? product.buyPrice ?? it.rate ?? 0,

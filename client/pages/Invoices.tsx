@@ -82,6 +82,7 @@ interface InvoiceItem {
   qty: number;
   rate: number;
   taxPct?: number;
+  isAdjustment?: boolean;
 }
 
 interface Invoice {
@@ -244,19 +245,51 @@ export default function Invoices() {
 
           const fallbackPid = baseItems[0]?.productId || (products[0]?._id || '');
           const adjustItems: InvoiceItem[] = [];
-          if (damageSum > 0) {
-            adjustItems.push({ productId: fallbackPid, desc: 'Damage Total', unitType: 'pcs', qty: 1, rate: Number(damageSum.toFixed(2)), taxPct: 0, isAdjustment: true });
+
+          // Create per-item shortage and damage adjustment lines
+          if (lastReturn && Array.isArray(lastReturn.items)) {
+            lastReturn.items.forEach((r: any) => {
+              const itemName = r.name || r.desc || 'Item';
+              const shortageCost = Number(r.shortageCost || 0);
+              const damageAmount = Number(r.damageAmount || 0);
+
+              if (shortageCost > 0) {
+                adjustItems.push({
+                  productId: fallbackPid,
+                  desc: `Shortage – ${itemName}`,
+                  unitType: 'pcs',
+                  qty: 1,
+                  rate: Number(shortageCost.toFixed(2)),
+                  taxPct: 0,
+                  isAdjustment: true,
+                });
+              }
+
+              if (damageAmount > 0) {
+                adjustItems.push({
+                  productId: fallbackPid,
+                  desc: `Damage – ${itemName}`,
+                  unitType: 'pcs',
+                  qty: 1,
+                  rate: Number(damageAmount.toFixed(2)),
+                  taxPct: 0,
+                  isAdjustment: true,
+                });
+              }
+            });
           }
-          if (shortageSum > 0) {
-            adjustItems.push({ productId: fallbackPid, desc: 'Shortage Total', unitType: 'pcs', qty: 1, rate: Number(shortageSum.toFixed(2)), taxPct: 0, isAdjustment: true });
-          }
+
+          // Single aggregated Late Fee line if any
           if (lateSum > 0) {
-            // merge into Damage Total if damage exists, else add new
-            if (damageSum > 0) {
-              adjustItems[0].rate = Number((adjustItems[0].rate + lateSum).toFixed(2));
-            } else {
-              adjustItems.push({ productId: fallbackPid, desc: 'Late Fee', unitType: 'pcs', qty: 1, rate: Number(lateSum.toFixed(2)), taxPct: 0, isAdjustment: true });
-            }
+            adjustItems.push({
+              productId: fallbackPid,
+              desc: 'Late Fee',
+              unitType: 'pcs',
+              qty: 1,
+              rate: Number(lateSum.toFixed(2)),
+              taxPct: 0,
+              isAdjustment: true,
+            });
           }
 
           // prefill form
