@@ -484,7 +484,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         await session.abortTransaction();
         session.endSession();
         return res
-          .status(409)
+          .status(403)
           .json({ error: "Event already fully returned", code: "ALREADY_RETURNED" });
       }
 
