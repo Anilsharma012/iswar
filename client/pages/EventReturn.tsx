@@ -157,6 +157,7 @@ export default function EventReturn() {
                 <TableHead>Damages (₹)</TableHead>
                 <TableHead>Late Fee (₹)</TableHead>
                 <TableHead>Rate</TableHead>
+                <TableHead>Shortage Cost</TableHead>
                 <TableHead>Line Adjust</TableHead>
               </TableRow>
             </TableHeader>
@@ -214,6 +215,9 @@ export default function EventReturn() {
                         updateRow(i, { rate: Number(e.target.value) })
                       }
                     />
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {formatINR(r.shortageCost || 0)}
                   </TableCell>
                   <TableCell className="font-medium">
                     {formatINR(r.lineAdjust || 0)}
