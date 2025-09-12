@@ -54,7 +54,7 @@ import {
   Filter,
   ChevronDown,
 } from "lucide-react";
-import { getAuthToken } from "@/lib/api";
+import api, { getAuthToken } from "@/lib/api";
 import { useParams, useSearchParams } from "react-router-dom";
 
 interface Event {
