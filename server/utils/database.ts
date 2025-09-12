@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
-const RAW_MONGO_URI = process.env.MONGO_URI || '';
+const pick = (v?: string) => (typeof v === 'string' ? v : '');
+const RAW_MONGO_URI = pick(process.env.MONGO_URI) || pick(process.env.MONGODB_URI);
 const MONGO_URI = RAW_MONGO_URI.trim().replace(/^['"]|['"]$/g, '');
 
 export const connectDatabase = async (): Promise<void> => {
