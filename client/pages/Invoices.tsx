@@ -1287,6 +1287,72 @@ export default function Invoices() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Modal */}
+      <Dialog open={isPayOpen} onOpenChange={setIsPayOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Payment</DialogTitle>
+            <DialogDescription>
+              Settle dues for invoice {payInvoice?.number}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Amount (₹)</Label>
+              <Input
+                type="number"
+                value={payAmount}
+                onChange={(e) =>
+                  setPayAmount(Number(Number(e.target.value || 0).toFixed(2)))
+                }
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <Label>Payment Date & Time</Label>
+              <Input
+                type="datetime-local"
+                value={payDate}
+                onChange={(e) => setPayDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Mode</Label>
+              <Select value={payMode} onValueChange={(v: any) => setPayMode(v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="bank">Bank</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Ref (optional)</Label>
+              <Input
+                value={payRef}
+                onChange={(e) => setPayRef(e.target.value)}
+                placeholder="Txn ID / Notes"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPayOpen(false)} disabled={payLoading}>
+              Cancel
+            </Button>
+            <Button onClick={recordPayment} disabled={payLoading || !payInvoice || payAmount <= 0}>
+              {payLoading ? "Recording..." : "Record Payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
