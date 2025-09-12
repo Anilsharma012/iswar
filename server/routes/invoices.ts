@@ -206,21 +206,24 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
     // If changing from draft to final, apply stock changes
     if (existingInvoice.status === 'draft' && value.status === 'final') {
       for (const item of value.items) {
+        // Skip adjustment lines
+        if ((item as any).isAdjustment) continue;
+
         const product = await Product.findById(item.productId).session(session);
         if (!product) {
           throw new Error(`Product not found: ${item.productId}`);
         }
-        
+
         if (product.stockQty < item.qty) {
           throw new Error(`Insufficient stock for ${product.name}. Available: ${product.stockQty}, Required: ${item.qty}`);
         }
-        
+
         await Product.findByIdAndUpdate(
           item.productId,
           { $inc: { stockQty: -item.qty } },
           { session }
         );
-        
+
         const stockEntry = new StockLedger({
           productId: item.productId,
           qtyChange: -item.qty,
@@ -229,15 +232,15 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
           refId: existingInvoice._id
         });
         await stockEntry.save({ session });
-        
+
         await IssueRegister.findOneAndUpdate(
           { productId: item.productId, clientId: value.clientId },
           {
             $inc: { qtyIssued: item.qty },
-            $setOnInsert: { 
-              issueDate: new Date(),
-              qtyReturned: 0,
-              returnDates: []
+            $setOnInsert: {
+            	issueDate: new Date(),
+            	qtyReturned: 0,
+            	returnDates: []
             }
           },
           { upsert: true, session }
