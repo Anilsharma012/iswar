@@ -502,6 +502,7 @@ export default function Invoices() {
                     <Select
                       value={formData.clientId}
                       onValueChange={(value) => setFormData({ ...formData, clientId: value })}
+                      disabled={prefillClientLocked}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select client" />
