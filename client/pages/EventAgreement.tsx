@@ -96,6 +96,7 @@ export default function EventAgreement() {
           setItems(rows);
           // attach a flag to the event object to indicate readonly source
           (ev as any).__useDispatchDraft = sourceIsDraft;
+          setEvent(ev);
         } else {
           // fallback to product catalog and previous selections
           const prodRes = await productAPI.getAll({ limit: 1000 });
