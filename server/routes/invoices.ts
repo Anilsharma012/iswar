@@ -95,7 +95,8 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
     // Create invoice
     const invoice = new Invoice({
       ...value,
-      number: invoiceNumber
+      number: invoiceNumber,
+      eventId: value.eventId,
     });
 
     // If invoice is being finalized, update stock
