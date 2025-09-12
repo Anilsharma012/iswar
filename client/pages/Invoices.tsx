@@ -101,6 +101,7 @@ interface Invoice {
   _id: string;
   number: string;
   clientId: Client;
+  eventId?: string;
   date: string;
   withGST: boolean;
   language: "en" | "hi";
