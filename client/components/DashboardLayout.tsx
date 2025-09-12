@@ -194,6 +194,21 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
               <FileText className="h-4 w-4" />
               <span>Terms & Conditions</span>
             </Link>
+            {currentEventId && hasAgreement && (
+              <Link
+                to={`/admin/events/${currentEventId}/agreement/preview`}
+                onClick={onLinkClick}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-gray-700 hover:bg-gray-100",
+                  path.includes("/admin/events/") && path.endsWith("/agreement/preview")
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                    : undefined,
+                )}
+              >
+                <FileText className="h-4 w-4" />
+                <span>Agreement Preview</span>
+              </Link>
+            )}
             <Link
               to={
                 currentEventId
@@ -216,21 +231,6 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
               <Warehouse className="h-4 w-4" />
               <span>Stock Out</span>
             </Link>
-            {currentEventId && hasAgreement && (
-              <Link
-                to={`/admin/events/${currentEventId}/agreement/preview`}
-                onClick={onLinkClick}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-gray-700 hover:bg-gray-100",
-                  path.includes("/admin/events/") && path.endsWith("/agreement/preview")
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-                    : undefined,
-                )}
-              >
-                <FileText className="h-4 w-4" />
-                <span>Agreement Preview</span>
-              </Link>
-            )}
             <Link
               to={
                 currentEventId ? `/admin/events/${currentEventId}/return` : `#`
