@@ -489,17 +489,23 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         }
       }
 
-      let totalAdjust = 0;
+      // Work against the last confirmed dispatch if available, else selections
+      const lastDispatch = (event.dispatches && event.dispatches.length)
+        ? event.dispatches[event.dispatches.length - 1]
+        : null;
+      const targetItems = lastDispatch ? lastDispatch.items : event.selections || [];
+
       const sanitized: any[] = [];
+      let totalShortageCost = 0;
+      let totalDamage = 0;
+      let totalLate = 0;
 
       for (const it of items) {
-        // Expect each item: { productId, expected, returned, shortage, damageAmount, lateFee, lossPrice?, rate }
+        // Expect each item: { itemId, expected, returned, shortage, damageAmount, lateFee, lossPrice?, rate }
         const pid = it.productId || it.itemId || it._id || null;
         const expected = Number(it.expected || 0);
         const returned = Number(it.returned || 0);
-        const shortage = Number(
-          it.shortage ?? Math.max(0, expected - returned),
-        );
+        const shortage = Number(it.shortage ?? Math.max(0, expected - returned));
         const damageAmount = Number(it.damageAmount || 0);
         const lateFee = Number(it.lateFee || 0);
 
@@ -537,21 +543,38 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           { session },
         );
 
+        // Create an inventory txn (issue txn) record
+        await (mongoose.models.IssueTxn as any).create(
+          [
+            {
+              clientId: event.clientId,
+              productId: product._id,
+              qty: returned,
+              type: 'return',
+              ref: `Event:${event._id}`,
+              at: new Date(),
+            },
+          ],
+          { session },
+        );
+
         // Determine loss price: prefer provided lossPrice, then buyPrice, then rate, else 0
-        const lossPrice = Number(
-          it.lossPrice ?? product.buyPrice ?? it.rate ?? 0,
-        );
-
+        const lossPrice = Number(it.lossPrice ?? product.buyPrice ?? it.rate ?? 0);
         const shortageCost = Number((shortage * lossPrice).toFixed(2));
-        const lineAdjust = Number(
-          (shortageCost + damageAmount + lateFee).toFixed(2),
-        );
-        totalAdjust += lineAdjust;
+        const lineAdjust = Number((shortageCost + damageAmount + lateFee).toFixed(2));
 
-        const qtyToSend = expected; // preserve original expected as qtyToSend
-        const rate = Number(
-          it.rate ?? product.sellPrice ?? product.buyPrice ?? 0,
-        );
+        totalShortageCost += shortageCost;
+        totalDamage += damageAmount;
+        totalLate += lateFee;
+
+        // Update dispatched/selection line returnedQty and completed flag
+        const matching = targetItems.find((ti: any) => String(ti.productId) === String(product._id));
+        if (matching) {
+          matching.returnedQty = (matching.returnedQty || 0) + returned;
+          matching.completed = Boolean(matching.returnedQty >= (matching.qtyToSend || matching.qty || 0));
+        }
+
+        const rate = Number(it.rate ?? product.sellPrice ?? product.buyPrice ?? 0);
         const amount = Number((returned * rate).toFixed(2));
 
         sanitized.push({
@@ -560,7 +583,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           sku: product.sku,
           unitType: product.unitType,
           stockQty: product.stockQty,
-          qtyToSend,
+          qtyToSend: expected,
           qtyReturned: returned,
           shortage,
           damageAmount,
@@ -573,29 +596,40 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         });
       }
 
+      // persist changes to event dispatch items
+      if (lastDispatch) {
+        // replace lastDispatch items with updated targetItems
+        lastDispatch.items = targetItems;
+      } else {
+        event.selections = targetItems;
+      }
+
       event.returns = event.returns || [];
       event.returns.push({
         items: sanitized,
         date: new Date(),
-        total: Number(totalAdjust.toFixed(2)),
+        total: Number((totalShortageCost + totalDamage + totalLate).toFixed(2)),
         shortages: sanitized.reduce((s, it) => s + it.shortage, 0),
         damages: sanitized.reduce((s, it) => s + it.damageAmount, 0),
         lateFee: sanitized.reduce((s, it) => s + it.lateFee, 0),
       });
-      event.status = "returned";
+
+      // determine if all dispatch lines completed
+      const allCompleted = (targetItems.length === 0) || targetItems.every((ti: any) => Boolean(ti.completed));
+      if (allCompleted) {
+        event.status = 'returned';
+      }
 
       await event.save({ session });
 
       await (mongoose.models.AuditLog as any).create(
         [
           {
-            action: "return",
-            entity: "Event",
+            action: 'return',
+            entity: 'Event',
             entityId: event._id,
-            userId: req.adminId
-              ? new mongoose.Types.ObjectId(req.adminId)
-              : undefined,
-            meta: { items: sanitized, totalAdjust },
+            userId: req.adminId ? new mongoose.Types.ObjectId(req.adminId) : undefined,
+            meta: { items: sanitized, totals: { totalShortageCost, totalDamage, totalLate } },
           },
         ],
         { session },
@@ -604,10 +638,18 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       await session.commitTransaction();
       session.endSession();
 
-      const populatedEvent = await Event.findById(event._id).populate(
-        "clientId",
-      );
-      return res.json(populatedEvent);
+      const populatedEvent = await Event.findById(event._id).populate('clientId');
+
+      return res.json({
+        event: populatedEvent,
+        summary: {
+          totalShortageCost: Number(totalShortageCost.toFixed(2)),
+          totalDamage: Number(totalDamage.toFixed(2)),
+          totalLate: Number(totalLate.toFixed(2)),
+          lines: sanitized,
+          allCompleted: allCompleted,
+        },
+      });
     } catch (error: any) {
       try {
         await session.abortTransaction();
@@ -618,8 +660,8 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
 
       const isTransient =
         error &&
-        (error.errorLabelSet?.has("TransientTransactionError") ||
-          error.codeName === "WriteConflict");
+        (error.errorLabelSet?.has('TransientTransactionError') ||
+          error.codeName === 'WriteConflict');
 
       console.error(`Return event error (attempt ${attempt}):`, error);
 
@@ -628,7 +670,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         continue;
       }
 
-      return res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 };
