@@ -42,6 +42,7 @@ import {
   getStockLedger,
   getIssueRegister,
   updateStock,
+  getReturnable,
 } from "./routes/stock";
 import {
   getEvents,
@@ -175,6 +176,7 @@ app.get("/api/invoices/:id/pdf", generateInvoicePDFRoute);
 app.get("/api/stock/current", getCurrentStock);
 app.get("/api/stock/ledger", getStockLedger);
 app.get("/api/issue-register", getIssueRegister);
+app.get("/api/stock/returnable", getReturnable);
 app.post("/api/stock/update", updateStock);
 
 // Event routes
