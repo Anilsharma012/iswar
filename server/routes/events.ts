@@ -278,13 +278,26 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       amount: Number(s.amount || 0),
     }));
 
+    const subTotal = sanitized.reduce((s: number, it: any) => s + Number(it.amount || 0), 0);
+    const advNum = Number(advance || 0);
+    const secNum = Number(security || 0);
+    const snapshot = {
+      items: sanitized,
+      advance: advNum,
+      security: secNum,
+      terms: String(agreementTerms || ""),
+      grandTotal: Number((subTotal - advNum - secNum).toFixed(2)),
+      savedAt: new Date(),
+    };
+
     const event = await Event.findByIdAndUpdate(
       id,
       {
         selections: sanitized,
-        advance: Number(advance || 0),
-        security: Number(security || 0),
+        advance: advNum,
+        security: secNum,
         agreementTerms: String(agreementTerms || ""),
+        agreementSnapshot: snapshot,
       },
       { new: true },
     ).populate("clientId");
