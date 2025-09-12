@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { Product, StockLedger, IssueRegister } from '../models';
+import { Product, StockLedger, IssueRegister, Event } from '../models';
 import { AuthRequest } from '../utils/auth';
 import { stockUpdateSchema } from '../utils/validation';
 
@@ -122,6 +122,42 @@ export const getIssueRegister = async (req: AuthRequest, res: Response) => {
     res.json({ issues: issueRegisters });
   } catch (error) {
     console.error('Get issue register error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getReturnable = async (req: AuthRequest, res: Response) => {
+  try {
+    // Fetch recent events that are not explicitly closed
+    const events = await Event.find({ $or: [{ returnClosed: { $ne: true } }, { returnClosed: { $exists: false } }] })
+      .populate('clientId', 'name phone')
+      .sort({ dateFrom: -1 })
+      .limit(200);
+
+    const result: any[] = [];
+
+    for (const ev of events) {
+      const lastDispatch = ev.dispatches && ev.dispatches.length ? ev.dispatches[ev.dispatches.length - 1] : null;
+      const lines = lastDispatch ? lastDispatch.items : ev.selections || [];
+      const hasOutstanding = lines.some((li: any) => {
+        const dispatched = Number(li.qtyToSend || li.qty || 0);
+        const ret = Number(li.returnedQty || 0);
+        return dispatched > ret;
+      });
+      if (!hasOutstanding) continue;
+      result.push({
+        _id: ev._id,
+        name: ev.name,
+        client: ev.clientId,
+        dateFrom: ev.dateFrom,
+        dateTo: ev.dateTo,
+        status: ev.status,
+      });
+    }
+
+    res.json({ events: result });
+  } catch (error) {
+    console.error('Get returnable events error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
