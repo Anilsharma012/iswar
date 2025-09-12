@@ -19,6 +19,7 @@ export default function EventReturn() {
   const [event, setEvent] = useState<any>(null);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [returnDue, setReturnDue] = useState<number>(0);
 
   useEffect(() => {
     const run = async () => {
@@ -144,6 +145,10 @@ export default function EventReturn() {
     [rows],
   );
 
+  useEffect(() => {
+    setReturnDue(Number(totalAdjust.toFixed(2)) || 0);
+  }, [totalAdjust]);
+
   const submit = async () => {
     const prevRows = rows;
     try {
@@ -169,9 +174,25 @@ export default function EventReturn() {
       });
       setRows(optimistic);
 
-      const res = await eventAPI.return(id!, { items: payloadItems });
+      const res = await eventAPI.return(id!, {
+        items: payloadItems,
+        returnDue: Number(returnDue.toFixed(2)),
+      });
       const data = res.data;
       const summary = data?.summary;
+
+      try {
+        const handoff = {
+          eventId: data?.eventId || id,
+          clientId:
+            data?.clientId || data?.event?.clientId?._id || data?.event?.clientId,
+          amount: Number((data?.returnDue ?? totalAdjust).toFixed(2)),
+          ts: Date.now(),
+        };
+        if (handoff.eventId && handoff.clientId) {
+          localStorage.setItem("lastReturnDue", JSON.stringify(handoff));
+        }
+      } catch (_) {}
 
       if (summary?.allCompleted) {
         toast.success("All items returned");
@@ -385,8 +406,21 @@ export default function EventReturn() {
               </TableBody>
             </Table>
 
-            <div className="flex justify-end mt-4 text-lg font-semibold">
-              Total Adjustments: {formatINR(totalAdjust)}
+            <div className="flex justify-end mt-4 items-center gap-6">
+              <div className="text-lg font-semibold">
+                Total Adjustments: {formatINR(totalAdjust)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Return Dues (₹)</span>
+                <Input
+                  type="number"
+                  className="w-32"
+                  value={returnDue}
+                  onChange={(e) =>
+                    setReturnDue(Number(parseFloat(e.target.value).toFixed(2)) || 0)
+                  }
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
