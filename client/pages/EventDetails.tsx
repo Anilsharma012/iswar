@@ -385,9 +385,10 @@ export default function EventDetails() {
       } else {
         toast.error(res.data?.error || "Failed to save expense");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving expense:", error);
-      toast.error("Failed to save expense");
+      const msg = error?.response?.data?.error || error?.message || "Failed to save expense";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
