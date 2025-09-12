@@ -26,6 +26,9 @@ interface EventType {
   security?: number;
   selections?: any[];
   agreementTerms?: string;
+  dispatches?: any[];
+  dispatchDrafts?: any[];
+  agreementSnapshot?: { items: any[] } | null;
 }
 
 interface ProductType {
