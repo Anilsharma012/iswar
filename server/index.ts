@@ -182,6 +182,7 @@ app.get("/api/events", getEvents);
 app.get("/api/events/:id", getEvent);
 app.get("/api/events/:id/summary", getEventSummary);
 app.put("/api/events/:id/agreement", saveAgreement);
+app.patch("/api/events/:id/agreement", saveAgreement);
 app.post("/api/events/:id/dispatch", dispatchEvent);
 app.post("/api/events/:id/return", returnEvent);
 app.get("/api/events/:id/agreement/pdf", generateAgreementPDFRoute);

@@ -24,6 +24,14 @@ export interface IEvent extends Document {
   advance?: number;
   security?: number;
   agreementTerms?: string;
+  agreementSnapshot?: {
+    items: ISelectionItem[];
+    advance: number;
+    security: number;
+    terms: string;
+    grandTotal: number;
+    savedAt: Date;
+  };
   status?: "new" | "confirmed" | "reserved" | "dispatched" | "returned";
   dispatches?: Array<{
     items: ISelectionItem[];
@@ -100,6 +108,20 @@ const eventSchema = new Schema<IEvent>(
     advance: { type: Number, min: 0, default: 0 },
     security: { type: Number, min: 0, default: 0 },
     agreementTerms: { type: String, trim: true },
+    agreementSnapshot: {
+      type: new Schema(
+        {
+          items: { type: [selectionSchema], default: [] },
+          advance: { type: Number, default: 0 },
+          security: { type: Number, default: 0 },
+          terms: { type: String, default: "" },
+          grandTotal: { type: Number, default: 0 },
+          savedAt: { type: Date, default: Date.now },
+        },
+        { _id: false },
+      ),
+      default: undefined,
+    },
     clientSign: { type: String, trim: true },
     companySign: { type: String, trim: true },
     status: {

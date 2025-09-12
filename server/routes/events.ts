@@ -242,14 +242,23 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const {
       selections = [],
+      items = [],
       advance = 0,
       security = 0,
       agreementTerms = "",
+      terms,
+      grandTotal,
+      clientSign,
+      companySign,
     } = req.body || {};
 
+    // choose source array: items (new) or selections (legacy)
+    const rawArray: any[] =
+      Array.isArray(items) && items.length ? items : selections;
+
     // Basic validation
-    if (!Array.isArray(selections)) {
-      return res.status(400).json({ error: "selections must be an array" });
+    if (!Array.isArray(rawArray)) {
+      return res.status(400).json({ error: "items must be an array" });
     }
 
     // Check cold lead
@@ -267,27 +276,69 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    const sanitized = selections.map((s: any) => ({
-      productId: s.productId,
+    const sanitized = rawArray.map((s: any) => ({
+      productId: s.productId || s.itemId,
       name: s.name,
       sku: s.sku,
-      unitType: s.unitType,
+      unitType: s.unitType || s.uom,
       stockQty: Number(s.stockQty || 0),
-      qtyToSend: Number(s.qtyToSend || 0),
+      qtyToSend: Number(s.qtyToSend ?? s.qty ?? 0),
       rate: Number(s.rate || 0),
-      amount: Number(s.amount || 0),
+      amount: Number(
+        s.amount ??
+          Number(
+            (Number(s.qtyToSend ?? s.qty ?? 0) * Number(s.rate || 0)).toFixed(
+              2,
+            ),
+          ),
+      ),
     }));
 
-    const event = await Event.findByIdAndUpdate(
-      id,
-      {
-        selections: sanitized,
-        advance: Number(advance || 0),
-        security: Number(security || 0),
-        agreementTerms: String(agreementTerms || ""),
-      },
-      { new: true },
-    ).populate("clientId");
+    const hasAgreementPayload =
+      rawArray.length > 0 ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "advance") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "security") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "agreementTerms") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "terms") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "grandTotal");
+
+    const subTotal = sanitized.reduce(
+      (s: number, it: any) => s + Number(it.amount || 0),
+      0,
+    );
+    const advNum = Number(advance || 0);
+    const secNum = Number(security || 0);
+    const computedGrand = Number((subTotal - advNum - secNum).toFixed(2));
+    const providedGrand = Number(grandTotal);
+    const gt = Number.isFinite(providedGrand)
+      ? Number(providedGrand.toFixed(2))
+      : computedGrand;
+    const termsText = String(terms ?? agreementTerms ?? "");
+
+    const updateDoc: any = {};
+
+    if (hasAgreementPayload) {
+      const snapshot = {
+        items: sanitized,
+        advance: advNum,
+        security: secNum,
+        terms: termsText,
+        grandTotal: gt,
+        savedAt: new Date(),
+      };
+      updateDoc.agreementSnapshot = snapshot;
+      updateDoc.agreementTerms = termsText;
+      updateDoc.advance = advNum;
+      updateDoc.security = secNum;
+      if (rawArray.length > 0) updateDoc.selections = sanitized;
+    }
+
+    if (typeof clientSign !== "undefined") updateDoc.clientSign = clientSign;
+    if (typeof companySign !== "undefined") updateDoc.companySign = companySign;
+
+    const event = await Event.findByIdAndUpdate(id, updateDoc, {
+      new: true,
+    }).populate("clientId");
 
     res.json(event);
   } catch (error) {

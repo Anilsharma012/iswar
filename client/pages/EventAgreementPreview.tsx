@@ -24,7 +24,13 @@ export default function EventAgreementPreview() {
       try {
         setLoading(true);
         const res = await eventAPI.getById(id!);
-        setEvent(res.data);
+        const ev = res.data;
+        if (!ev?.agreementSnapshot?.items?.length) {
+          toast.info("No saved agreement");
+          navigate(-1);
+          return;
+        }
+        setEvent(ev);
       } catch (e) {
         console.error(e);
         toast.error("Failed to load agreement preview");
@@ -33,7 +39,7 @@ export default function EventAgreementPreview() {
       }
     };
     if (id) load();
-  }, [id]);
+  }, [id, navigate]);
 
   const onPrint = () => window.print();
 
@@ -58,22 +64,20 @@ export default function EventAgreementPreview() {
 
   if (loading || !event) return <div className="p-6">Loading...</div>;
 
-  const rows =
-    event.dispatches && event.dispatches.length
+  const snap = event.agreementSnapshot;
+  const rows = snap?.items?.length
+    ? snap.items
+    : event.dispatches && event.dispatches.length
       ? event.dispatches[event.dispatches.length - 1].items
       : event.selections || [];
 
-  const subtotal = rows.reduce(
-    (s: number, it: any) =>
-      s +
-      Number(
-        (
-          Number(it.qtyToSend ?? it.qty ?? it.qtyReturned ?? 0) *
-          Number(it.rate || it.sellPrice || 0)
-        ).toFixed(2),
-      ),
-    0,
-  );
+  const subtotal = rows.reduce((s: number, it: any) => {
+    const qty = Number(it.qtyToSend ?? it.qty ?? it.qtyReturned ?? 0);
+    const rate = Number(it.rate ?? it.sellPrice ?? 0);
+    const amount =
+      typeof it.amount === "number" ? Number(it.amount) : Number((qty * rate).toFixed(2));
+    return s + amount;
+  }, 0);
 
   return (
     <div className="p-6">
@@ -114,6 +118,17 @@ export default function EventAgreementPreview() {
             {new Date(event.dateTo).toLocaleString("en-IN")}
           </div>
           {event.location && <div>Venue: {event.location}</div>}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Terms</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="whitespace-pre-wrap">
+            {snap?.terms || event.agreementTerms || ""}
+          </div>
         </CardContent>
       </Card>
 
@@ -160,17 +175,15 @@ export default function EventAgreementPreview() {
             </div>
           </div>
           <div className="flex justify-end mt-2">
-            <div>Advance: ₹{Number(event.advance || 0).toFixed(2)}</div>
+            <div>Advance: ₹{Number(snap?.advance ?? event.advance ?? 0).toFixed(2)}</div>
           </div>
           <div className="flex justify-end mt-2">
-            <div>Security: ₹{Number(event.security || 0).toFixed(2)}</div>
+            <div>Security: ₹{Number(snap?.security ?? event.security ?? 0).toFixed(2)}</div>
           </div>
           <div className="flex justify-end mt-2 font-bold text-lg">
             Grand Total: ₹
             {(
-              subtotal -
-              Number(event.advance || 0) -
-              Number(event.security || 0)
+              Number(snap?.grandTotal ?? (subtotal - Number(snap?.advance ?? event.advance ?? 0) - Number(snap?.security ?? event.security ?? 0)))
             ).toFixed(2)}
           </div>
         </CardContent>

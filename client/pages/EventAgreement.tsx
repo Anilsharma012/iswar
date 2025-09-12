@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,10 @@ interface EventType {
   security?: number;
   selections?: any[];
   agreementTerms?: string;
+  dispatches?: any[];
+  dispatchDrafts?: any[];
+  agreementSnapshot?: { items: any[] } | null;
+  status?: "new" | "confirmed" | "reserved" | "dispatched" | "returned";
 }
 
 interface ProductType {
@@ -51,6 +55,7 @@ export default function EventAgreement() {
   const [advance, setAdvance] = useState<string>("0");
   const [security, setSecurity] = useState<string>("0");
   const [terms, setTerms] = useState<string>("");
+  const navigate = useNavigate();
 
   // Signatures
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -68,12 +73,20 @@ export default function EventAgreement() {
         setSecurity(String(ev.security ?? 0));
         setTerms(ev.agreementTerms || "");
 
-        // Prefer latest dispatchDraft (reserve) then dispatch lines as source
+        // Prefer confirmed dispatch if available, otherwise draft if reserved
         const lastDraft = ev.dispatchDrafts?.[ev.dispatchDrafts.length - 1];
         const lastDispatch = ev.dispatches?.[ev.dispatches.length - 1];
         let source: any = null;
         let sourceIsDraft = false;
         if (
+          ev.status === "dispatched" &&
+          lastDispatch &&
+          Array.isArray(lastDispatch.items) &&
+          lastDispatch.items.length > 0
+        ) {
+          source = lastDispatch;
+        } else if (
+          ev.status === "reserved" &&
           lastDraft &&
           Array.isArray(lastDraft.items) &&
           lastDraft.items.length > 0
@@ -86,6 +99,13 @@ export default function EventAgreement() {
           lastDispatch.items.length > 0
         ) {
           source = lastDispatch;
+        } else if (
+          lastDraft &&
+          Array.isArray(lastDraft.items) &&
+          lastDraft.items.length > 0
+        ) {
+          source = lastDraft;
+          sourceIsDraft = true;
         }
 
         if (source) {
@@ -208,12 +228,22 @@ export default function EventAgreement() {
           amount: Number((r.qtyToSend * r.rate).toFixed(2)),
         }));
       const payload = {
-        selections,
+        items: selections.map((s) => ({
+          itemId: s.productId,
+          name: s.name,
+          sku: s.sku,
+          uom: s.unitType,
+          qty: s.qtyToSend,
+          rate: s.rate,
+          amount: s.amount,
+        })),
         advance: Number(advance || 0),
         security: Number(security || 0),
-        agreementTerms: terms,
+        terms: terms,
+        grandTotal: Number((selections.reduce((sum, r) => sum + r.amount, 0) - Number(advance || 0) - Number(security || 0)).toFixed(2)),
       };
-      await eventAPI.saveAgreement(id!, payload);
+      const resp = await eventAPI.saveAgreement(id!, payload);
+      setEvent(resp.data);
       toast.success("Agreement saved");
     } catch (e: any) {
       console.error(e);
@@ -259,7 +289,7 @@ export default function EventAgreement() {
                 <TableHead>SKU</TableHead>
                 <TableHead>UOM</TableHead>
                 <TableHead>Stock</TableHead>
-                <TableHead>Qty To Send</TableHead>
+                <TableHead>{(event as any)?.__useConfirmedDispatch ? "Qty" : "Qty To Send"}</TableHead>
                 <TableHead>Rate</TableHead>
                 <TableHead>Amount</TableHead>
               </TableRow>
@@ -281,7 +311,7 @@ export default function EventAgreement() {
                       }
                       className="w-24"
                       readOnly={Boolean(
-                        event && (event as any).__useDispatchDraft,
+                        event && ((event as any).__useDispatchDraft || (event as any).__useConfirmedDispatch),
                       )}
                     />
                   </TableCell>
@@ -296,7 +326,7 @@ export default function EventAgreement() {
                       }
                       className="w-28"
                       readOnly={Boolean(
-                        event && (event as any).__useDispatchDraft,
+                        event && ((event as any).__useDispatchDraft || (event as any).__useConfirmedDispatch),
                       )}
                     />
                   </TableCell>
@@ -359,11 +389,40 @@ export default function EventAgreement() {
           Back
         </Button>
         <Button
-          onClick={() =>
-            window.open(`/admin/events/${id}/agreement/preview`, "_blank")
-          }
+          onClick={() => {
+            if ((event as any)?.agreementSnapshot?.items?.length) {
+              navigate(`/admin/events/${id}/agreement/preview`);
+            } else {
+              toast.info("Save T&C first");
+            }
+          }}
+          disabled={!Boolean((event as any)?.agreementSnapshot?.items?.length)}
+          title={!Boolean((event as any)?.agreementSnapshot?.items?.length) ? "Save T&C first" : undefined}
         >
           Preview
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={async () => {
+            try {
+              const resp = await eventAPI.downloadAgreement(id!);
+              const url = window.URL.createObjectURL(new Blob([resp.data], { type: "application/pdf" }));
+              const a = document.createElement("a");
+              a.href = url;
+              const clientName = event?.clientId?.name?.replace(/\s+/g, "_") || "client";
+              const dateStr = new Date().toISOString().slice(0, 10);
+              a.download = `agreement-${clientName}-${dateStr}.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            } catch (e: any) {
+              console.error(e);
+              toast.error(e.response?.data?.error || "Failed to download PDF");
+            }
+          }}
+        >
+          Print/PDF
         </Button>
         <Button
           onClick={() =>
