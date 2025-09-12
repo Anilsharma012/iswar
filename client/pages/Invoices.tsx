@@ -139,6 +139,7 @@ export default function Invoices() {
   const [formData, setFormData] = useState<InvoiceFormData>(initialFormData);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [prefillClientLocked, setPrefillClientLocked] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [pagination, setPagination] = useState({
@@ -200,6 +201,79 @@ export default function Invoices() {
     fetchClients();
     fetchProducts();
   }, []);
+
+  // Auto-open invoice modal when redirected from return flow
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const shouldNew = params.get('new');
+    const eventId = params.get('eventId');
+    if (shouldNew === '1' && eventId) {
+      (async () => {
+        try {
+          // fetch event and products if needed
+          const evRes = await eventAPI.getById(eventId);
+          const ev = evRes.data;
+
+          // base lines = last confirmed dispatch
+          const lastDispatch = ev.dispatches && ev.dispatches.length ? ev.dispatches[ev.dispatches.length - 1] : null;
+          const base = (lastDispatch && lastDispatch.items) || ev.selections || [];
+          const baseItems = base.map((it: any) => ({
+            productId: String(it.productId || it._id || ''),
+            desc: it.name || '',
+            unitType: it.unitType || 'pcs',
+            qty: Number(it.qtyToSend || it.qty || 0),
+            rate: Number(it.rate || 0),
+            taxPct: 0,
+          } as InvoiceItem));
+
+          // adjustments from last return
+          const lastReturn = ev.returns && ev.returns.length ? ev.returns[ev.returns.length - 1] : null;
+          let damageSum = 0;
+          let shortageSum = 0;
+          let lateSum = 0;
+          if (lastReturn && Array.isArray(lastReturn.items)) {
+            lastReturn.items.forEach((r: any) => {
+              damageSum += Number(r.damageAmount || 0);
+              shortageSum += Number(r.shortageCost || 0);
+              lateSum += Number(r.lateFee || 0);
+            });
+          }
+
+          const fallbackPid = baseItems[0]?.productId || (products[0]?._id || '');
+          const adjustItems: InvoiceItem[] = [];
+          if (damageSum > 0) {
+            adjustItems.push({ productId: fallbackPid, desc: 'Damage Total', unitType: 'pcs', qty: 1, rate: Number(damageSum.toFixed(2)), taxPct: 0 });
+          }
+          if (shortageSum > 0) {
+            adjustItems.push({ productId: fallbackPid, desc: 'Shortage Total', unitType: 'pcs', qty: 1, rate: Number(shortageSum.toFixed(2)), taxPct: 0 });
+          }
+          if (lateSum > 0) {
+            // merge into Damage Total if damage exists, else add new
+            if (damageSum > 0) {
+              adjustItems[0].rate = Number((adjustItems[0].rate + lateSum).toFixed(2));
+            } else {
+              adjustItems.push({ productId: fallbackPid, desc: 'Late Fee', unitType: 'pcs', qty: 1, rate: Number(lateSum.toFixed(2)), taxPct: 0 });
+            }
+          }
+
+          // prefill form
+          setFormData({
+            clientId: ev.clientId?._id || ev.clientId || '',
+            withGST: false,
+            language: 'en',
+            items: [...baseItems, ...adjustItems],
+            paid: Number(ev.advance || 0),
+            discount: 0,
+          });
+          setPrefillClientLocked(true);
+          setIsDialogOpen(true);
+        } catch (e) {
+          console.error('Prefill invoice from event failed', e);
+        }
+      })();
+    }
+  }, [location.search, products]);
 
   const calculateTotals = (items: InvoiceItem[], discount: number = 0, withGST: boolean = false) => {
     const subTotal = items.reduce((total, item) => total + (item.qty * item.rate), 0);
