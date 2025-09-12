@@ -51,18 +51,50 @@ export default function EventInvoice() {
         // return adjustments from last return
         const lastReturn = ev.returns?.[ev.returns.length - 1];
         const adjustLines: any[] = [];
+        let lateTotal = 0;
         if (lastReturn && Array.isArray(lastReturn.items)) {
           lastReturn.items.forEach((r: any) => {
-            if (r.lineAdjust && Number(r.lineAdjust) !== 0) {
+            const shortage = Number(r.shortage || 0);
+            const damage = Number(r.damageAmount || 0);
+            const late = Number(r.lateFee || 0);
+            const lossPrice = Number(r.lossPrice || r.buyPrice || r.rate || 0);
+            const shortageCost = Number((shortage * lossPrice).toFixed(2));
+
+            if (shortage > 0 && shortageCost > 0) {
               adjustLines.push({
                 productId: r.productId,
-                desc: `Adjustment - ${r.name}`,
+                desc: `Shortage - ${r.name}`,
                 unitType: r.unitType || "pcs",
                 qty: 1,
-                rate: Number(r.lineAdjust),
+                rate: shortageCost,
               });
             }
+
+            if (damage > 0) {
+              adjustLines.push({
+                productId: r.productId,
+                desc: `Damage - ${r.name}`,
+                unitType: r.unitType || "pcs",
+                qty: 1,
+                rate: damage,
+              });
+            }
+
+            if (late > 0) {
+              lateTotal += late;
+            }
           });
+
+          if (lateTotal > 0) {
+            const fallbackPid = baseItems[0]?.productId || (lastReturn.items[0]?.productId ?? "");
+            adjustLines.push({
+              productId: fallbackPid,
+              desc: `Late Fee`,
+              unitType: "pcs",
+              qty: 1,
+              rate: Number(lateTotal.toFixed(2)),
+            });
+          }
         }
 
         setItems([...baseItems, ...adjustLines]);
