@@ -37,6 +37,7 @@ import {
   returnInvoice,
   generateInvoicePDFRoute,
 } from "./routes/invoices";
+import { createInvoicePayment } from "./routes/payments";
 import {
   getCurrentStock,
   getStockLedger,
@@ -172,6 +173,9 @@ app.put("/api/invoices/:id", updateInvoice);
 app.delete("/api/invoices/:id", deleteInvoice);
 app.post("/api/invoices/:id/return", returnInvoice);
 app.get("/api/invoices/:id/pdf", generateInvoicePDFRoute);
+
+// Payments
+app.post("/api/payments", createInvoicePayment);
 
 // Stock routes
 app.get("/api/stock/current", getCurrentStock);
