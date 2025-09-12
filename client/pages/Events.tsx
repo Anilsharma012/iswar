@@ -39,7 +39,7 @@ import {
   DollarSign,
   Receipt,
 } from "lucide-react";
-import { getAuthToken } from "@/lib/api";
+import { getAuthToken, eventAPI } from "@/lib/api";
 
 interface Event {
   _id: string;
