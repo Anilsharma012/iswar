@@ -485,7 +485,10 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         session.endSession();
         return res
           .status(403)
-          .json({ error: "Event already fully returned", code: "ALREADY_RETURNED" });
+          .json({
+            error: "Event already fully returned",
+            code: "ALREADY_RETURNED",
+          });
       }
 
       // Cold lead guard
@@ -542,9 +545,13 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         if (!matching) {
           await session.abortTransaction();
           session.endSession();
-          return res.status(404).json({ error: `Item ${pid} not found in dispatch` });
+          return res
+            .status(404)
+            .json({ error: `Item ${pid} not found in dispatch` });
         }
-        const dispatchedQty = Number(matching.qtyToSend || matching.qty || expected || 0);
+        const dispatchedQty = Number(
+          matching.qtyToSend || matching.qty || expected || 0,
+        );
         const alreadyReturned = Number(matching.returnedQty || 0);
         const remaining = Math.max(0, dispatchedQty - alreadyReturned);
 
@@ -554,7 +561,10 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           session.endSession();
           return res
             .status(409)
-            .json({ error: "Line already fully returned", code: "ALREADY_RETURNED_LINE" });
+            .json({
+              error: "Line already fully returned",
+              code: "ALREADY_RETURNED_LINE",
+            });
         }
 
         // Guard: allow return ONLY if returnedQty < dispatchedQty and not exceeding remaining
@@ -626,7 +636,8 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         matching.returnedQty = alreadyReturned + returned;
         const nowCompleted = matching.returnedQty >= dispatchedQty;
         matching.completed = Boolean(nowCompleted);
-        if (nowCompleted && !matching.completedAt) matching.completedAt = new Date();
+        if (nowCompleted && !matching.completedAt)
+          matching.completedAt = new Date();
 
         const rate = Number(
           it.rate ?? product.sellPrice ?? product.buyPrice ?? 0,

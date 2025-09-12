@@ -30,7 +30,10 @@ export default function EventReturn() {
 
         // Hard guard: redirect if already closed
         if (data.returnClosed === true) {
-          toast.error("Already returned", { description: "This event is closed for returns.", duration: 3000 });
+          toast.error("Already returned", {
+            description: "This event is closed for returns.",
+            duration: 3000,
+          });
           window.history.back();
           return;
         }
@@ -46,7 +49,10 @@ export default function EventReturn() {
         });
 
         if (outstanding.length === 0) {
-          toast.error("Already returned", { description: "No outstanding items remain.", duration: 3000 });
+          toast.error("Already returned", {
+            description: "No outstanding items remain.",
+            duration: 3000,
+          });
           window.history.back();
           return;
         }
@@ -223,16 +229,23 @@ export default function EventReturn() {
         return;
       }
 
-      if (status === 409 && (code === "ALREADY_RETURNED_LINE" || code === "ALREADY_RETURNED")) {
+      if (
+        status === 409 &&
+        (code === "ALREADY_RETURNED_LINE" || code === "ALREADY_RETURNED")
+      ) {
         // Partial conflict: notify user and refresh the page state
-        toast.error(e.response?.data?.error || "Some lines were already returned");
+        toast.error(
+          e.response?.data?.error || "Some lines were already returned",
+        );
         // refresh event to update UI
         try {
           const refreshed = await eventAPI.getById(id!);
           if (refreshed?.data) setEvent(refreshed.data);
           // compute outstanding rows again
-          const lastDispatch = refreshed.data.dispatches?.[refreshed.data.dispatches.length - 1];
-          const allItems = lastDispatch?.items || refreshed.data.selections || [];
+          const lastDispatch =
+            refreshed.data.dispatches?.[refreshed.data.dispatches.length - 1];
+          const allItems =
+            lastDispatch?.items || refreshed.data.selections || [];
           const outstanding = allItems.filter((x: any) => {
             const dispatched = Number(x.qtyToSend || x.qty || 0);
             const alreadyReturned = Number(x.returnedQty || 0);
@@ -262,7 +275,7 @@ export default function EventReturn() {
           });
           setRows(newRows);
         } catch (refreshErr) {
-          console.error('Failed to refresh event after conflict', refreshErr);
+          console.error("Failed to refresh event after conflict", refreshErr);
         }
         return;
       }
