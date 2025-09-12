@@ -554,7 +554,7 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           session.endSession();
           return res
             .status(409)
-            .json({ error: "Line already fully returned", code: "ALREADY_RETURNED" });
+            .json({ error: "Line already fully returned", code: "ALREADY_RETURNED_LINE" });
         }
 
         // Guard: allow return ONLY if returnedQty < dispatchedQty and not exceeding remaining
