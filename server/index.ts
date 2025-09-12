@@ -55,6 +55,7 @@ import {
   dispatchEvent,
   returnEvent,
   generateAgreementPDFRoute,
+  getLastReturnSummary,
 } from "./routes/events";
 import {
   getEventExpenses,
