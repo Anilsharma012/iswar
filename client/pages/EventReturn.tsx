@@ -125,7 +125,7 @@ export default function EventReturn() {
 
       await eventAPI.return(id!, { items: payloadItems });
       toast.success("Return recorded");
-      window.location.href = `/admin/events/${id}/invoice`;
+      window.location.href = `/invoices?new=1&eventId=${id}`;
     } catch (e: any) {
       console.error(e);
       toast.error(e.response?.data?.error || "Failed to return");
