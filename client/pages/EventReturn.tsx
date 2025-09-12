@@ -165,16 +165,19 @@ export default function EventReturn() {
 
       const res = await eventAPI.return(id!, { items: payloadItems });
       const data = res.data;
-      toast.success("Return recorded");
-
-      // Update local event and rows based on server response
-      if (data?.event) setEvent(data.event);
       const summary = data?.summary;
 
       if (summary?.allCompleted) {
-        // hide card by clearing rows and setting status
-        setRows([]);
-      } else if (data?.event) {
+        toast.success("All items returned");
+        // navigate away to event details
+        window.location.href = `/event-details/${id}`;
+        return;
+      }
+
+      toast.success("Return recorded");
+      // Update local event and rows based on server response
+      if (data?.event) setEvent(data.event);
+      if (data?.event) {
         const lastDispatch =
           data.event.dispatches?.[data.event.dispatches.length - 1];
         const allItems = lastDispatch?.items || data.event.selections || [];
@@ -212,9 +215,17 @@ export default function EventReturn() {
       window.location.href = `/invoices?new=1&eventId=${id}`;
     } catch (e: any) {
       console.error(e);
-      toast.error(e.response?.data?.error || "Failed to return");
-      // rollback optimistic
-      setRows(prevRows);
+      if (e?.response?.status === 409 && e?.response?.data?.code === "ALREADY_RETURNED") {
+        toast.error("Already returned");
+        window.history.back();
+      } else if (e?.response?.status === 403) {
+        toast.error("Already returned");
+        window.history.back();
+      } else {
+        toast.error(e.response?.data?.error || "Failed to return");
+        // rollback optimistic
+        setRows(prevRows);
+      }
     }
   };
 
