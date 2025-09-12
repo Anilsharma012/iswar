@@ -189,10 +189,22 @@ export default function EventDetails() {
     if (id) {
       fetchEventDetails();
       fetchEventSummary();
+      fetchFinancials();
       if (activeTab === "workers") fetchWorkers();
       if (activeTab === "expenses") fetchExpenses();
     }
   }, [id, activeTab]);
+
+  useEffect(() => {
+    const onPaymentsUpdated = (e: any) => {
+      if (!id) return;
+      if (!e?.detail?.eventId || String(e.detail.eventId) === String(id)) {
+        fetchFinancials();
+      }
+    };
+    window.addEventListener("payments:updated", onPaymentsUpdated);
+    return () => window.removeEventListener("payments:updated", onPaymentsUpdated);
+  }, [id]);
 
   const fetchEventDetails = async () => {
     try {
