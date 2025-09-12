@@ -840,3 +840,25 @@ export const generateAgreementPDFRoute = async (
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const getLastReturnSummary = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const event = await Event.findById(id).populate("clientId");
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    const summary = (event as any).lastReturnSummary || {
+      totals: { shortage: 0, damage: 0, late: 0, returnDue: 0 },
+      at: null,
+    };
+
+    return res.json({
+      eventId: event._id,
+      clientId: (event.clientId as any)?._id || event.clientId,
+      lastReturnSummary: summary,
+    });
+  } catch (error) {
+    console.error("Get last return summary error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
