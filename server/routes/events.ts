@@ -289,26 +289,29 @@ export const saveAgreement = async (req: AuthRequest, res: Response) => {
     const advNum = Number(advance || 0);
     const secNum = Number(security || 0);
     const computedGrand = Number((subTotal - advNum - secNum).toFixed(2));
+    const providedGrand = Number(grandTotal);
+    const gt = Number.isFinite(providedGrand) ? Number(providedGrand.toFixed(2)) : computedGrand;
+
     const snapshot = {
       items: sanitized,
       advance: advNum,
       security: secNum,
       terms: String(agreementTerms || ""),
-      grandTotal: Number((grandTotal ?? computedGrand).toFixed ? (grandTotal as number) : computedGrand),
+      grandTotal: gt,
       savedAt: new Date(),
     };
 
-    const event = await Event.findByIdAndUpdate(
-      id,
-      {
-        selections: sanitized,
-        advance: advNum,
-        security: secNum,
-        agreementTerms: String(agreementTerms || ""),
-        agreementSnapshot: snapshot,
-      },
-      { new: true },
-    ).populate("clientId");
+    const updateDoc: any = {
+      advance: advNum,
+      security: secNum,
+      agreementTerms: String(agreementTerms || ""),
+      agreementSnapshot: snapshot,
+    };
+    if (rawArray.length > 0) updateDoc.selections = sanitized;
+    if (typeof clientSign !== "undefined") updateDoc.clientSign = clientSign;
+    if (typeof companySign !== "undefined") updateDoc.companySign = companySign;
+
+    const event = await Event.findByIdAndUpdate(id, updateDoc, { new: true }).populate("clientId");
 
     res.json(event);
   } catch (error) {
