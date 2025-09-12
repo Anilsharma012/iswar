@@ -1227,6 +1227,11 @@ export default function Invoices() {
                               </AlertDialogContent>
                             </AlertDialog>
                           )}
+                          {(invoice.totals?.pending ?? 0) > 0 && (
+                            <Button variant="outline" size="sm" onClick={() => openSettle(invoice)}>
+                              ₹ Settle
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
