@@ -19,6 +19,7 @@ import EventAgreementPreview from "@/pages/EventAgreementPreview";
 import EventAgreementSign from "@/pages/EventAgreementSign";
 import EventDispatch from "@/pages/EventDispatch";
 import EventReturn from "@/pages/EventReturn";
+import EventInvoice from "@/pages/EventInvoice";
 import Workers from "@/pages/Workers";
 import Attendance from "@/pages/Attendance";
 import Payroll from "@/pages/Payroll";
