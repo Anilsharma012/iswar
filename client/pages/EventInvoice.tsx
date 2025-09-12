@@ -165,7 +165,7 @@ export default function EventInvoice() {
             rate: Number(it.rate || 0),
           })),
         totals: {
-          subTotal,
+          subTotal: baseSubtotal,
           tax: 0,
           discount: discountAmount,
           roundOff: 0,
@@ -201,7 +201,7 @@ export default function EventInvoice() {
             rate: Number(it.rate || 0),
           })),
         totals: {
-          subTotal,
+          subTotal: baseSubtotal,
           tax: 0,
           discount: discountAmount,
           roundOff: 0,
