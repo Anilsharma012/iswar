@@ -265,6 +265,7 @@ export default function EventAgreement() {
                         updateRow(idx, { qtyToSend: Number(e.target.value) })
                       }
                       className="w-24"
+                      readOnly={Boolean(event && (event as any).__useDispatchDraft)}
                     />
                   </TableCell>
                   <TableCell>
