@@ -98,9 +98,12 @@ export default function EventReturn() {
       const next = [...prev];
       const r = { ...next[i], ...patch };
       if (r.returned < 0) r.returned = 0;
-      if (r.returned > r.expected) r.returned = r.expected;
+      const maxReturnable = (r.expected || 0) - (r.alreadyReturned || 0);
+      if (r.returned > maxReturnable) r.returned = maxReturnable;
+
+      const totalReturned = (r.alreadyReturned || 0) + Number(r.returned || 0);
       r.shortage = Number(
-        patch.shortage ?? Math.max(0, r.expected - r.returned),
+        patch.shortage ?? Math.max(0, (r.expected || 0) - totalReturned),
       );
       const lossPrice = r.lossPrice || r.buyPrice || r.rate || 0;
       r.shortageCost = Number((r.shortage * lossPrice).toFixed(2));
