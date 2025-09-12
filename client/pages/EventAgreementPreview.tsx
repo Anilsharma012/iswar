@@ -24,7 +24,13 @@ export default function EventAgreementPreview() {
       try {
         setLoading(true);
         const res = await eventAPI.getById(id!);
-        setEvent(res.data);
+        const ev = res.data;
+        if (!ev?.agreementSnapshot?.items?.length) {
+          toast.info("No saved agreement");
+          navigate(-1);
+          return;
+        }
+        setEvent(ev);
       } catch (e) {
         console.error(e);
         toast.error("Failed to load agreement preview");
@@ -33,7 +39,7 @@ export default function EventAgreementPreview() {
       }
     };
     if (id) load();
-  }, [id]);
+  }, [id, navigate]);
 
   const onPrint = () => window.print();
 
