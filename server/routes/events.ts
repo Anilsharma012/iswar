@@ -534,12 +534,10 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
       if (event.returnClosed) {
         await session.abortTransaction();
         session.endSession();
-        return res
-          .status(403)
-          .json({
-            error: "Event already fully returned",
-            code: "ALREADY_RETURNED",
-          });
+        return res.status(403).json({
+          error: "Event already fully returned",
+          code: "ALREADY_RETURNED",
+        });
       }
 
       // Cold lead guard
@@ -610,12 +608,10 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
         if (matching.completed || remaining <= 0) {
           await session.abortTransaction();
           session.endSession();
-          return res
-            .status(409)
-            .json({
-              error: "Line already fully returned",
-              code: "ALREADY_RETURNED_LINE",
-            });
+          return res.status(409).json({
+            error: "Line already fully returned",
+            code: "ALREADY_RETURNED_LINE",
+          });
         }
 
         // Guard: allow return ONLY if returnedQty < dispatchedQty and not exceeding remaining
@@ -743,7 +739,9 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
 
       // compute return dues and persist summary
       const computedDue = Number(
-        sanitized.reduce((s, it) => s + Number(it.lineAdjust || 0), 0).toFixed(2),
+        sanitized
+          .reduce((s, it) => s + Number(it.lineAdjust || 0), 0)
+          .toFixed(2),
       );
       const providedDue = Number((req.body || {}).returnDue);
       const effectiveDue = Number.isFinite(providedDue)
@@ -773,7 +771,12 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
               : undefined,
             meta: {
               items: sanitized,
-              totals: { totalShortageCost, totalDamage, totalLate, returnDue: effectiveDue },
+              totals: {
+                totalShortageCost,
+                totalDamage,
+                totalLate,
+                returnDue: effectiveDue,
+              },
             },
           },
         ],

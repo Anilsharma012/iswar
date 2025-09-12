@@ -258,14 +258,17 @@ export default function Clients() {
               action: {
                 label: "Open Event",
                 onClick: () => {
-                  if (eventId) window.location.href = `/event-details/${eventId}`;
+                  if (eventId)
+                    window.location.href = `/event-details/${eventId}`;
                   else window.location.href = "/events";
                 },
               },
             } as any);
           } catch (evErr: any) {
             console.error("Auto-create event failed:", evErr);
-            toast.error(evErr.response?.data?.error || "Failed to create event");
+            toast.error(
+              evErr.response?.data?.error || "Failed to create event",
+            );
           }
         } else {
           toast.success("Client created successfully");
@@ -654,7 +657,9 @@ export default function Clients() {
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{client.name}</span>
                               {client.eventName && (
-                                <span className="text-xs text-gray-500">• {client.eventName}</span>
+                                <span className="text-xs text-gray-500">
+                                  • {client.eventName}
+                                </span>
                               )}
                               {leadPriority[client._id] && (
                                 <Badge

@@ -185,7 +185,9 @@ export default function EventReturn() {
         const handoff = {
           eventId: data?.eventId || id,
           clientId:
-            data?.clientId || data?.event?.clientId?._id || data?.event?.clientId,
+            data?.clientId ||
+            data?.event?.clientId?._id ||
+            data?.event?.clientId,
           amount: Number((data?.returnDue ?? totalAdjust).toFixed(2)),
           ts: Date.now(),
         };
@@ -417,7 +419,9 @@ export default function EventReturn() {
                   className="w-32"
                   value={returnDue}
                   onChange={(e) =>
-                    setReturnDue(Number(parseFloat(e.target.value).toFixed(2)) || 0)
+                    setReturnDue(
+                      Number(parseFloat(e.target.value).toFixed(2)) || 0,
+                    )
                   }
                 />
               </div>

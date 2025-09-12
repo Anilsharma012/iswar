@@ -232,7 +232,8 @@ export default function Invoices() {
             ev.dispatches && ev.dispatches.length
               ? ev.dispatches[ev.dispatches.length - 1]
               : null;
-          const base = (lastDispatch && lastDispatch.items) || ev.selections || [];
+          const base =
+            (lastDispatch && lastDispatch.items) || ev.selections || [];
           const baseItems = base.map(
             (it: any) =>
               ({
@@ -260,7 +261,9 @@ export default function Invoices() {
             setReturnDues(Number(Number(data.amount || 0).toFixed(2)) || 0);
           } else {
             try {
-              const s = await eventAPI.getLastReturnSummary(String(data.eventId));
+              const s = await eventAPI.getLastReturnSummary(
+                String(data.eventId),
+              );
               const amt = Number(
                 s?.data?.lastReturnSummary?.totals?.returnDue ?? 0,
               );
