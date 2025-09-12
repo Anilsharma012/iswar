@@ -321,8 +321,8 @@ export default function EventDetails() {
     setLoading(true);
     try {
       const url = editingWorker
-        ? `/api/events/${id}/workers/${editingWorker._id}`
-        : `/api/events/${id}/workers`;
+        ? `/events/${id}/workers/${editingWorker._id}`
+        : `/events/${id}/workers`;
       const method = editingWorker ? "PUT" : "POST";
 
       const payload = {
@@ -364,8 +364,8 @@ export default function EventDetails() {
     setLoading(true);
     try {
       const url = editingExpense
-        ? `/api/events/${id}/expenses/${editingExpense._id}`
-        : `/api/events/${id}/expenses`;
+        ? `/events/${id}/expenses/${editingExpense._id}`
+        : `/events/${id}/expenses`;
       const method = editingExpense ? "PUT" : "POST";
 
       const payload = {
