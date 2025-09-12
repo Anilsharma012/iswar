@@ -38,6 +38,7 @@ import {
   generateInvoicePDFRoute,
 } from "./routes/invoices";
 import { createInvoicePayment } from "./routes/payments";
+import { getEventFinancials } from "./routes/financials";
 import {
   getCurrentStock,
   getStockLedger,
@@ -188,6 +189,7 @@ app.post("/api/stock/update", updateStock);
 app.get("/api/events", getEvents);
 app.get("/api/events/:id", getEvent);
 app.get("/api/events/:id/summary", getEventSummary);
+app.get("/api/events/:id/financials", getEventFinancials);
 app.put("/api/events/:id/agreement", saveAgreement);
 app.patch("/api/events/:id/agreement", saveAgreement);
 app.post("/api/events/:id/dispatch", dispatchEvent);
