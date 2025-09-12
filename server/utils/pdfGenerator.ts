@@ -63,7 +63,7 @@ const translations = {
     grandTotal: "कुल योग",
     paid: "भुगतान",
     pending: "बकाया",
-    thankYou: "आपके व्यापार के लिए धन्यव���द!",
+    thankYou: "आपके व्या��ार के लिए धन्यवाद!",
   },
 };
 
@@ -324,18 +324,17 @@ export const generateAgreementPDF = (
   doc.font("Helvetica-Bold").text("Subtotal:", 360, y);
   doc.font("Helvetica").text(`₹${subtotal.toFixed(2)}`, 500, y);
   y += 16;
+  const adv = Number(event.agreementSnapshot?.advance ?? event.advance ?? 0);
+  const sec = Number(event.agreementSnapshot?.security ?? event.security ?? 0);
   doc.font("Helvetica-Bold").text("Advance:", 360, y);
-  doc
-    .font("Helvetica")
-    .text(`₹${Number(event.advance || 0).toFixed(2)}`, 500, y);
+  doc.font("Helvetica").text(`₹${adv.toFixed(2)}`, 500, y);
   y += 16;
   doc.font("Helvetica-Bold").text("Security:", 360, y);
-  doc
-    .font("Helvetica")
-    .text(`₹${Number(event.security || 0).toFixed(2)}`, 500, y);
+  doc.font("Helvetica").text(`₹${sec.toFixed(2)}`, 500, y);
   y += 18;
-  const grand =
-    subtotal - Number(event.advance || 0) - Number(event.security || 0);
+  const grand = Number(
+    (event.agreementSnapshot?.grandTotal ?? subtotal - adv - sec).toFixed(2),
+  );
   doc.font("Helvetica-Bold").text("Grand Total:", 360, y);
   doc.font("Helvetica-Bold").text(`₹${grand.toFixed(2)}`, 500, y);
 
