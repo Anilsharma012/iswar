@@ -467,10 +467,18 @@ export default function EventDetails() {
       const rawAmount = parseFloat(paymentFormData.amount);
       const remaining = Number(selectedWorker.remainingAmount || 0);
       const safeAmount = Math.min(Math.max(rawAmount, 0), remaining);
-      const payload = {
-        ...paymentFormData,
+
+      const payload: any = {
         amount: Number(safeAmount.toFixed(2)),
-      } as any;
+        paymentMode: paymentFormData.paymentMode,
+        paymentDate: new Date(paymentFormData.paymentDate).toISOString(),
+      };
+      if (paymentFormData.referenceNumber?.trim()) {
+        payload.referenceNumber = paymentFormData.referenceNumber.trim();
+      }
+      if (paymentFormData.notes?.trim()) {
+        payload.notes = paymentFormData.notes.trim();
+      }
 
       const res = await api.post(
         `/events/${id}/workers/${selectedWorker._id}/payments`,
