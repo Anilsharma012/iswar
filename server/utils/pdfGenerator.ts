@@ -63,9 +63,22 @@ const translations = {
     grandTotal: "कुल योग",
     paid: "भुगतान",
     pending: "बकाया",
-    thankYou: "आपके व्या��ार के लिए धन्यवाद!",
+    thankYou: "आपके व्यवसाय के लिए धन्यवाद!",
   },
-};
+} as const;
+
+const DEFAULT_TERMS: string[] = [
+  "Goods are rented for the specified event duration only. Additional days will be charged extra.",
+  "Any damage, loss, or shortage will be charged at actual replacement or repair cost.",
+  "Security deposit, if any, is refundable after complete return and quality check of goods.",
+  "Customer is responsible for safe custody of items at the event site.",
+  "Site readiness, permissions, electricity and water arrangements are the customer's responsibility.",
+  "Cancellations within 48 hours of the schedule may attract up to 100% charges.",
+  "Payment terms: advance to confirm booking; balance on delivery unless otherwise agreed in writing.",
+  "Taxes and government levies are extra as applicable.",
+  "Force Majeure: We are not liable for delays caused by events beyond control.",
+  "All disputes are subject to local jurisdiction.",
+];
 
 export const generateInvoicePDF = (
   invoice: PDFInvoice,
@@ -75,152 +88,149 @@ export const generateInvoicePDF = (
   const doc = new PDFDocument({ margin: 50 });
   const t = translations[language];
 
-  // Set response headers
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
     `attachment; filename=invoice-${invoice.number}.pdf`,
   );
 
-  // Pipe the PDF to response
   doc.pipe(res);
 
-  // Header
-  doc.fontSize(20).font("Helvetica-Bold").text(t.company, 50, 50);
-  doc.fontSize(16).text(t.invoice, 50, 80);
+  // Header block
+  doc
+    .fontSize(20)
+    .font("Helvetica-Bold")
+    .text(t.company, 50, 40, { width: 300 });
+  doc.fontSize(12).font("Helvetica").text(t.invoice, 50, 70);
 
-  // Invoice details
-  doc.fontSize(12).font("Helvetica");
-  doc.text(`${t.invoiceNo}: ${invoice.number}`, 350, 50);
-  doc.text(
-    `${t.date}: ${new Date(invoice.date).toLocaleDateString()}`,
-    350,
-    70,
-  );
+  // Invoice meta box
+  doc
+    .roundrect(350, 40, 200, 45, 6)
+    .strokeColor("#e5e7eb")
+    .lineWidth(1)
+    .stroke();
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .text(`${t.invoiceNo}: ${invoice.number}`, 360, 50)
+    .text(`${t.date}: ${new Date(invoice.date).toLocaleDateString()}`, 360, 65);
 
-  // Bill to section
-  doc.fontSize(14).font("Helvetica-Bold").text(t.billTo, 50, 130);
-  doc.fontSize(12).font("Helvetica");
-  doc.text(invoice.clientId.name, 50, 150);
-  doc.text(invoice.clientId.phone, 50, 165);
-  doc.text(invoice.clientId.address, 50, 180);
-
+  // Bill to box
+  doc
+    .fontSize(11)
+    .font("Helvetica-Bold")
+    .text(t.billTo, 50, 110);
+  doc
+    .roundrect(50, 125, 500, 70, 6)
+    .strokeColor("#e5e7eb")
+    .lineWidth(1)
+    .stroke();
+  doc
+    .font("Helvetica")
+    .fontSize(10)
+    .text(invoice.clientId.name, 60, 138)
+    .text(invoice.clientId.phone, 60, 153)
+    .text(invoice.clientId.address, 60, 168);
   if (invoice.withGST && invoice.clientId.gstin) {
-    doc.text(`${t.gstin}: ${invoice.clientId.gstin}`, 50, 195);
+    doc.text(`${t.gstin}: ${invoice.clientId.gstin}`, 60, 183);
   }
 
-  // Table header
-  const tableTop = 230;
-  const itemCodeX = 50;
-  const descriptionX = 150;
+  // Table header background
+  const tableTop = 215;
+  doc
+    .save()
+    .rect(50, tableTop, 500, 20)
+    .fillColor("#f3f4f6")
+    .fill()
+    .restore();
+
+  const descriptionX = 60;
   const unitX = 300;
-  const qtyX = 350;
-  const rateX = 400;
-  const amountX = 480;
+  const qtyX = 360;
+  const rateX = 420;
+  const amountX = 500;
 
   doc.fontSize(10).font("Helvetica-Bold");
-  doc.text(t.description, descriptionX, tableTop);
-  doc.text(t.unit, unitX, tableTop);
-  doc.text(t.qty, qtyX, tableTop);
-  doc.text(t.rate, rateX, tableTop);
-  doc.text(t.amount, amountX, tableTop);
+  doc.text(t.description, descriptionX, tableTop + 5);
+  doc.text(t.unit, unitX, tableTop + 5);
+  doc.text(t.qty, qtyX, tableTop + 5);
+  doc.text(t.rate, rateX, tableTop + 5);
+  doc.text(t.amount, amountX, tableTop + 5);
 
-  if (invoice.withGST) {
-    const taxX = 530;
-    doc.text(t.tax, taxX, tableTop);
-  }
-
-  // Draw line under header
-  doc
-    .strokeColor("#000000")
-    .lineWidth(1)
-    .moveTo(50, tableTop + 15)
-    .lineTo(550, tableTop + 15)
-    .stroke();
-
-  // Table items
-  let y = tableTop + 25;
+  // Items
+  let y = tableTop + 26;
   doc.font("Helvetica").fontSize(9);
-
   invoice.items.forEach((item) => {
     const lineAmount = item.qty * item.rate;
-    const taxAmount =
-      invoice.withGST && item.taxPct ? lineAmount * (item.taxPct / 100) : 0;
+    const taxAmount = invoice.withGST && item.taxPct ? lineAmount * (item.taxPct / 100) : 0;
 
-    doc.text(item.desc || item.productId.name, descriptionX, y, { width: 140 });
+    doc.text(item.desc || item.productId.name, descriptionX, y, { width: 220 });
     doc.text(item.unitType, unitX, y);
     doc.text(item.qty.toString(), qtyX, y);
     doc.text(`₹${item.rate.toFixed(2)}`, rateX, y);
     doc.text(`₹${lineAmount.toFixed(2)}`, amountX, y);
 
     if (invoice.withGST && taxAmount > 0) {
-      doc.text(`₹${taxAmount.toFixed(2)}`, 530, y);
+      doc.text(`₹${taxAmount.toFixed(2)}`, amountX + 60, y);
     }
 
-    y += 20;
+    y += 18;
+    doc.moveTo(50, y).lineTo(550, y).strokeColor("#e5e7eb").lineWidth(1).stroke();
+    y += 4;
   });
 
-  // Draw line before totals
+  // Totals box
   y += 10;
-  doc
-    .strokeColor("#000000")
-    .lineWidth(1)
-    .moveTo(300, y)
-    .lineTo(550, y)
-    .stroke();
-
-  // Totals section
-  y += 20;
-  const totalsX = 350;
-  const amountColumn = 480;
+  const boxY = y;
+  doc.roundrect(320, boxY, 230, 110, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  let ty = boxY + 10;
+  const labelX = 330;
+  const valueX = 530 - 10;
 
   doc.fontSize(10).font("Helvetica");
-  doc.text(`${t.subtotal}:`, totalsX, y);
-  doc.text(`₹${invoice.totals.subTotal.toFixed(2)}`, amountColumn, y);
+  doc.text(`${t.subtotal}:`, labelX, ty, { width: 160, align: "right" });
+  doc.text(`₹${invoice.totals.subTotal.toFixed(2)}`, valueX - 80, ty, { align: "right" });
 
   if (invoice.withGST && invoice.totals.tax > 0) {
-    y += 15;
-    doc.text(`${t.tax}:`, totalsX, y);
-    doc.text(`₹${invoice.totals.tax.toFixed(2)}`, amountColumn, y);
+    ty += 15;
+    doc.text(`${t.tax}:`, labelX, ty, { width: 160, align: "right" });
+    doc.text(`₹${invoice.totals.tax.toFixed(2)}`, valueX - 80, ty, { align: "right" });
   }
 
   if (invoice.totals.discount && invoice.totals.discount > 0) {
-    y += 15;
-    doc.text(`${t.discount}:`, totalsX, y);
-    doc.text(`-₹${invoice.totals.discount.toFixed(2)}`, amountColumn, y);
+    ty += 15;
+    doc.text(`${t.discount}:`, labelX, ty, { width: 160, align: "right" });
+    doc.text(`-₹${invoice.totals.discount.toFixed(2)}`, valueX - 80, ty, { align: "right" });
   }
 
   if (invoice.totals.roundOff && invoice.totals.roundOff !== 0) {
-    y += 15;
-    doc.text(`${t.roundOff}:`, totalsX, y);
-    doc.text(`₹${invoice.totals.roundOff.toFixed(2)}`, amountColumn, y);
+    ty += 15;
+    doc.text(`${t.roundOff}:`, labelX, ty, { width: 160, align: "right" });
+    doc.text(`₹${invoice.totals.roundOff.toFixed(2)}`, valueX - 80, ty, { align: "right" });
   }
 
-  // Grand total
-  y += 20;
-  doc.fontSize(12).font("Helvetica-Bold");
-  doc.text(`${t.grandTotal}:`, totalsX, y);
-  doc.text(`₹${invoice.totals.grandTotal.toFixed(2)}`, amountColumn, y);
+  ty += 20;
+  doc.font("Helvetica-Bold").fontSize(11);
+  doc.text(`${t.grandTotal}:`, labelX, ty, { width: 160, align: "right" });
+  doc.text(`₹${invoice.totals.grandTotal.toFixed(2)}`, valueX - 80, ty, { align: "right" });
 
-  // Payment details
+  // Paid/Pending
   if (invoice.totals.paid > 0 || invoice.totals.pending > 0) {
-    y += 20;
-    doc.fontSize(10).font("Helvetica");
-    doc.text(`${t.paid}:`, totalsX, y);
-    doc.text(`₹${invoice.totals.paid.toFixed(2)}`, amountColumn, y);
-
-    y += 15;
-    doc.text(`${t.pending}:`, totalsX, y);
-    doc.text(`₹${invoice.totals.pending.toFixed(2)}`, amountColumn, y);
+    ty += 18;
+    doc.font("Helvetica").fontSize(10);
+    doc.text(`${t.paid}:`, labelX, ty, { width: 160, align: "right" });
+    doc.text(`₹${invoice.totals.paid.toFixed(2)}`, valueX - 80, ty, { align: "right" });
+    ty += 14;
+    doc.text(`${t.pending}:`, labelX, ty, { width: 160, align: "right" });
+    doc.text(`₹${invoice.totals.pending.toFixed(2)}`, valueX - 80, ty, { align: "right" });
   }
 
   // Footer
   doc
     .fontSize(10)
     .font("Helvetica-Oblique")
-    .text(t.thankYou, 50, doc.page.height - 100, { align: "center" });
+    .text(t.thankYou, 50, doc.page.height - 80, { align: "center" });
 
-  // Finalize the PDF
   doc.end();
 };
 
@@ -230,7 +240,6 @@ export const generateAgreementPDF = (
   res: Response,
 ) => {
   const doc = new PDFDocument({ margin: 50 });
-  // basic translations reuse invoice labels
   const t = translations[language] || translations.en;
 
   res.setHeader("Content-Type", "application/pdf");
@@ -243,63 +252,55 @@ export const generateAgreementPDF = (
 
   doc.pipe(res);
 
-  doc
-    .fontSize(18)
-    .font("Helvetica-Bold")
-    .text("Terms & Conditions / Agreement", { align: "center" });
-  doc.moveDown();
+  // Title
+  doc.fontSize(18).font("Helvetica-Bold").text("Terms & Conditions / Agreement", { align: "center" });
+  doc.moveDown(0.5);
 
-  // Client block
-  doc.fontSize(12).font("Helvetica-Bold").text("Client:");
-  doc.font("Helvetica").text(event.clientId?.name || "-");
-  doc.text(event.clientId?.phone || "-");
-  if (event.clientId?.address) doc.text(event.clientId.address);
-  doc.moveDown();
+  // Client / Event boxes
+  doc.roundrect(50, 80, 240, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  doc.fontSize(11).font("Helvetica-Bold").text("Client", 60, 90);
+  doc.font("Helvetica").fontSize(10);
+  doc.text(event.clientId?.name || "-", 60, 106);
+  doc.text(event.clientId?.phone || "-", 60, 121);
+  if (event.clientId?.address) doc.text(event.clientId.address, 60, 136, { width: 220 });
 
-  // Event block
-  doc.fontSize(12).font("Helvetica-Bold").text("Event:");
-  const from = event.dateFrom
-    ? new Date(event.dateFrom).toLocaleString("en-IN")
-    : "-";
-  const to = event.dateTo
-    ? new Date(event.dateTo).toLocaleString("en-IN")
-    : "-";
-  doc.font("Helvetica").text(`Schedule: ${from} - ${to}`);
-  if (event.location) doc.text(`Venue: ${event.location}`);
-  doc.moveDown();
+  doc.roundrect(310, 80, 240, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  doc.fontSize(11).font("Helvetica-Bold").text("Event", 320, 90);
+  const from = event.dateFrom ? new Date(event.dateFrom).toLocaleString("en-IN") : "-";
+  const to = event.dateTo ? new Date(event.dateTo).toLocaleString("en-IN") : "-";
+  doc.font("Helvetica").fontSize(10);
+  doc.text(`Schedule: ${from} – ${to}`, 320, 106, { width: 220 });
+  if (event.location) doc.text(`Venue: ${event.location}`, 320, 121, { width: 220 });
 
-  // Terms text
-  doc.fontSize(12).font("Helvetica-Bold").text("Terms:");
-  const termsText = event.agreementSnapshot?.terms || event.agreementTerms || "";
-  doc.font("Helvetica").text(termsText, { align: "left" });
-  doc.moveDown();
+  // Terms
+  let y = 190;
+  doc.fontSize(11).font("Helvetica-Bold").text("Terms", 50, y);
+  y += 14;
+  const termsText = (event.agreementSnapshot?.terms || event.agreementTerms || "").trim();
+  const terms = termsText ? termsText.split(/\n+/).map((s: string) => s.trim()).filter(Boolean) : DEFAULT_TERMS;
+  doc.font("Helvetica").fontSize(10);
+  doc.list(terms, 50, y, { width: 500, bulletRadius: 2 });
+  y = doc.y + 10;
 
-  // Products table (prefer saved snapshot)
-  const rows =
-    (event.agreementSnapshot?.items && event.agreementSnapshot.items.length)
-      ? event.agreementSnapshot.items
-      : (event.dispatches && event.dispatches.length
-          ? event.dispatches[event.dispatches.length - 1].items
-          : event.selections || []);
-
-  const tableTop = doc.y + 10;
-  const colX = { name: 50, uom: 260, qty: 340, rate: 420, amount: 500 };
-
+  // Products table
+  const tableTop = y + 10;
+  doc.save().rect(50, tableTop, 500, 18).fillColor("#f3f4f6").fill().restore();
+  const colX = { name: 60, uom: 300, qty: 360, rate: 420, amount: 500 } as const;
   doc.fontSize(10).font("Helvetica-Bold");
-  doc.text("Item", colX.name, tableTop);
-  doc.text("UOM", colX.uom, tableTop);
-  doc.text("Qty", colX.qty, tableTop);
-  doc.text("Rate", colX.rate, tableTop);
-  doc.text("Amount", colX.amount, tableTop);
+  doc.text("Item", colX.name, tableTop + 4);
+  doc.text("UOM", colX.uom, tableTop + 4);
+  doc.text("Qty", colX.qty, tableTop + 4);
+  doc.text("Rate", colX.rate, tableTop + 4);
+  doc.text("Amount", colX.amount, tableTop + 4);
 
-  doc
-    .moveTo(50, tableTop + 15)
-    .lineTo(550, tableTop + 15)
-    .stroke();
-
-  let y = tableTop + 25;
+  let ty = tableTop + 22;
   doc.font("Helvetica").fontSize(10);
   let subtotal = 0;
+  const rows = (event.agreementSnapshot?.items && event.agreementSnapshot.items.length)
+    ? event.agreementSnapshot.items
+    : (event.dispatches && event.dispatches.length
+        ? event.dispatches[event.dispatches.length - 1].items
+        : event.selections || []);
   rows.forEach((it: any) => {
     const name = it.name || it.productId?.name || "-";
     const uom = it.unitType || it.productId?.unitType || "-";
@@ -308,41 +309,50 @@ export const generateAgreementPDF = (
     const amount = Number((qty * rate).toFixed(2));
     subtotal += amount;
 
-    doc.text(name, colX.name, y, { width: 200 });
-    doc.text(uom, colX.uom, y);
-    doc.text(String(qty), colX.qty, y);
-    doc.text(`₹${rate.toFixed(2)}`, colX.rate, y);
-    doc.text(`₹${amount.toFixed(2)}`, colX.amount, y);
+    doc.text(name, colX.name, ty, { width: 220 });
+    doc.text(uom, colX.uom, ty);
+    doc.text(String(qty), colX.qty, ty);
+    doc.text(`₹${rate.toFixed(2)}`, colX.rate, ty);
+    doc.text(`₹${amount.toFixed(2)}`, colX.amount, ty);
 
-    y += 20;
+    ty += 18;
+    doc.moveTo(50, ty).lineTo(550, ty).strokeColor("#e5e7eb").lineWidth(1).stroke();
+    ty += 4;
   });
 
-  y += 10;
-  doc.moveTo(300, y).lineTo(550, y).stroke();
-  y += 10;
-
-  doc.font("Helvetica-Bold").text("Subtotal:", 360, y);
-  doc.font("Helvetica").text(`₹${subtotal.toFixed(2)}`, 500, y);
-  y += 16;
+  // Totals
   const adv = Number(event.agreementSnapshot?.advance ?? event.advance ?? 0);
   const sec = Number(event.agreementSnapshot?.security ?? event.security ?? 0);
-  doc.font("Helvetica-Bold").text("Advance:", 360, y);
-  doc.font("Helvetica").text(`₹${adv.toFixed(2)}`, 500, y);
-  y += 16;
-  doc.font("Helvetica-Bold").text("Security:", 360, y);
-  doc.font("Helvetica").text(`₹${sec.toFixed(2)}`, 500, y);
-  y += 18;
-  const grand = Number(
-    (event.agreementSnapshot?.grandTotal ?? subtotal - adv - sec).toFixed(2),
-  );
-  doc.font("Helvetica-Bold").text("Grand Total:", 360, y);
-  doc.font("Helvetica-Bold").text(`₹${grand.toFixed(2)}`, 500, y);
+  const grand = Number((event.agreementSnapshot?.grandTotal ?? subtotal).toFixed(2));
+  const due = Math.max(0, Number((grand - adv - sec).toFixed(2)));
 
-  y += 40;
-  doc.fontSize(10).font("Helvetica").text("Client Signature:", 60, y);
-  doc.text("____________________________", 60, y + 15);
-  doc.text("Company Signature:", 360, y);
-  doc.text("____________________________", 360, y + 15);
+  ty += 6;
+  doc.roundrect(320, ty, 230, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  let sx = 330; let sy = ty + 10;
+  doc.font("Helvetica").fontSize(10);
+  doc.text("Subtotal:", sx, sy, { width: 160, align: "right" });
+  doc.text(`₹${subtotal.toFixed(2)}`, 520, sy, { align: "right" });
+  sy += 14;
+  doc.text("Advance:", sx, sy, { width: 160, align: "right" });
+  doc.text(`₹${adv.toFixed(2)}`, 520, sy, { align: "right" });
+  sy += 14;
+  doc.text("Security:", sx, sy, { width: 160, align: "right" });
+  doc.text(`₹${sec.toFixed(2)}`, 520, sy, { align: "right" });
+  sy += 16;
+  doc.font("Helvetica-Bold").fontSize(11);
+  doc.text("Grand Total:", sx, sy, { width: 160, align: "right" });
+  doc.text(`₹${grand.toFixed(2)}`, 520, sy, { align: "right" });
+  sy += 14;
+  doc.font("Helvetica").fontSize(10);
+  doc.text("Amount Due:", sx, sy, { width: 160, align: "right" });
+  doc.text(`₹${due.toFixed(2)}`, 520, sy, { align: "right" });
+
+  // Signatures
+  const sigY = sy + 40;
+  doc.fontSize(10).font("Helvetica").text("Client Signature:", 60, sigY);
+  doc.text("____________________________", 60, sigY + 15);
+  doc.text("Company Signature:", 360, sigY);
+  doc.text("____________________________", 360, sigY + 15);
 
   doc.end();
 };
