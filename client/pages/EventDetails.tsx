@@ -55,7 +55,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import api, { getAuthToken } from "@/lib/api";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 
 interface Event {
   _id: string;
