@@ -75,38 +75,37 @@ export default function EventAgreementPreview() {
     }
   };
 
-  if (loading || !event) return <div className="p-6">Loading...</div>;
-
-  const snap = event.agreementSnapshot;
-  const rows = snap?.items?.length
+  // Derive snapshot/rows safely and compute totals/terms with useMemo BEFORE any returns
+  const snap = event?.agreementSnapshot;
+  const rows: any[] = snap?.items?.length
     ? snap.items
-    : event.dispatches && event.dispatches.length
+    : event?.dispatches && event.dispatches.length
       ? event.dispatches[event.dispatches.length - 1].items
-      : event.selections || [];
+      : event?.selections || [];
 
   const computed = useMemo(() => {
     const subtotal = rows.reduce((s: number, it: any) => {
-      const qty = Number(it.qtyToSend ?? it.qty ?? it.qtyReturned ?? 0);
-      const rate = Number(it.rate ?? it.sellPrice ?? 0);
+      const qty = Number(it?.qtyToSend ?? it?.qty ?? it?.qtyReturned ?? 0);
+      const rate = Number(it?.rate ?? it?.sellPrice ?? 0);
       const amount =
-        typeof it.amount === "number"
-          ? Number(it.amount)
-          : Number((qty * rate).toFixed(2));
+        typeof it?.amount === "number" ? Number(it.amount) : Number((qty * rate).toFixed(2));
       return s + amount;
     }, 0);
 
-    const advance = Number(snap?.advance ?? event.advance ?? 0);
-    const security = Number(snap?.security ?? event.security ?? 0);
+    const advance = Number(snap?.advance ?? event?.advance ?? 0);
+    const security = Number(snap?.security ?? event?.security ?? 0);
     const grandTotal = Number((snap?.grandTotal ?? subtotal).toFixed(2));
     const amountDue = Math.max(0, Number((grandTotal - advance - security).toFixed(2)));
 
-    const termsText = (snap?.terms || event.agreementTerms || "").trim();
+    const termsText = (snap?.terms || event?.agreementTerms || "").trim();
     const terms = termsText
       ? termsText.split(/\n+/).map((s: string) => s.trim()).filter(Boolean)
       : DEFAULT_TERMS;
 
     return { subtotal, advance, security, grandTotal, amountDue, terms };
   }, [rows, snap, event]);
+
+  if (loading || !event) return <div className="p-6">Loading...</div>;
 
   return (
     <div className="p-6 print:p-0">
@@ -194,13 +193,13 @@ export default function EventAgreementPreview() {
               </TableHeader>
               <TableBody>
                 {rows.map((it: any, i: number) => {
-                  const qty = Number(it.qtyToSend ?? it.qty ?? it.qtyReturned ?? 0);
-                  const rate = Number(it.rate ?? it.sellPrice ?? 0);
+                  const qty = Number(it?.qtyToSend ?? it?.qty ?? it?.qtyReturned ?? 0);
+                  const rate = Number(it?.rate ?? it?.sellPrice ?? 0);
                   const amount = Number((qty * rate).toFixed(2));
                   return (
                     <TableRow key={i} className="border-b last:border-0">
-                      <TableCell className="w-[45%]">{it.name || it.productId?.name}</TableCell>
-                      <TableCell className="w-[15%]">{it.unitType || it.productId?.unitType}</TableCell>
+                      <TableCell className="w-[45%]">{it?.name || it?.productId?.name}</TableCell>
+                      <TableCell className="w-[15%]">{it?.unitType || it?.productId?.unitType}</TableCell>
                       <TableCell className="text-right w-[10%]">{qty}</TableCell>
                       <TableCell className="text-right w-[15%]">₹{rate.toFixed(2)}</TableCell>
                       <TableCell className="text-right w-[15%]">₹{amount.toFixed(2)}</TableCell>
