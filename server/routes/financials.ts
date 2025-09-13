@@ -40,6 +40,7 @@ export const getEventFinancials = async (req: AuthRequest, res: Response) => {
       mode: p.mode,
       ref: p.ref || "",
       invoiceId: String(p.invoiceId),
+      clientId: p.clientId ? String(p.clientId) : undefined,
     }));
 
     res.json({
