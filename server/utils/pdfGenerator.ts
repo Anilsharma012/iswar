@@ -72,12 +72,7 @@ const DEFAULT_TERMS: string[] = [
   "Any damage, loss, or shortage will be charged at actual replacement or repair cost.",
   "Security deposit, if any, is refundable after complete return and quality check of goods.",
   "Customer is responsible for safe custody of items at the event site.",
-  "Site readiness, permissions, electricity and water arrangements are the customer's responsibility.",
-  "Cancellations within 48 hours of the schedule may attract up to 100% charges.",
   "Payment terms: advance to confirm booking; balance on delivery unless otherwise agreed in writing.",
-  "Taxes and government levies are extra as applicable.",
-  "Force Majeure: We are not liable for delays caused by events beyond control.",
-  "All disputes are subject to local jurisdiction.",
 ];
 
 export const generateInvoicePDF = (
