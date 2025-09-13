@@ -812,6 +812,140 @@ export default function EventDetails() {
         </TabsList>
 
         <TabsContent value="overview">
+          {/* Client Payments */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Client Payments
+                {financials?.totals?.pending === 0 && (
+                  <Badge className="ml-2 bg-green-600 text-white">Paid</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Totals row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Billed</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {financials ? `₹${(financials.totals.billed ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {financials ? `₹${(financials.totals.paid ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-2xl font-bold ${financials && financials.totals.pending === 0 ? 'text-green-600' : ''}`}>
+                      {financials ? `₹${(financials.totals.pending ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Lists */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Invoices */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">Invoices</h3>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>No</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-right">Paid</TableHead>
+                        <TableHead className="text-right">Pending</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {financials && financials.invoices.length > 0 ? (
+                        financials.invoices.map((inv) => (
+                          <TableRow key={inv._id}>
+                            <TableCell className="font-medium">{inv.number}</TableCell>
+                            <TableCell>{formatDate(inv.date)}</TableCell>
+                            <TableCell className="text-right">₹{inv.total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="text-right">₹{inv.paid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className={`text-right ${inv.pending === 0 ? 'text-green-600' : ''}`}>₹{inv.pending.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="text-right">
+                              <Button asChild variant="ghost" size="sm">
+                                <Link to="/invoices" title="Open Invoices">
+                                  <ArrowLeft className="rotate-180 h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground">—</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Payments */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">Payments</h3>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Mode</TableHead>
+                        <TableHead>Ref</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {financials && financials.payments.length > 0 ? (
+                        financials.payments.map((p) => (
+                          <TableRow key={p._id}>
+                            <TableCell>{formatDate(p.at)}</TableCell>
+                            <TableCell className="text-right">₹{p.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="uppercase">{p.mode}</TableCell>
+                            <TableCell>{p.ref || '-'}</TableCell>
+                            <TableCell className="text-right">
+                              <Button asChild variant="ghost" size="sm">
+                                <Link to="/invoices" title="View Invoice">
+                                  <ArrowLeft className="rotate-180 h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground">—</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
