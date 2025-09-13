@@ -105,7 +105,7 @@ export const generateInvoicePDF = (
 
   // Invoice meta box
   doc
-    .roundrect(350, 40, 200, 45, 6)
+    .roundedRect(350, 40, 200, 45, 6)
     .strokeColor("#e5e7eb")
     .lineWidth(1)
     .stroke();
@@ -121,7 +121,7 @@ export const generateInvoicePDF = (
     .font("Helvetica-Bold")
     .text(t.billTo, 50, 110);
   doc
-    .roundrect(50, 125, 500, 70, 6)
+    .roundedRect(50, 125, 500, 70, 6)
     .strokeColor("#e5e7eb")
     .lineWidth(1)
     .stroke();
@@ -182,7 +182,7 @@ export const generateInvoicePDF = (
   // Totals box
   y += 10;
   const boxY = y;
-  doc.roundrect(320, boxY, 230, 110, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  doc.roundedRect(320, boxY, 230, 110, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
   let ty = boxY + 10;
   const labelX = 330;
   const valueX = 530 - 10;
@@ -257,14 +257,14 @@ export const generateAgreementPDF = (
   doc.moveDown(0.5);
 
   // Client / Event boxes
-  doc.roundrect(50, 80, 240, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  doc.roundedRect(50, 80, 240, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
   doc.fontSize(11).font("Helvetica-Bold").text("Client", 60, 90);
   doc.font("Helvetica").fontSize(10);
   doc.text(event.clientId?.name || "-", 60, 106);
   doc.text(event.clientId?.phone || "-", 60, 121);
   if (event.clientId?.address) doc.text(event.clientId.address, 60, 136, { width: 220 });
 
-  doc.roundrect(310, 80, 240, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  doc.roundedRect(310, 80, 240, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
   doc.fontSize(11).font("Helvetica-Bold").text("Event", 320, 90);
   const from = event.dateFrom ? new Date(event.dateFrom).toLocaleString("en-IN") : "-";
   const to = event.dateTo ? new Date(event.dateTo).toLocaleString("en-IN") : "-";
@@ -327,7 +327,7 @@ export const generateAgreementPDF = (
   const due = Math.max(0, Number((grand - adv - sec).toFixed(2)));
 
   ty += 6;
-  doc.roundrect(320, ty, 230, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  doc.roundedRect(320, ty, 230, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
   let sx = 330; let sy = ty + 10;
   doc.font("Helvetica").fontSize(10);
   doc.text("Subtotal:", sx, sy, { width: 160, align: "right" });
