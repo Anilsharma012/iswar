@@ -495,7 +495,10 @@ export default function EventDetails() {
       }
     } catch (error: any) {
       console.error("Error recording payment:", error);
-      const msg = error?.response?.data?.error || error?.message || "Failed to record payment";
+      const msg =
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to record payment";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -848,31 +851,45 @@ export default function EventDetails() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Total Billed</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Total Billed
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {financials ? `₹${(financials.totals.billed ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                      {financials
+                        ? `₹${(financials.totals.billed ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "—"}
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Total Paid
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {financials ? `₹${(financials.totals.paid ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                      {financials
+                        ? `₹${(financials.totals.paid ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "—"}
                     </div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      Pending
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className={`text-2xl font-bold ${financials && financials.totals.pending === 0 ? 'text-green-600' : ''}`}>
-                      {financials ? `₹${(financials.totals.pending ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                    <div
+                      className={`text-2xl font-bold ${financials && financials.totals.pending === 0 ? "text-green-600" : ""}`}
+                    >
+                      {financials
+                        ? `₹${(financials.totals.pending ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "—"}
                     </div>
                   </CardContent>
                 </Card>
@@ -900,11 +917,33 @@ export default function EventDetails() {
                       {financials && financials.invoices.length > 0 ? (
                         financials.invoices.map((inv) => (
                           <TableRow key={inv._id}>
-                            <TableCell className="font-medium">{inv.number}</TableCell>
+                            <TableCell className="font-medium">
+                              {inv.number}
+                            </TableCell>
                             <TableCell>{formatDate(inv.date)}</TableCell>
-                            <TableCell className="text-right">₹{inv.total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                            <TableCell className="text-right">₹{inv.paid.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                            <TableCell className={`text-right ${inv.pending === 0 ? 'text-green-600' : ''}`}>₹{inv.pending.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="text-right">
+                              ₹
+                              {inv.total.toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              ₹
+                              {inv.paid.toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </TableCell>
+                            <TableCell
+                              className={`text-right ${inv.pending === 0 ? "text-green-600" : ""}`}
+                            >
+                              ₹
+                              {inv.pending.toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </TableCell>
                             <TableCell className="text-right">
                               <Button asChild variant="ghost" size="sm">
                                 <Link to="/invoices" title="Open Invoices">
@@ -916,7 +955,12 @@ export default function EventDetails() {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground">—</TableCell>
+                          <TableCell
+                            colSpan={6}
+                            className="text-center text-muted-foreground"
+                          >
+                            —
+                          </TableCell>
                         </TableRow>
                       )}
                     </TableBody>
@@ -943,9 +987,17 @@ export default function EventDetails() {
                         financials.payments.map((p) => (
                           <TableRow key={p._id}>
                             <TableCell>{formatDate(p.at)}</TableCell>
-                            <TableCell className="text-right">₹{p.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                            <TableCell className="uppercase">{p.mode}</TableCell>
-                            <TableCell>{p.ref || '-'}</TableCell>
+                            <TableCell className="text-right">
+                              ₹
+                              {p.amount.toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </TableCell>
+                            <TableCell className="uppercase">
+                              {p.mode}
+                            </TableCell>
+                            <TableCell>{p.ref || "-"}</TableCell>
                             <TableCell className="text-right">
                               <Button asChild variant="ghost" size="sm">
                                 <Link to="/invoices" title="View Invoice">
@@ -957,7 +1009,12 @@ export default function EventDetails() {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground">—</TableCell>
+                          <TableCell
+                            colSpan={5}
+                            className="text-center text-muted-foreground"
+                          >
+                            —
+                          </TableCell>
                         </TableRow>
                       )}
                     </TableBody>
