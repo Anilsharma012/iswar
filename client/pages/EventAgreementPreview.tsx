@@ -18,12 +18,7 @@ const DEFAULT_TERMS: string[] = [
   "Any damage, loss, or shortage will be charged at actual replacement or repair cost.",
   "Security deposit, if any, will be refunded after complete return and quality check of all items.",
   "Customer is responsible for safe custody of items at the event site.",
-  "Site readiness, permissions, electricity and water arrangements are the customer's responsibility.",
-  "Cancellations within 48 hours of the schedule may attract up to 100% charges.",
   "Payment terms: advance to confirm booking; balance on delivery unless otherwise agreed in writing.",
-  "Taxes and government levies are extra as applicable.",
-  "Force Majeure: No liability for delays caused by events beyond reasonable control (weather, strikes, etc.).",
-  "All disputes are subject to local jurisdiction.",
 ];
 
 export default function EventAgreementPreview() {
@@ -164,20 +159,6 @@ export default function EventAgreementPreview() {
           </Card>
         </div>
 
-        {/* Terms */}
-        <div className="px-6">
-          <Card className="border-muted">
-            <CardContent className="pt-6">
-              <div className="text-xs uppercase text-muted-foreground mb-3">Terms</div>
-              <ol className="list-decimal pl-5 space-y-1 text-sm leading-6">
-                {computed.terms.map((line: string, i: number) => (
-                  <li key={i}>{line}</li>
-                ))}
-              </ol>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Products */}
         <div className="p-6">
           <div className="rounded-md border">
@@ -235,6 +216,20 @@ export default function EventAgreementPreview() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Terms (moved to bottom) */}
+        <div className="px-6 pb-4">
+          <Card className="border-muted">
+            <CardContent className="pt-6">
+              <div className="text-xs uppercase text-muted-foreground mb-3">Terms</div>
+              <ol className="list-decimal pl-5 space-y-1 text-sm leading-6">
+                {computed.terms.map((line: string, i: number) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Signatures */}
