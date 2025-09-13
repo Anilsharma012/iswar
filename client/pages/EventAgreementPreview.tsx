@@ -83,18 +83,26 @@ export default function EventAgreementPreview() {
       const qty = Number(it?.qtyToSend ?? it?.qty ?? it?.qtyReturned ?? 0);
       const rate = Number(it?.rate ?? it?.sellPrice ?? 0);
       const amount =
-        typeof it?.amount === "number" ? Number(it.amount) : Number((qty * rate).toFixed(2));
+        typeof it?.amount === "number"
+          ? Number(it.amount)
+          : Number((qty * rate).toFixed(2));
       return s + amount;
     }, 0);
 
     const advance = Number(snap?.advance ?? event?.advance ?? 0);
     const security = Number(snap?.security ?? event?.security ?? 0);
     const grandTotal = Number((snap?.grandTotal ?? subtotal).toFixed(2));
-    const amountDue = Math.max(0, Number((grandTotal - advance - security).toFixed(2)));
+    const amountDue = Math.max(
+      0,
+      Number((grandTotal - advance - security).toFixed(2)),
+    );
 
     const termsText = (snap?.terms || event?.agreementTerms || "").trim();
     const terms = termsText
-      ? termsText.split(/\n+/).map((s: string) => s.trim()).filter(Boolean)
+      ? termsText
+          .split(/\n+/)
+          .map((s: string) => s.trim())
+          .filter(Boolean)
       : DEFAULT_TERMS;
 
     return { subtotal, advance, security, grandTotal, amountDue, terms };
@@ -113,7 +121,9 @@ export default function EventAgreementPreview() {
           <Button variant="outline" onClick={() => navigate(-1)}>
             Back
           </Button>
-          <Button onClick={() => navigate(`/admin/events/${id}/agreement/sign`)}>
+          <Button
+            onClick={() => navigate(`/admin/events/${id}/agreement/sign`)}
+          >
             Proceed to e-Sign
           </Button>
         </div>
@@ -124,8 +134,12 @@ export default function EventAgreementPreview() {
         {/* Header */}
         <div className="flex items-start justify-between border-b p-6">
           <div>
-            <div className="text-2xl font-extrabold tracking-tight">Mannat Tent House</div>
-            <div className="text-sm text-muted-foreground">Agreement / Job Sheet</div>
+            <div className="text-2xl font-extrabold tracking-tight">
+              Mannat Tent House
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Agreement / Job Sheet
+            </div>
           </div>
           <div className="text-right text-sm">
             <div className="font-medium">Date</div>
@@ -137,7 +151,9 @@ export default function EventAgreementPreview() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
           <Card className="border-muted">
             <CardContent className="pt-6">
-              <div className="text-xs uppercase text-muted-foreground mb-2">Client</div>
+              <div className="text-xs uppercase text-muted-foreground mb-2">
+                Client
+              </div>
               <div className="font-medium">{event.clientId?.name}</div>
               <div className="text-sm">{event.clientId?.phone}</div>
               {event.clientId?.address && (
@@ -148,9 +164,12 @@ export default function EventAgreementPreview() {
 
           <Card className="border-muted">
             <CardContent className="pt-6">
-              <div className="text-xs uppercase text-muted-foreground mb-2">Event</div>
+              <div className="text-xs uppercase text-muted-foreground mb-2">
+                Event
+              </div>
               <div className="text-sm">
-                Schedule: {new Date(event.dateFrom).toLocaleString("en-IN")} – {new Date(event.dateTo).toLocaleString("en-IN")}
+                Schedule: {new Date(event.dateFrom).toLocaleString("en-IN")} –{" "}
+                {new Date(event.dateTo).toLocaleString("en-IN")}
               </div>
               {event.location && (
                 <div className="text-sm">Venue: {event.location}</div>
@@ -174,16 +193,28 @@ export default function EventAgreementPreview() {
               </TableHeader>
               <TableBody>
                 {rows.map((it: any, i: number) => {
-                  const qty = Number(it?.qtyToSend ?? it?.qty ?? it?.qtyReturned ?? 0);
+                  const qty = Number(
+                    it?.qtyToSend ?? it?.qty ?? it?.qtyReturned ?? 0,
+                  );
                   const rate = Number(it?.rate ?? it?.sellPrice ?? 0);
                   const amount = Number((qty * rate).toFixed(2));
                   return (
                     <TableRow key={i} className="border-b last:border-0">
-                      <TableCell className="w-[45%]">{it?.name || it?.productId?.name}</TableCell>
-                      <TableCell className="w-[15%]">{it?.unitType || it?.productId?.unitType}</TableCell>
-                      <TableCell className="text-right w-[10%]">{qty}</TableCell>
-                      <TableCell className="text-right w-[15%]">₹{rate.toFixed(2)}</TableCell>
-                      <TableCell className="text-right w-[15%]">₹{amount.toFixed(2)}</TableCell>
+                      <TableCell className="w-[45%]">
+                        {it?.name || it?.productId?.name}
+                      </TableCell>
+                      <TableCell className="w-[15%]">
+                        {it?.unitType || it?.productId?.unitType}
+                      </TableCell>
+                      <TableCell className="text-right w-[10%]">
+                        {qty}
+                      </TableCell>
+                      <TableCell className="text-right w-[15%]">
+                        ₹{rate.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right w-[15%]">
+                        ₹{amount.toFixed(2)}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -196,7 +227,9 @@ export default function EventAgreementPreview() {
             <div className="w-full sm:w-80 border rounded-md p-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium">₹{computed.subtotal.toFixed(2)}</span>
+                <span className="font-medium">
+                  ₹{computed.subtotal.toFixed(2)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm mt-2">
                 <span className="text-muted-foreground">Advance</span>
@@ -208,11 +241,15 @@ export default function EventAgreementPreview() {
               </div>
               <div className="border-t mt-3 pt-3 flex items-center justify-between">
                 <span className="font-semibold">Grand Total</span>
-                <span className="font-semibold">₹{computed.grandTotal.toFixed(2)}</span>
+                <span className="font-semibold">
+                  ₹{computed.grandTotal.toFixed(2)}
+                </span>
               </div>
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Amount Due</span>
-                <span className="font-medium">₹{computed.amountDue.toFixed(2)}</span>
+                <span className="font-medium">
+                  ₹{computed.amountDue.toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
@@ -222,7 +259,9 @@ export default function EventAgreementPreview() {
         <div className="px-6 pb-4">
           <Card className="border-muted">
             <CardContent className="pt-6">
-              <div className="text-xs uppercase text-muted-foreground mb-3">Terms</div>
+              <div className="text-xs uppercase text-muted-foreground mb-3">
+                Terms
+              </div>
               <ol className="list-decimal pl-5 space-y-1 text-sm leading-6">
                 {computed.terms.map((line: string, i: number) => (
                   <li key={i}>{line}</li>
@@ -235,11 +274,15 @@ export default function EventAgreementPreview() {
         {/* Signatures */}
         <div className="px-6 pb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <div className="text-sm text-muted-foreground">Client Signature</div>
+            <div className="text-sm text-muted-foreground">
+              Client Signature
+            </div>
             <div className="mt-6 border-t" />
           </div>
           <div className="text-right">
-            <div className="text-sm text-muted-foreground">Company Signature</div>
+            <div className="text-sm text-muted-foreground">
+              Company Signature
+            </div>
             <div className="mt-6 border-t" />
           </div>
         </div>

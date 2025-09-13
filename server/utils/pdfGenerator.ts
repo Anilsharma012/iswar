@@ -111,10 +111,7 @@ export const generateInvoicePDF = (
     .text(`${t.date}: ${new Date(invoice.date).toLocaleDateString()}`, 360, 65);
 
   // Bill to box
-  doc
-    .fontSize(11)
-    .font("Helvetica-Bold")
-    .text(t.billTo, 50, 110);
+  doc.fontSize(11).font("Helvetica-Bold").text(t.billTo, 50, 110);
   doc
     .roundedRect(50, 125, 500, 70, 6)
     .strokeColor("#e5e7eb")
@@ -132,12 +129,7 @@ export const generateInvoicePDF = (
 
   // Table header background
   const tableTop = 215;
-  doc
-    .save()
-    .rect(50, tableTop, 500, 20)
-    .fillColor("#f3f4f6")
-    .fill()
-    .restore();
+  doc.save().rect(50, tableTop, 500, 20).fillColor("#f3f4f6").fill().restore();
 
   const descriptionX = 60;
   const unitX = 300;
@@ -157,7 +149,8 @@ export const generateInvoicePDF = (
   doc.font("Helvetica").fontSize(9);
   invoice.items.forEach((item) => {
     const lineAmount = item.qty * item.rate;
-    const taxAmount = invoice.withGST && item.taxPct ? lineAmount * (item.taxPct / 100) : 0;
+    const taxAmount =
+      invoice.withGST && item.taxPct ? lineAmount * (item.taxPct / 100) : 0;
 
     doc.text(item.desc || item.productId.name, descriptionX, y, { width: 220 });
     doc.text(item.unitType, unitX, y);
@@ -170,54 +163,77 @@ export const generateInvoicePDF = (
     }
 
     y += 18;
-    doc.moveTo(50, y).lineTo(550, y).strokeColor("#e5e7eb").lineWidth(1).stroke();
+    doc
+      .moveTo(50, y)
+      .lineTo(550, y)
+      .strokeColor("#e5e7eb")
+      .lineWidth(1)
+      .stroke();
     y += 4;
   });
 
   // Totals box
   y += 10;
   const boxY = y;
-  doc.roundedRect(320, boxY, 230, 110, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  doc
+    .roundedRect(320, boxY, 230, 110, 6)
+    .strokeColor("#e5e7eb")
+    .lineWidth(1)
+    .stroke();
   let ty = boxY + 10;
   const labelX = 330;
   const valueX = 530 - 10;
 
   doc.fontSize(10).font("Helvetica");
   doc.text(`${t.subtotal}:`, labelX, ty, { width: 160, align: "right" });
-  doc.text(`₹${invoice.totals.subTotal.toFixed(2)}`, valueX - 80, ty, { align: "right" });
+  doc.text(`₹${invoice.totals.subTotal.toFixed(2)}`, valueX - 80, ty, {
+    align: "right",
+  });
 
   if (invoice.withGST && invoice.totals.tax > 0) {
     ty += 15;
     doc.text(`${t.tax}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`₹${invoice.totals.tax.toFixed(2)}`, valueX - 80, ty, { align: "right" });
+    doc.text(`₹${invoice.totals.tax.toFixed(2)}`, valueX - 80, ty, {
+      align: "right",
+    });
   }
 
   if (invoice.totals.discount && invoice.totals.discount > 0) {
     ty += 15;
     doc.text(`${t.discount}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`-₹${invoice.totals.discount.toFixed(2)}`, valueX - 80, ty, { align: "right" });
+    doc.text(`-₹${invoice.totals.discount.toFixed(2)}`, valueX - 80, ty, {
+      align: "right",
+    });
   }
 
   if (invoice.totals.roundOff && invoice.totals.roundOff !== 0) {
     ty += 15;
     doc.text(`${t.roundOff}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`₹${invoice.totals.roundOff.toFixed(2)}`, valueX - 80, ty, { align: "right" });
+    doc.text(`₹${invoice.totals.roundOff.toFixed(2)}`, valueX - 80, ty, {
+      align: "right",
+    });
   }
 
   ty += 20;
   doc.font("Helvetica-Bold").fontSize(11);
   doc.text(`${t.grandTotal}:`, labelX, ty, { width: 160, align: "right" });
-  doc.text(`₹${invoice.totals.grandTotal.toFixed(2)}`, valueX - 80, ty, { align: "right" });
+  doc.text(`₹${invoice.totals.grandTotal.toFixed(2)}`, valueX - 80, ty, {
+    align: "right",
+  });
 
   // Paid/Pending
   if (invoice.totals.paid > 0 || invoice.totals.pending > 0) {
     ty += 18;
     doc.font("Helvetica").fontSize(10);
     doc.text(`${t.paid}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`₹${invoice.totals.paid.toFixed(2)}`, valueX - 80, ty, { align: "right" });
+    doc.text(`₹${invoice.totals.paid.toFixed(2)}`, valueX - 80, ty, {
+      align: "right",
+    });
     ty += 14;
     doc.text(`${t.pending}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`₹${invoice.totals.pending.toFixed(2)}`, valueX - 80, ty, { align: "right" });
+    doc.text(`₹${invoice.totals.pending.toFixed(2)}`, valueX - 80, ty, {
+      align: "right",
+    });
   }
 
   // Footer
@@ -248,31 +264,57 @@ export const generateAgreementPDF = (
   doc.pipe(res);
 
   // Title
-  doc.fontSize(18).font("Helvetica-Bold").text("Terms & Conditions / Agreement", { align: "center" });
+  doc
+    .fontSize(18)
+    .font("Helvetica-Bold")
+    .text("Terms & Conditions / Agreement", { align: "center" });
   doc.moveDown(0.5);
 
   // Client / Event boxes
-  doc.roundedRect(50, 80, 240, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  doc
+    .roundedRect(50, 80, 240, 90, 6)
+    .strokeColor("#e5e7eb")
+    .lineWidth(1)
+    .stroke();
   doc.fontSize(11).font("Helvetica-Bold").text("Client", 60, 90);
   doc.font("Helvetica").fontSize(10);
   doc.text(event.clientId?.name || "-", 60, 106);
   doc.text(event.clientId?.phone || "-", 60, 121);
-  if (event.clientId?.address) doc.text(event.clientId.address, 60, 136, { width: 220 });
+  if (event.clientId?.address)
+    doc.text(event.clientId.address, 60, 136, { width: 220 });
 
-  doc.roundedRect(310, 80, 240, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
+  doc
+    .roundedRect(310, 80, 240, 90, 6)
+    .strokeColor("#e5e7eb")
+    .lineWidth(1)
+    .stroke();
   doc.fontSize(11).font("Helvetica-Bold").text("Event", 320, 90);
-  const from = event.dateFrom ? new Date(event.dateFrom).toLocaleString("en-IN") : "-";
-  const to = event.dateTo ? new Date(event.dateTo).toLocaleString("en-IN") : "-";
+  const from = event.dateFrom
+    ? new Date(event.dateFrom).toLocaleString("en-IN")
+    : "-";
+  const to = event.dateTo
+    ? new Date(event.dateTo).toLocaleString("en-IN")
+    : "-";
   doc.font("Helvetica").fontSize(10);
   doc.text(`Schedule: ${from} – ${to}`, 320, 106, { width: 220 });
-  if (event.location) doc.text(`Venue: ${event.location}`, 320, 121, { width: 220 });
+  if (event.location)
+    doc.text(`Venue: ${event.location}`, 320, 121, { width: 220 });
 
   // Terms
   let y = 190;
   doc.fontSize(11).font("Helvetica-Bold").text("Terms", 50, y);
   y += 14;
-  const termsText = (event.agreementSnapshot?.terms || event.agreementTerms || "").trim();
-  const terms = termsText ? termsText.split(/\n+/).map((s: string) => s.trim()).filter(Boolean) : DEFAULT_TERMS;
+  const termsText = (
+    event.agreementSnapshot?.terms ||
+    event.agreementTerms ||
+    ""
+  ).trim();
+  const terms = termsText
+    ? termsText
+        .split(/\n+/)
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+    : DEFAULT_TERMS;
   doc.font("Helvetica").fontSize(10);
   doc.list(terms, 50, y, { width: 500, bulletRadius: 2 });
   y = doc.y + 10;
@@ -280,7 +322,13 @@ export const generateAgreementPDF = (
   // Products table
   const tableTop = y + 10;
   doc.save().rect(50, tableTop, 500, 18).fillColor("#f3f4f6").fill().restore();
-  const colX = { name: 60, uom: 300, qty: 360, rate: 420, amount: 500 } as const;
+  const colX = {
+    name: 60,
+    uom: 300,
+    qty: 360,
+    rate: 420,
+    amount: 500,
+  } as const;
   doc.fontSize(10).font("Helvetica-Bold");
   doc.text("Item", colX.name, tableTop + 4);
   doc.text("UOM", colX.uom, tableTop + 4);
@@ -291,11 +339,12 @@ export const generateAgreementPDF = (
   let ty = tableTop + 22;
   doc.font("Helvetica").fontSize(10);
   let subtotal = 0;
-  const rows = (event.agreementSnapshot?.items && event.agreementSnapshot.items.length)
-    ? event.agreementSnapshot.items
-    : (event.dispatches && event.dispatches.length
+  const rows =
+    event.agreementSnapshot?.items && event.agreementSnapshot.items.length
+      ? event.agreementSnapshot.items
+      : event.dispatches && event.dispatches.length
         ? event.dispatches[event.dispatches.length - 1].items
-        : event.selections || []);
+        : event.selections || [];
   rows.forEach((it: any) => {
     const name = it.name || it.productId?.name || "-";
     const uom = it.unitType || it.productId?.unitType || "-";
@@ -311,19 +360,31 @@ export const generateAgreementPDF = (
     doc.text(`₹${amount.toFixed(2)}`, colX.amount, ty);
 
     ty += 18;
-    doc.moveTo(50, ty).lineTo(550, ty).strokeColor("#e5e7eb").lineWidth(1).stroke();
+    doc
+      .moveTo(50, ty)
+      .lineTo(550, ty)
+      .strokeColor("#e5e7eb")
+      .lineWidth(1)
+      .stroke();
     ty += 4;
   });
 
   // Totals
   const adv = Number(event.agreementSnapshot?.advance ?? event.advance ?? 0);
   const sec = Number(event.agreementSnapshot?.security ?? event.security ?? 0);
-  const grand = Number((event.agreementSnapshot?.grandTotal ?? subtotal).toFixed(2));
+  const grand = Number(
+    (event.agreementSnapshot?.grandTotal ?? subtotal).toFixed(2),
+  );
   const due = Math.max(0, Number((grand - adv - sec).toFixed(2)));
 
   ty += 6;
-  doc.roundedRect(320, ty, 230, 90, 6).strokeColor("#e5e7eb").lineWidth(1).stroke();
-  let sx = 330; let sy = ty + 10;
+  doc
+    .roundedRect(320, ty, 230, 90, 6)
+    .strokeColor("#e5e7eb")
+    .lineWidth(1)
+    .stroke();
+  let sx = 330;
+  let sy = ty + 10;
   doc.font("Helvetica").fontSize(10);
   doc.text("Subtotal:", sx, sy, { width: 160, align: "right" });
   doc.text(`₹${subtotal.toFixed(2)}`, 520, sy, { align: "right" });
