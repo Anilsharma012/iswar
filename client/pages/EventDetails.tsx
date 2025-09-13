@@ -464,10 +464,13 @@ export default function EventDetails() {
 
     setLoading(true);
     try {
+      const rawAmount = parseFloat(paymentFormData.amount);
+      const remaining = Number(selectedWorker.remainingAmount || 0);
+      const safeAmount = Math.min(Math.max(rawAmount, 0), remaining);
       const payload = {
         ...paymentFormData,
-        amount: parseFloat(paymentFormData.amount),
-      };
+        amount: Number(safeAmount.toFixed(2)),
+      } as any;
 
       const res = await api.post(
         `/events/${id}/workers/${selectedWorker._id}/payments`,
@@ -482,9 +485,10 @@ export default function EventDetails() {
       } else {
         toast.error(res.data?.error || "Failed to record payment");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error recording payment:", error);
-      toast.error("Failed to record payment");
+      const msg = error?.response?.data?.error || error?.message || "Failed to record payment";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
