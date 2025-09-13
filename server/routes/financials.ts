@@ -15,7 +15,7 @@ export const getEventFinancials = async (req: AuthRequest, res: Response) => {
     );
 
     const payments = await Payment.find({ eventId: id })
-      .select("date amount mode ref invoiceId")
+      .select("date amount mode ref invoiceId clientId")
       .sort({ date: -1 });
 
     const billed = to2(
