@@ -815,12 +815,21 @@ export default function EventDetails() {
           {/* Client Payments */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Client Payments
-                {financials?.totals?.pending === 0 && (
-                  <Badge className="ml-2 bg-green-600 text-white">Paid</Badge>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  Client Payments
+                  {financials?.totals?.pending === 0 && (
+                    <Badge className="ml-2 bg-green-600 text-white">Paid</Badge>
+                  )}
+                </CardTitle>
+                {event?.clientId?._id && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to={`/invoices?clientId=${event.clientId._id}`}>
+                      View all invoices for this client
+                    </Link>
+                  </Button>
                 )}
-              </CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Totals row */}
