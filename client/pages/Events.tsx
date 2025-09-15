@@ -309,10 +309,7 @@ export default function Events() {
           <Calendar className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Event Management</h1>
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Event
-        </Button>
+       
       </div>
 
       {/* Filters */}
