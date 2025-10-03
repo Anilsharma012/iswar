@@ -61,10 +61,6 @@ export default function EventDispatch() {
       const next = [...prev];
       const r = { ...next[i], ...patch };
       if (r.qty < 0) r.qty = 0;
-      if (r.qty > r.stockQty) {
-        r.qty = r.stockQty;
-        toast.warning("Qty cannot exceed stock");
-      }
       r.amount = Number((r.qty * r.rate).toFixed(2));
       next[i] = r;
       return next;
@@ -187,7 +183,7 @@ export default function EventDispatch() {
                         variant="outline"
                         size="sm"
                         onClick={() =>
-                          updateRow(i, { qty: Math.min(r.stockQty, r.qty + 1) })
+                          updateRow(i, { qty: r.qty + 1 })
                         }
                       >
                         +
