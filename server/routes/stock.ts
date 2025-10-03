@@ -2,6 +2,7 @@ import { Response } from "express";
 import { Product, StockLedger, IssueRegister, Event } from "../models";
 import { AuthRequest } from "../utils/auth";
 import { stockUpdateSchema } from "../utils/validation";
+import { consumeProductStock } from "../utils/b2bStock";
 
 export const getCurrentStock = async (req: AuthRequest, res: Response) => {
   try {
@@ -191,29 +192,30 @@ export const updateStock = async (req: AuthRequest, res: Response) => {
 
     // Calculate quantity change based on type
     let qtyChange = 0;
-    let newQty = 0;
+    let newQty = product.stockQty;
+    let allocation = null as
+      | (Awaited<ReturnType<typeof consumeProductStock>> & { reason: string })
+      | null;
 
     if (type === "in") {
       qtyChange = quantity;
       newQty = product.stockQty + quantity;
+      product.stockQty = newQty;
+      await product.save();
     } else if (type === "out") {
       qtyChange = -quantity;
-      newQty = product.stockQty - quantity;
-
-      // Check if sufficient stock available
-      if (newQty < 0) {
-        return res
-          .status(400)
-          .json({ error: "Insufficient stock for this operation" });
-      }
+      const result = await consumeProductStock({
+        product,
+        quantity,
+      });
+      newQty = result.projectedStock;
+      allocation = { ...result, reason: "manual" };
     } else if (type === "adjustment") {
       qtyChange = quantity - product.stockQty;
       newQty = quantity;
+      product.stockQty = newQty;
+      await product.save();
     }
-
-    // Update product stock
-    product.stockQty = newQty;
-    await product.save();
 
     // Create stock ledger entry
     const stockEntry = new StockLedger({
@@ -229,9 +231,15 @@ export const updateStock = async (req: AuthRequest, res: Response) => {
       message: "Stock updated successfully",
       product,
       ledgerEntry: stockEntry,
+      allocation,
     });
   } catch (error) {
     console.error("Update stock error:", error);
+    if ((error as any)?.code === "INSUFFICIENT_STOCK") {
+      return res
+        .status(400)
+        .json({ error: "Insufficient stock for this operation" });
+    }
     res.status(500).json({ error: "Internal server error" });
   }
 };

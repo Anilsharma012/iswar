@@ -1,4 +1,4 @@
-import { Schema, model, models, type Document, type Types } from "mongoose";
+import mongoose, { Schema, type Document, type Types } from "mongoose";
 
 export interface IB2BPurchaseLog {
   _id?: Types.ObjectId;
@@ -58,4 +58,5 @@ b2bStockSchema.pre("validate", function (next) {
 });
 
 export const B2BStock =
-  (models.B2BStock as any) || model<IB2BStock>("B2BStock", b2bStockSchema);
+  (mongoose.models.B2BStock as mongoose.Model<IB2BStock> | undefined) ||
+  mongoose.model<IB2BStock>("B2BStock", b2bStockSchema);
