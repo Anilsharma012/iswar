@@ -202,10 +202,6 @@ export default function EventAgreement() {
       const next = [...prev];
       const r = { ...next[idx], ...patch } as Row;
       if (r.qtyToSend < 0) r.qtyToSend = 0;
-      if (r.qtyToSend > r.stockQty) {
-        r.qtyToSend = r.stockQty;
-        toast.warning("Qty cannot exceed available stock");
-      }
       r.rate = Number(isNaN(Number(r.rate)) ? 0 : r.rate);
       r.amount = Number((r.qtyToSend * r.rate).toFixed(2));
       next[idx] = r;
@@ -430,6 +426,11 @@ export default function EventAgreement() {
           }
         >
           Proceed to e-Sign
+        </Button>
+        <Button
+          onClick={() => (window.location.href = `/admin/events/${id}/invoice`)}
+        >
+          Create Invoice
         </Button>
         <Button onClick={handleSave}>Save</Button>
       </div>
