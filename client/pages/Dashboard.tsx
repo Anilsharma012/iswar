@@ -240,7 +240,8 @@ export default function Dashboard() {
                 <div className="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
                   {upcomingEvents && upcomingEvents.length > 0 ? (
                     upcomingEvents.slice(0, 20).map((ev) => {
-                      const dateStr = new Date(ev.dateFrom || ev.dateTo || '').toLocaleDateString();
+                      const rawDate = ev.dateFrom || ev.dateTo || '';
+                      const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : '-';
                       return (
                         <div key={ev._id} className="flex items-center justify-between">
                           <div className="min-w-0">
