@@ -361,14 +361,26 @@ export const deleteInvoice = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Invoice not found" });
     }
 
-    // If invoice was finalized, restore stock
+    // If invoice was finalized, restore stock (including B2B allocations)
     if (invoice.status === "final") {
-      for (const item of invoice.items) {
+      for (const item of (invoice.items as any[])) {
         await Product.findByIdAndUpdate(
           item.productId,
           { $inc: { stockQty: item.qty } },
           { session },
         );
+
+        // Restore B2B allocations to their respective fallback entries
+        const allocations = Array.isArray(item.b2bAllocations)
+          ? item.b2bAllocations
+          : [];
+        for (const alloc of allocations) {
+          await B2BStock.findByIdAndUpdate(
+            alloc.stockId,
+            { $inc: { quantityAvailable: alloc.quantity } },
+            { session },
+          );
+        }
 
         await StockLedger.deleteMany({
           productId: item.productId,
