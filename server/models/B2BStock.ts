@@ -34,7 +34,12 @@ const purchaseLogSchema = new Schema<IB2BPurchaseLog>(
 const b2bStockSchema = new Schema<IB2BStock>(
   {
     itemName: { type: String, required: true, trim: true },
-    normalizedItemName: { type: String, required: true, lowercase: true, index: true },
+    normalizedItemName: {
+      type: String,
+      required: true,
+      lowercase: true,
+      index: true,
+    },
     supplierName: { type: String, required: true, trim: true },
     quantityAvailable: { type: Number, required: true, min: 0 },
     unitPrice: { type: Number, required: true, min: 0 },

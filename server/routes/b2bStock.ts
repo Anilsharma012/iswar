@@ -123,9 +123,7 @@ export const updateB2BStock = async (req: AuthRequest, res: Response) => {
     }
     if (typeof value.quantity === "number") {
       if (value.quantity < 0) {
-        return res
-          .status(400)
-          .json({ error: "Quantity cannot be negative" });
+        return res.status(400).json({ error: "Quantity cannot be negative" });
       }
       item.quantityAvailable = value.quantity;
     }
