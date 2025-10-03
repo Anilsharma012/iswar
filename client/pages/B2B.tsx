@@ -180,39 +180,39 @@ export default function B2B() {
           ) : (
             <div className="overflow-x-auto">
               <Table>
-                <Thead>
-                  <Tr>
-                    <Th>Item</Th>
-                    <Th>Supplier</Th>
-                    <Th>Qty Available</Th>
-                    <Th>Unit Price</Th>
-                    <Th>Linked Product</Th>
-                    <Th className="text-right">Actions</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead>Qty Available</TableHead>
+                    <TableHead>Unit Price</TableHead>
+                    <TableHead>Linked Product</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {rows.map((it) => (
-                    <Tr key={it._id}>
-                      <Td>
+                    <TableRow key={it._id}>
+                      <TableCell>
                         <Input value={it.itemName} onChange={(e) => onInlineUpdate(it._id, 'itemName', e.target.value)} />
-                      </Td>
-                      <Td>
+                      </TableCell>
+                      <TableCell>
                         <Input value={it.supplierName} onChange={(e) => onInlineUpdate(it._id, 'supplierName', e.target.value)} />
-                      </Td>
-                      <Td className="w-32">
+                      </TableCell>
+                      <TableCell className="w-32">
                         <Input type="number" value={it.quantityAvailable} onChange={(e) => onInlineUpdate(it._id, 'quantityAvailable', Number(e.target.value))} />
-                      </Td>
-                      <Td className="w-32">
+                      </TableCell>
+                      <TableCell className="w-32">
                         <Input type="number" value={it.unitPrice} onChange={(e) => onInlineUpdate(it._id, 'unitPrice', Number(e.target.value))} />
-                      </Td>
-                      <Td>
+                      </TableCell>
+                      <TableCell>
                         {typeof it.productId === 'object' && it.productId ? (
                           <span className="text-sm text-gray-700">{(it.productId as any).name}</span>
                         ) : (
                           <span className="text-xs text-gray-400">Not linked</span>
                         )}
-                      </Td>
-                      <Td className="text-right">
+                      </TableCell>
+                      <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Dialog>
                             <DialogTrigger asChild>
@@ -244,24 +244,24 @@ export default function B2B() {
                                   <h4 className="text-sm font-medium mb-2">Purchase Logs</h4>
                                   <div className="max-h-48 overflow-y-auto">
                                     <Table>
-                                      <Thead>
-                                        <Tr>
-                                          <Th>Date</Th>
-                                          <Th>Qty</Th>
-                                          <Th>Price</Th>
-                                          <Th>Supplier</Th>
-                                        </Tr>
-                                      </Thead>
-                                      <Tbody>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Date</TableHead>
+                                          <TableHead>Qty</TableHead>
+                                          <TableHead>Price</TableHead>
+                                          <TableHead>Supplier</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
                                         {active.purchaseLogs.map((pl) => (
-                                          <Tr key={pl._id || pl.createdAt}>
-                                            <Td>{new Date(pl.createdAt).toLocaleString()}</Td>
-                                            <Td>{pl.quantity}</Td>
-                                            <Td>₹{pl.price}</Td>
-                                            <Td>{pl.supplierName}</Td>
-                                          </Tr>
+                                          <TableRow key={pl._id || pl.createdAt}>
+                                            <TableCell>{new Date(pl.createdAt).toLocaleString()}</TableCell>
+                                            <TableCell>{pl.quantity}</TableCell>
+                                            <TableCell>₹{pl.price}</TableCell>
+                                            <TableCell>{pl.supplierName}</TableCell>
+                                          </TableRow>
                                         ))}
-                                      </Tbody>
+                                      </TableBody>
                                     </Table>
                                   </div>
                                 </div>
@@ -270,10 +270,10 @@ export default function B2B() {
                           </Dialog>
                           <Button variant="destructive" size="sm" onClick={() => onDelete(it._id)}>Delete</Button>
                         </div>
-                      </Td>
-                    </Tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </Tbody>
+                </TableBody>
               </Table>
             </div>
           )}
