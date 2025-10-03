@@ -63,6 +63,7 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState('today');
+  const [upcomingCount, setUpcomingCount] = useState(0);
 
   const fetchDashboardData = async () => {
     try {
