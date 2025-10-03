@@ -47,6 +47,13 @@ import {
   getReturnable,
 } from "./routes/stock";
 import {
+  listB2BStock,
+  createB2BStock,
+  updateB2BStock,
+  deleteB2BStock,
+  createB2BPurchase,
+} from "./routes/b2bStock";
+import {
   getEvents,
   getEvent,
   createEvent,
