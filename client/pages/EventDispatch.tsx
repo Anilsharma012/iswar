@@ -182,9 +182,7 @@ export default function EventDispatch() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          updateRow(i, { qty: r.qty + 1 })
-                        }
+                        onClick={() => updateRow(i, { qty: r.qty + 1 })}
                       >
                         +
                       </Button>

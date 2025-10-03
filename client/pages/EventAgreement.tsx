@@ -236,7 +236,13 @@ export default function EventAgreement() {
         advance: Number(advance || 0),
         security: Number(security || 0),
         terms: terms,
-        grandTotal: Number((selections.reduce((sum, r) => sum + r.amount, 0) - Number(advance || 0) - Number(security || 0)).toFixed(2)),
+        grandTotal: Number(
+          (
+            selections.reduce((sum, r) => sum + r.amount, 0) -
+            Number(advance || 0) -
+            Number(security || 0)
+          ).toFixed(2),
+        ),
       };
       const resp = await eventAPI.saveAgreement(id!, payload);
       setEvent(resp.data);
@@ -285,7 +291,11 @@ export default function EventAgreement() {
                 <TableHead>SKU</TableHead>
                 <TableHead>UOM</TableHead>
                 <TableHead>Stock</TableHead>
-                <TableHead>{(event as any)?.__useConfirmedDispatch ? "Qty" : "Qty To Send"}</TableHead>
+                <TableHead>
+                  {(event as any)?.__useConfirmedDispatch
+                    ? "Qty"
+                    : "Qty To Send"}
+                </TableHead>
                 <TableHead>Rate</TableHead>
                 <TableHead>Amount</TableHead>
               </TableRow>
@@ -306,7 +316,6 @@ export default function EventAgreement() {
                         updateRow(idx, { qtyToSend: Number(e.target.value) })
                       }
                       className="w-24"
-                      
                     />
                   </TableCell>
                   <TableCell>
@@ -319,7 +328,6 @@ export default function EventAgreement() {
                         updateRow(idx, { rate: Number(e.target.value) })
                       }
                       className="w-28"
-                      
                     />
                   </TableCell>
                   <TableCell className="font-medium">
@@ -389,7 +397,11 @@ export default function EventAgreement() {
             }
           }}
           disabled={!Boolean((event as any)?.agreementSnapshot?.items?.length)}
-          title={!Boolean((event as any)?.agreementSnapshot?.items?.length) ? "Save T&C first" : undefined}
+          title={
+            !Boolean((event as any)?.agreementSnapshot?.items?.length)
+              ? "Save T&C first"
+              : undefined
+          }
         >
           Preview
         </Button>
@@ -398,10 +410,13 @@ export default function EventAgreement() {
           onClick={async () => {
             try {
               const resp = await eventAPI.downloadAgreement(id!);
-              const url = window.URL.createObjectURL(new Blob([resp.data], { type: "application/pdf" }));
+              const url = window.URL.createObjectURL(
+                new Blob([resp.data], { type: "application/pdf" }),
+              );
               const a = document.createElement("a");
               a.href = url;
-              const clientName = event?.clientId?.name?.replace(/\s+/g, "_") || "client";
+              const clientName =
+                event?.clientId?.name?.replace(/\s+/g, "_") || "client";
               const dateStr = new Date().toISOString().slice(0, 10);
               a.download = `agreement-${clientName}-${dateStr}.pdf`;
               document.body.appendChild(a);
