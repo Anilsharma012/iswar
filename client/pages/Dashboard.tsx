@@ -113,8 +113,15 @@ export default function Dashboard() {
       const nowIso = new Date().toISOString();
       const resp = await eventAPI.getAll({ fromDate: nowIso, page: 1, limit: 100 });
       const events: UpcomingEvent[] = Array.isArray(resp.data?.events) ? resp.data.events : [];
-      // sort by nearest upcoming date (dateFrom then dateTo)
-      const sorted = [...events].sort((a, b) => {
+      const now = Date.now();
+      // keep only events starting in the future or currently ongoing
+      const future = events.filter((e) => {
+        const start = new Date(e.dateFrom || e.dateTo || 0).getTime();
+        const end = new Date(e.dateTo || e.dateFrom || 0).getTime();
+        return start >= now || end >= now;
+      });
+      // sort by nearest upcoming start date
+      const sorted = future.sort((a, b) => {
         const ad = new Date(a.dateFrom || a.dateTo || 0).getTime();
         const bd = new Date(b.dateFrom || b.dateTo || 0).getTime();
         return ad - bd;
@@ -240,12 +247,15 @@ export default function Dashboard() {
                 <div className="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
                   {upcomingEvents && upcomingEvents.length > 0 ? (
                     upcomingEvents.slice(0, 20).map((ev) => {
-                      const rawDate = ev.dateFrom || ev.dateTo || '';
-                      const dateStr = rawDate ? new Date(rawDate).toLocaleDateString() : '-';
+                      const startRaw = ev.dateFrom || '';
+                      const endRaw = ev.dateTo || '';
+                      const startStr = startRaw ? new Date(startRaw).toLocaleDateString() : '';
+                      const endStr = endRaw && endRaw !== startRaw ? new Date(endRaw).toLocaleDateString() : '';
+                      const dateStr = endStr ? `${startStr} - ${endStr}` : (startStr || '-');
                       return (
                         <div key={ev._id} className="flex items-center justify-between">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{ev.name || 'Untitled Event'}</p>
+                            <Link to={`/event-details/${ev._id}`} className="text-sm font-medium truncate text-blue-700 hover:underline">{ev.name || 'Untitled Event'}</Link>
                             {typeof ev.clientId === 'object' && ev.clientId && (
                               <p className="text-xs text-gray-500 truncate">{(ev.clientId as any).name}</p>
                             )}
