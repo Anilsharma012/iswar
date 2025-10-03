@@ -28,6 +28,7 @@ import {
   Tent,
   Receipt,
   ClipboardList,
+  Boxes,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -59,6 +60,11 @@ const sidebarItems = [
     title: "Stock",
     icon: Warehouse,
     href: "/stock",
+  },
+  {
+    title: "B2B",
+    icon: Boxes,
+    href: "/b2b",
   },
   {
     title: "Issue Tracker",

@@ -415,32 +415,36 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
           return res.status(404).json({ error: `Product ${pid} not found` });
         }
 
-        if (product.stockQty < qty) {
+        try {
+          const allocation = await (await import('../utils/b2bStock')).consumeProductStock({
+            product,
+            quantity: qty,
+            session,
+            dryRun,
+          });
+
+          const amount = Number((qty * rate).toFixed(2));
+          total += amount;
+
+          sanitized.push({
+            productId: product._id,
+            name: product.name,
+            sku: product.sku,
+            unitType: product.unitType,
+            stockQty: allocation.projectedStock,
+            qtyToSend: qty,
+            rate,
+            amount,
+            b2bUsed: allocation.b2bUsed,
+          });
+        } catch (err: any) {
           await session.abortTransaction();
           session.endSession();
-          return res
-            .status(400)
-            .json({ error: `Insufficient stock for product ${product.name}` });
+          if (err?.code === 'INSUFFICIENT_STOCK') {
+            return res.status(400).json({ error: `Insufficient stock for product ${product.name}` });
+          }
+          return res.status(500).json({ error: 'Internal server error' });
         }
-
-        if (!dryRun) {
-          product.stockQty = Number(product.stockQty) - qty;
-          await product.save({ session });
-        }
-
-        const amount = Number((qty * rate).toFixed(2));
-        total += amount;
-
-        sanitized.push({
-          productId: product._id,
-          name: product.name,
-          sku: product.sku,
-          unitType: product.unitType,
-          stockQty: product.stockQty,
-          qtyToSend: qty,
-          rate,
-          amount,
-        });
       }
 
       if (dryRun) {
