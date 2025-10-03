@@ -101,6 +101,27 @@ export const stockUpdateSchema = Joi.object({
   reason: Joi.string().required().trim(),
 });
 
+export const b2bStockCreateSchema = Joi.object({
+  itemName: Joi.string().required().trim(),
+  supplierName: Joi.string().required().trim(),
+  quantity: Joi.number().greater(0).required(),
+  price: Joi.number().min(0).required(),
+});
+
+export const b2bStockUpdateSchema = Joi.object({
+  itemName: Joi.string().optional().trim(),
+  supplierName: Joi.string().optional().trim(),
+  quantity: Joi.number().min(0).optional(),
+  price: Joi.number().min(0).optional(),
+  productId: Joi.string().optional().allow(null, ""),
+}).or("itemName", "supplierName", "quantity", "price", "productId");
+
+export const b2bPurchaseSchema = Joi.object({
+  quantity: Joi.number().greater(0).required(),
+  price: Joi.number().min(0).required(),
+  supplierName: Joi.string().required().trim(),
+});
+
 export const eventExpenseSchema = Joi.object({
   category: Joi.string().valid("travel", "food", "material", "misc").required(),
   amount: Joi.number().min(0).required(),
