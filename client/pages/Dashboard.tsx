@@ -142,6 +142,7 @@ export default function Dashboard() {
       icon: DollarSign,
       change: '+12.5%',
       changeType: 'positive' as const,
+      subtitle: 'from last period',
     },
     {
       title: 'Net Revenue',
@@ -149,13 +150,14 @@ export default function Dashboard() {
       icon: TrendingUp,
       change: '+8.2%',
       changeType: 'positive' as const,
+      subtitle: 'from last period',
     },
     {
-      title: 'Total Invoices',
-      value: data.summary.totalInvoices.toString(),
-      icon: Receipt,
-      change: '+15.1%',
+      title: 'Upcoming Events',
+      value: upcomingCount.toString(),
+      icon: Calendar,
       changeType: 'positive' as const,
+      subtitle: 'scheduled from today',
     },
     {
       title: 'Net Profit',
@@ -163,6 +165,7 @@ export default function Dashboard() {
       icon: TrendingUp,
       change: '+5.4%',
       changeType: 'positive' as const,
+      subtitle: 'from last period',
     },
   ];
 
