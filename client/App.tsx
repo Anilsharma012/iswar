@@ -24,6 +24,7 @@ import Workers from "@/pages/Workers";
 import Attendance from "@/pages/Attendance";
 import Payroll from "@/pages/Payroll";
 import Reports from "@/pages/Reports";
+import B2B from "@/pages/B2B";
 import IssueTracker from "@/pages/IssueTracker";
 import NotFound from "@/pages/NotFound";
 import PlaceholderPage from "@/components/PlaceholderPage";
@@ -58,6 +59,7 @@ function App() {
               <Route path="products" element={<Products />} />
               <Route path="invoices" element={<Invoices />} />
               <Route path="stock" element={<Stock />} />
+              <Route path="b2b" element={<B2B />} />
               <Route path="events" element={<Events />} />
               <Route path="event-details/:id" element={<EventDetails />} />
               <Route

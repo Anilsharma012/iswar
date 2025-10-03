@@ -28,6 +28,7 @@ import {
   Tent,
   Receipt,
   ClipboardList,
+  Boxes,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -59,6 +60,11 @@ const sidebarItems = [
     title: "Stock",
     icon: Warehouse,
     href: "/stock",
+  },
+  {
+    title: "B2B",
+    icon: Boxes,
+    href: "/b2b",
   },
   {
     title: "Issue Tracker",
@@ -200,7 +206,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
                 onClick={onLinkClick}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-gray-700 hover:bg-gray-100",
-                  path.includes("/admin/events/") && path.endsWith("/agreement/preview")
+                  path.includes("/admin/events/") &&
+                    path.endsWith("/agreement/preview")
                     ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
                     : undefined,
                 )}
