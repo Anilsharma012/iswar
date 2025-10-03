@@ -6,11 +6,13 @@ import {
   StockLedger,
   IssueRegister,
   Client,
+  B2BStock,
 } from "../models";
 import { AuthRequest } from "../utils/auth";
 import { invoiceSchema } from "../utils/validation";
 import { generateInvoiceNumber } from "../utils/invoiceNumber";
 import { generateInvoicePDF } from "../utils/pdfGenerator";
+import { consumeProductStock } from "../utils/b2bStock";
 
 export const getInvoices = async (req: AuthRequest, res: Response) => {
   try {
