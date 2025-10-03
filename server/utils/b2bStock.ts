@@ -8,6 +8,7 @@ export interface B2BUsage {
   stockId: mongoose.Types.ObjectId;
   itemName: string;
   supplierName: string;
+  unitPrice: number;
   quantity: number;
 }
 
@@ -98,6 +99,7 @@ export const consumeProductStock = async ({
         stockId: item._id,
         itemName: item.itemName,
         supplierName: item.supplierName,
+        unitPrice: Number(item.unitPrice) || 0,
         quantity: take,
       });
 
