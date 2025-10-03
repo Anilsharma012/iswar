@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { Event, EventExpense, EventWorker } from "../models";
 import { AuthRequest } from "../utils/auth";
 import { eventSchema } from "../utils/validation";
+import { consumeProductStock } from "../utils/b2bStock";
 
 // Check if database is connected
 const isDatabaseConnected = () => {
