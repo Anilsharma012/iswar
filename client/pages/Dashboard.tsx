@@ -59,11 +59,20 @@ interface DashboardData {
   }>;
 }
 
+type UpcomingEvent = {
+  _id: string;
+  name?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  clientId?: { name?: string } | string | null;
+};
+
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState('today');
   const [upcomingCount, setUpcomingCount] = useState(0);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
 
   const fetchDashboardData = async () => {
     try {
@@ -102,12 +111,21 @@ export default function Dashboard() {
   const fetchUpcomingEvents = async () => {
     try {
       const nowIso = new Date().toISOString();
-      const resp = await eventAPI.getAll({ fromDate: nowIso, page: 1, limit: 1 });
-      const total = resp.data?.pagination?.total ?? (resp.data?.events?.length || 0);
+      const resp = await eventAPI.getAll({ fromDate: nowIso, page: 1, limit: 100 });
+      const events: UpcomingEvent[] = Array.isArray(resp.data?.events) ? resp.data.events : [];
+      // sort by nearest upcoming date (dateFrom then dateTo)
+      const sorted = [...events].sort((a, b) => {
+        const ad = new Date(a.dateFrom || a.dateTo || 0).getTime();
+        const bd = new Date(b.dateFrom || b.dateTo || 0).getTime();
+        return ad - bd;
+      });
+      setUpcomingEvents(sorted);
+      const total = resp.data?.pagination?.total ?? sorted.length;
       setUpcomingCount(Number(total) || 0);
     } catch (err) {
       console.error('Upcoming events fetch error:', err);
       setUpcomingCount(0);
+      setUpcomingEvents([]);
     }
   };
 
@@ -216,6 +234,32 @@ export default function Dashboard() {
                   {stat.change ? ' ' : ''}
                   {stat.subtitle}
                 </p>
+              )}
+
+              {stat.title === 'Upcoming Events' && (
+                <div className="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
+                  {upcomingEvents && upcomingEvents.length > 0 ? (
+                    upcomingEvents.slice(0, 20).map((ev) => {
+                      const dateStr = new Date(ev.dateFrom || ev.dateTo || '').toLocaleDateString();
+                      return (
+                        <div key={ev._id} className="flex items-center justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{ev.name || 'Untitled Event'}</p>
+                            {typeof ev.clientId === 'object' && ev.clientId && (
+                              <p className="text-xs text-gray-500 truncate">{(ev.clientId as any).name}</p>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 whitespace-nowrap">{dateStr}</p>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-sm text-gray-500">No upcoming events</p>
+                  )}
+                  <div className="flex justify-end pt-1">
+                    <Link to="/events" className="text-xs text-blue-600 hover:underline">View All</Link>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
