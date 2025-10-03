@@ -7,6 +7,12 @@ export interface IInvoiceItem {
   qty: number;
   rate: number;
   taxPct?: number;
+  b2bAllocations?: Array<{
+    stockId: Types.ObjectId;
+    supplierName: string;
+    unitPrice: number;
+    quantity: number;
+  }>;
 }
 
 export interface IInvoiceTotals {
@@ -59,6 +65,20 @@ const invoiceItemSchema = new Schema<IInvoiceItem>({
     type: Number,
     min: 0,
     max: 100,
+  },
+  b2bAllocations: {
+    type: [
+      new Schema(
+        {
+          stockId: { type: Schema.Types.ObjectId, ref: "B2BStock" },
+          supplierName: { type: String },
+          unitPrice: { type: Number },
+          quantity: { type: Number },
+        },
+        { _id: false },
+      ),
+    ],
+    default: [],
   },
 });
 
