@@ -218,14 +218,26 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Invoice not found" });
     }
 
-    // If changing from final to draft, reverse stock changes
+    // If changing from final to draft, reverse stock changes (including B2B fallback)
     if (existingInvoice.status === "final" && value.status === "draft") {
-      for (const item of existingInvoice.items) {
+      for (const item of existingInvoice.items as any[]) {
         await Product.findByIdAndUpdate(
           item.productId,
           { $inc: { stockQty: item.qty } },
           { session },
         );
+
+        // Restore any B2B allocations consumed earlier
+        const allocations = Array.isArray(item.b2bAllocations)
+          ? item.b2bAllocations
+          : [];
+        for (const alloc of allocations) {
+          await B2BStock.findByIdAndUpdate(
+            alloc.stockId,
+            { $inc: { quantityAvailable: alloc.quantity } },
+            { session },
+          );
+        }
 
         // Remove stock ledger entries
         await StockLedger.deleteMany({
