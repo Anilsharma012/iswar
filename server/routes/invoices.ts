@@ -162,7 +162,9 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
             const det = err.details || {};
             const shortage = Math.max(
               0,
-              Number(det.requested || 0) - Number(det.mainAvailable || 0) - Number(det.b2bAvailable || 0),
+              Number(det.requested || 0) -
+                Number(det.mainAvailable || 0) -
+                Number(det.b2bAvailable || 0),
             );
             await session.abortTransaction();
             session.endSession();
@@ -191,11 +193,9 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     await session.abortTransaction();
     console.error("Create invoice error:", error);
-    res
-      .status(500)
-      .json({
-        error: error instanceof Error ? error.message : "Internal server error",
-      });
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
   } finally {
     session.endSession();
   }
@@ -307,7 +307,9 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
             const det = err.details || {};
             const shortage = Math.max(
               0,
-              Number(det.requested || 0) - Number(det.mainAvailable || 0) - Number(det.b2bAvailable || 0),
+              Number(det.requested || 0) -
+                Number(det.mainAvailable || 0) -
+                Number(det.b2bAvailable || 0),
             );
             await session.abortTransaction();
             session.endSession();
@@ -341,11 +343,9 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     await session.abortTransaction();
     console.error("Update invoice error:", error);
-    res
-      .status(500)
-      .json({
-        error: error instanceof Error ? error.message : "Internal server error",
-      });
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Internal server error",
+    });
   } finally {
     session.endSession();
   }
@@ -363,7 +363,7 @@ export const deleteInvoice = async (req: AuthRequest, res: Response) => {
 
     // If invoice was finalized, restore stock (including B2B allocations)
     if (invoice.status === "final") {
-      for (const item of (invoice.items as any[])) {
+      for (const item of invoice.items as any[]) {
         await Product.findByIdAndUpdate(
           item.productId,
           { $inc: { stockQty: item.qty } },

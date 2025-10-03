@@ -447,7 +447,9 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
             const det = err.details || {};
             const shortage = Math.max(
               0,
-              Number(det.requested || 0) - Number(det.mainAvailable || 0) - Number(det.b2bAvailable || 0),
+              Number(det.requested || 0) -
+                Number(det.mainAvailable || 0) -
+                Number(det.b2bAvailable || 0),
             );
             return res.status(400).json({
               error: "Stock Required",
