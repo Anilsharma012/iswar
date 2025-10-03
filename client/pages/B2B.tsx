@@ -253,6 +253,8 @@ export default function B2B() {
                   <TableRow>
                     <TableHead>Item</TableHead>
                     <TableHead>Supplier</TableHead>
+                    <TableHead>Received (Total)</TableHead>
+                    <TableHead>Used</TableHead>
                     <TableHead>Qty Available</TableHead>
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Linked Product</TableHead>
