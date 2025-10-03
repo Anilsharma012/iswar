@@ -206,12 +206,17 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className={stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}>
-                  {stat.change}
-                </span>{' '}
-                from last period
-              </p>
+              {stat.subtitle && (
+                <p className="text-xs text-muted-foreground">
+                  {stat.change && (
+                    <span className={stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}>
+                      {stat.change}
+                    </span>
+                  )}
+                  {stat.change ? ' ' : ''}
+                  {stat.subtitle}
+                </p>
+              )}
             </CardContent>
           </Card>
         ))}
