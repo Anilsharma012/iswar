@@ -444,11 +444,17 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
           await session.abortTransaction();
           session.endSession();
           if (err?.code === "INSUFFICIENT_STOCK") {
-            return res
-              .status(400)
-              .json({
-                error: `Insufficient stock for product ${product.name}`,
-              });
+            const det = err.details || {};
+            const shortage = Math.max(
+              0,
+              Number(det.requested || 0) - Number(det.mainAvailable || 0) - Number(det.b2bAvailable || 0),
+            );
+            return res.status(400).json({
+              error: "Stock Required",
+              productId: String(product._id),
+              productName: product.name,
+              shortage,
+            });
           }
           return res.status(500).json({ error: "Internal server error" });
         }
