@@ -47,6 +47,13 @@ import {
   getReturnable,
 } from "./routes/stock";
 import {
+  listB2BStock,
+  createB2BStock,
+  updateB2BStock,
+  deleteB2BStock,
+  createB2BPurchase,
+} from "./routes/b2bStock";
+import {
   getEvents,
   getEvent,
   createEvent,
@@ -184,6 +191,13 @@ app.get("/api/stock/ledger", getStockLedger);
 app.get("/api/issue-register", getIssueRegister);
 app.get("/api/stock/returnable", getReturnable);
 app.post("/api/stock/update", updateStock);
+
+// B2B stock routes
+app.get("/api/b2b-stock", listB2BStock);
+app.post("/api/b2b-stock", createB2BStock);
+app.put("/api/b2b-stock/:id", updateB2BStock);
+app.delete("/api/b2b-stock/:id", deleteB2BStock);
+app.post("/api/b2b-stock/:id/purchase", createB2BPurchase);
 
 // Event routes
 app.get("/api/events", getEvents);
