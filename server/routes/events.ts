@@ -438,6 +438,7 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
             rate,
             amount,
             b2bUsed: allocation.b2bUsed,
+            b2bUsages: allocation.b2bUsages,
           });
         } catch (err: any) {
           await session.abortTransaction();
