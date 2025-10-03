@@ -21,7 +21,7 @@ import {
   ArrowUpRight,
   Calendar,
 } from 'lucide-react';
-import { reportsAPI } from '@/lib/api';
+import { reportsAPI, eventAPI } from '@/lib/api';
 
 interface DashboardData {
   summary: {
