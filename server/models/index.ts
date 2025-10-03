@@ -42,3 +42,5 @@ export { Lead } from "./Lead";
 export type { ILead } from "./Lead";
 export { AuditLog } from "./AuditLog";
 export type { IAuditLog } from "./AuditLog";
+export { B2BStock } from "./B2BStock";
+export type { IB2BStock, IB2BPurchaseLog } from "./B2BStock";
