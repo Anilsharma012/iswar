@@ -99,8 +99,21 @@ export default function Dashboard() {
     }
   };
 
+  const fetchUpcomingEvents = async () => {
+    try {
+      const nowIso = new Date().toISOString();
+      const resp = await eventAPI.getAll({ fromDate: nowIso, page: 1, limit: 1 });
+      const total = resp.data?.pagination?.total ?? (resp.data?.events?.length || 0);
+      setUpcomingCount(Number(total) || 0);
+    } catch (err) {
+      console.error('Upcoming events fetch error:', err);
+      setUpcomingCount(0);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
+    fetchUpcomingEvents();
   }, [range]);
 
   if (loading) {
