@@ -255,51 +255,74 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // If changing from draft to final, apply stock changes
+    // If changing from draft to final, apply stock changes using main + B2B
     if (existingInvoice.status === "draft" && value.status === "final") {
+      const itemsWithAlloc: any[] = [];
       for (const item of value.items) {
-        // Skip adjustment lines
-        if ((item as any).isAdjustment) continue;
+        if ((item as any).isAdjustment) {
+          itemsWithAlloc.push(item);
+          continue;
+        }
 
         const product = await Product.findById(item.productId).session(session);
         if (!product) {
           throw new Error(`Product not found: ${item.productId}`);
         }
 
-        if (product.stockQty < item.qty) {
-          throw new Error(
-            `Insufficient stock for ${product.name}. Available: ${product.stockQty}, Required: ${item.qty}`,
-          );
-        }
+        try {
+          const allocation = await consumeProductStock({
+            product: product as any,
+            quantity: item.qty,
+            session,
+          });
 
-        await Product.findByIdAndUpdate(
-          item.productId,
-          { $inc: { stockQty: -item.qty } },
-          { session },
-        );
+          itemsWithAlloc.push({
+            ...item,
+            b2bAllocations: allocation.b2bUsages,
+          });
 
-        const stockEntry = new StockLedger({
-          productId: item.productId,
-          qtyChange: -item.qty,
-          reason: "invoice",
-          refType: "Invoice",
-          refId: existingInvoice._id,
-        });
-        await stockEntry.save({ session });
+          const stockEntry = new StockLedger({
+            productId: item.productId,
+            qtyChange: -item.qty,
+            reason: "invoice",
+            refType: "Invoice",
+            refId: existingInvoice._id,
+          });
+          await stockEntry.save({ session });
 
-        await IssueRegister.findOneAndUpdate(
-          { productId: item.productId, clientId: value.clientId },
-          {
-            $inc: { qtyIssued: item.qty },
-            $setOnInsert: {
-              issueDate: new Date(),
-              qtyReturned: 0,
-              returnDates: [],
+          await IssueRegister.findOneAndUpdate(
+            { productId: item.productId, clientId: value.clientId },
+            {
+              $inc: { qtyIssued: item.qty },
+              $setOnInsert: {
+                issueDate: new Date(),
+                qtyReturned: 0,
+                returnDates: [],
+              },
             },
-          },
-          { upsert: true, session },
-        );
+            { upsert: true, session },
+          );
+        } catch (err: any) {
+          if (err?.code === "INSUFFICIENT_STOCK") {
+            const det = err.details || {};
+            const shortage = Math.max(
+              0,
+              Number(det.requested || 0) - Number(det.mainAvailable || 0) - Number(det.b2bAvailable || 0),
+            );
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({
+              error: "Stock Required",
+              productId: String(product._id),
+              productName: product.name,
+              shortage,
+            });
+          }
+          throw err;
+        }
       }
+      // Override items so b2b allocations persist on the invoice document
+      (value as any).items = itemsWithAlloc;
     }
 
     const updatedInvoice = await Invoice.findByIdAndUpdate(
