@@ -237,10 +237,8 @@ export default function EventReturn() {
           };
         });
         setRows(newRows);
+        // Stay on page to allow repeated Stock In until all lines are completed
       }
-
-      // After processing, redirect to invoices (no modal)
-      window.location.href = `/invoices`;
     } catch (e: any) {
       const status = e?.response?.status;
       const code = e?.response?.data?.code;
