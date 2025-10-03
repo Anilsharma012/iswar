@@ -306,9 +306,7 @@ export default function EventAgreement() {
                         updateRow(idx, { qtyToSend: Number(e.target.value) })
                       }
                       className="w-24"
-                      readOnly={Boolean(
-                        event && ((event as any).__useDispatchDraft || (event as any).__useConfirmedDispatch),
-                      )}
+                      
                     />
                   </TableCell>
                   <TableCell>
@@ -321,9 +319,7 @@ export default function EventAgreement() {
                         updateRow(idx, { rate: Number(e.target.value) })
                       }
                       className="w-28"
-                      readOnly={Boolean(
-                        event && ((event as any).__useDispatchDraft || (event as any).__useConfirmedDispatch),
-                      )}
+                      
                     />
                   </TableCell>
                   <TableCell className="font-medium">
