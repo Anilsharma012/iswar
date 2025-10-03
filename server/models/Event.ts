@@ -12,6 +12,13 @@ export interface ISelectionItem {
   completedAt?: Date;
   rate: number;
   amount: number;
+  b2bUsed?: number;
+  b2bUsages?: Array<{
+    stockId: Types.ObjectId;
+    supplierName: string;
+    unitPrice: number;
+    quantity: number;
+  }>;
 }
 
 export interface IEvent extends Document {
@@ -81,6 +88,21 @@ const selectionSchema = new Schema<ISelectionItem>({
   completedAt: { type: Date },
   rate: { type: Number, required: true, min: 0 },
   amount: { type: Number, required: true, min: 0 },
+  b2bUsed: { type: Number, default: 0 },
+  b2bUsages: {
+    type: [
+      new Schema(
+        {
+          stockId: { type: Schema.Types.ObjectId, ref: "B2BStock" },
+          supplierName: { type: String },
+          unitPrice: { type: Number },
+          quantity: { type: Number },
+        },
+        { _id: false },
+      ),
+    ],
+    default: [],
+  },
 });
 
 const eventSchema = new Schema<IEvent>(
