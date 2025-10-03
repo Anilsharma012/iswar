@@ -135,15 +135,27 @@ export const stockAPI = {
 // B2B Stock API calls
 export const b2bAPI = {
   list: () => api.get("/b2b-stock"),
-  create: (data: { itemName: string; quantity: number; price: number; supplierName: string }) =>
-    api.post("/b2b-stock", data),
+  create: (data: {
+    itemName: string;
+    quantity: number;
+    price: number;
+    supplierName: string;
+  }) => api.post("/b2b-stock", data),
   update: (
     id: string,
-    data: Partial<{ itemName: string; quantity: number; price: number; supplierName: string; productId: string | null }>,
+    data: Partial<{
+      itemName: string;
+      quantity: number;
+      price: number;
+      supplierName: string;
+      productId: string | null;
+    }>,
   ) => api.put(`/b2b-stock/${id}`, data),
   remove: (id: string) => api.delete(`/b2b-stock/${id}`),
-  purchase: (id: string, data: { quantity: number; price: number; supplierName: string }) =>
-    api.post(`/b2b-stock/${id}/purchase`, data),
+  purchase: (
+    id: string,
+    data: { quantity: number; price: number; supplierName: string },
+  ) => api.post(`/b2b-stock/${id}/purchase`, data),
 };
 
 // Event API calls

@@ -416,7 +416,9 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
         }
 
         try {
-          const allocation = await (await import('../utils/b2bStock')).consumeProductStock({
+          const allocation = await (
+            await import("../utils/b2bStock")
+          ).consumeProductStock({
             product,
             quantity: qty,
             session,
@@ -440,10 +442,14 @@ export const dispatchEvent = async (req: AuthRequest, res: Response) => {
         } catch (err: any) {
           await session.abortTransaction();
           session.endSession();
-          if (err?.code === 'INSUFFICIENT_STOCK') {
-            return res.status(400).json({ error: `Insufficient stock for product ${product.name}` });
+          if (err?.code === "INSUFFICIENT_STOCK") {
+            return res
+              .status(400)
+              .json({
+                error: `Insufficient stock for product ${product.name}`,
+              });
           }
-          return res.status(500).json({ error: 'Internal server error' });
+          return res.status(500).json({ error: "Internal server error" });
         }
       }
 

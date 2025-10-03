@@ -1,16 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DollarSign,
   TrendingUp,
@@ -20,8 +26,8 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Calendar,
-} from 'lucide-react';
-import { reportsAPI, eventAPI } from '@/lib/api';
+} from "lucide-react";
+import { reportsAPI, eventAPI } from "@/lib/api";
 
 interface DashboardData {
   summary: {
@@ -70,7 +76,7 @@ type UpcomingEvent = {
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [range, setRange] = useState('today');
+  const [range, setRange] = useState("today");
   const [upcomingCount, setUpcomingCount] = useState(0);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
 
@@ -96,13 +102,13 @@ export default function Dashboard() {
           totalProducts: 0,
           totalClients: 0,
           totalWorkers: 0,
-        }
+        },
       };
 
       setData(validatedData);
     } catch (error: any) {
-      console.error('Dashboard error:', error);
-      toast.error('Failed to load dashboard data');
+      console.error("Dashboard error:", error);
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
@@ -111,8 +117,14 @@ export default function Dashboard() {
   const fetchUpcomingEvents = async () => {
     try {
       const nowIso = new Date().toISOString();
-      const resp = await eventAPI.getAll({ fromDate: nowIso, page: 1, limit: 100 });
-      const events: UpcomingEvent[] = Array.isArray(resp.data?.events) ? resp.data.events : [];
+      const resp = await eventAPI.getAll({
+        fromDate: nowIso,
+        page: 1,
+        limit: 100,
+      });
+      const events: UpcomingEvent[] = Array.isArray(resp.data?.events)
+        ? resp.data.events
+        : [];
       const now = Date.now();
       // keep only events starting in the future or currently ongoing
       const future = events.filter((e) => {
@@ -130,7 +142,7 @@ export default function Dashboard() {
       const total = resp.data?.pagination?.total ?? sorted.length;
       setUpcomingCount(Number(total) || 0);
     } catch (err) {
-      console.error('Upcoming events fetch error:', err);
+      console.error("Upcoming events fetch error:", err);
       setUpcomingCount(0);
       setUpcomingEvents([]);
     }
@@ -162,35 +174,35 @@ export default function Dashboard() {
 
   const stats = [
     {
-      title: 'Total Sales',
+      title: "Total Sales",
       value: `₹${data.summary.totalSales.toLocaleString()}`,
       icon: DollarSign,
-      change: '+12.5%',
-      changeType: 'positive' as const,
-      subtitle: 'from last period',
+      change: "+12.5%",
+      changeType: "positive" as const,
+      subtitle: "from last period",
     },
     {
-      title: 'Net Revenue',
+      title: "Net Revenue",
       value: `₹${data.summary.netRevenue.toLocaleString()}`,
       icon: TrendingUp,
-      change: '+8.2%',
-      changeType: 'positive' as const,
-      subtitle: 'from last period',
+      change: "+8.2%",
+      changeType: "positive" as const,
+      subtitle: "from last period",
     },
     {
-      title: 'Upcoming Events',
+      title: "Upcoming Events",
       value: upcomingCount.toString(),
       icon: Calendar,
-      changeType: 'positive' as const,
-      subtitle: 'scheduled from today',
+      changeType: "positive" as const,
+      subtitle: "scheduled from today",
     },
     {
-      title: 'Net Profit',
+      title: "Net Profit",
       value: `₹${data.summary.netProfit.toLocaleString()}`,
       icon: TrendingUp,
-      change: '+5.4%',
-      changeType: 'positive' as const,
-      subtitle: 'from last period',
+      change: "+5.4%",
+      changeType: "positive" as const,
+      subtitle: "from last period",
     },
   ];
 
@@ -234,33 +246,58 @@ export default function Dashboard() {
               {stat.subtitle && (
                 <p className="text-xs text-muted-foreground">
                   {stat.change && (
-                    <span className={stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}>
+                    <span
+                      className={
+                        stat.changeType === "positive"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }
+                    >
                       {stat.change}
                     </span>
                   )}
-                  {stat.change ? ' ' : ''}
+                  {stat.change ? " " : ""}
                   {stat.subtitle}
                 </p>
               )}
 
-              {stat.title === 'Upcoming Events' && (
+              {stat.title === "Upcoming Events" && (
                 <div className="mt-3 space-y-2 max-h-40 overflow-y-auto pr-1">
                   {upcomingEvents && upcomingEvents.length > 0 ? (
                     upcomingEvents.slice(0, 20).map((ev) => {
-                      const startRaw = ev.dateFrom || '';
-                      const endRaw = ev.dateTo || '';
-                      const startStr = startRaw ? new Date(startRaw).toLocaleDateString() : '';
-                      const endStr = endRaw && endRaw !== startRaw ? new Date(endRaw).toLocaleDateString() : '';
-                      const dateStr = endStr ? `${startStr} - ${endStr}` : (startStr || '-');
+                      const startRaw = ev.dateFrom || "";
+                      const endRaw = ev.dateTo || "";
+                      const startStr = startRaw
+                        ? new Date(startRaw).toLocaleDateString()
+                        : "";
+                      const endStr =
+                        endRaw && endRaw !== startRaw
+                          ? new Date(endRaw).toLocaleDateString()
+                          : "";
+                      const dateStr = endStr
+                        ? `${startStr} - ${endStr}`
+                        : startStr || "-";
                       return (
-                        <div key={ev._id} className="flex items-center justify-between">
+                        <div
+                          key={ev._id}
+                          className="flex items-center justify-between"
+                        >
                           <div className="min-w-0">
-                            <Link to={`/event-details/${ev._id}`} className="text-sm font-medium truncate text-blue-700 hover:underline">{ev.name || 'Untitled Event'}</Link>
-                            {typeof ev.clientId === 'object' && ev.clientId && (
-                              <p className="text-xs text-gray-500 truncate">{(ev.clientId as any).name}</p>
+                            <Link
+                              to={`/event-details/${ev._id}`}
+                              className="text-sm font-medium truncate text-blue-700 hover:underline"
+                            >
+                              {ev.name || "Untitled Event"}
+                            </Link>
+                            {typeof ev.clientId === "object" && ev.clientId && (
+                              <p className="text-xs text-gray-500 truncate">
+                                {(ev.clientId as any).name}
+                              </p>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 whitespace-nowrap">{dateStr}</p>
+                          <p className="text-xs text-gray-500 whitespace-nowrap">
+                            {dateStr}
+                          </p>
                         </div>
                       );
                     })
@@ -268,7 +305,12 @@ export default function Dashboard() {
                     <p className="text-sm text-gray-500">No upcoming events</p>
                   )}
                   <div className="flex justify-end pt-1">
-                    <Link to="/events" className="text-xs text-blue-600 hover:underline">View All</Link>
+                    <Link
+                      to="/events"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      View All
+                    </Link>
                   </div>
                 </div>
               )}
@@ -295,11 +337,14 @@ export default function Dashboard() {
             <div className="space-y-3">
               {data.recentInvoices && data.recentInvoices.length > 0 ? (
                 data.recentInvoices.slice(0, 5).map((invoice) => (
-                  <div key={invoice._id} className="flex items-center justify-between">
+                  <div
+                    key={invoice._id}
+                    className="flex items-center justify-between"
+                  >
                     <div>
                       <p className="font-medium text-sm">{invoice.number}</p>
                       <p className="text-xs text-gray-500">
-                        {invoice.clientId?.name || 'Unknown Client'}
+                        {invoice.clientId?.name || "Unknown Client"}
                       </p>
                     </div>
                     <div className="text-right">
@@ -329,7 +374,9 @@ export default function Dashboard() {
                 <AlertTriangle className="h-4 w-4 text-orange-500" />
                 Low Stock Alert
               </CardTitle>
-              <CardDescription>Products running low on inventory</CardDescription>
+              <CardDescription>
+                Products running low on inventory
+              </CardDescription>
             </div>
             <Button asChild size="sm" variant="outline">
               <Link to="/stock">
@@ -341,14 +388,17 @@ export default function Dashboard() {
             <div className="space-y-3">
               {data.lowStockProducts && data.lowStockProducts.length > 0 ? (
                 data.lowStockProducts.map((product) => (
-                  <div key={product._id} className="flex items-center justify-between">
+                  <div
+                    key={product._id}
+                    className="flex items-center justify-between"
+                  >
                     <div>
                       <p className="font-medium text-sm">{product.name}</p>
-                      <p className="text-xs text-gray-500">{product.category}</p>
+                      <p className="text-xs text-gray-500">
+                        {product.category}
+                      </p>
                     </div>
-                    <Badge variant="destructive">
-                      {product.stockQty} left
-                    </Badge>
+                    <Badge variant="destructive">{product.stockQty} left</Badge>
                   </div>
                 ))
               ) : (
@@ -365,7 +415,9 @@ export default function Dashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common tasks you might want to perform</CardDescription>
+          <CardDescription>
+            Common tasks you might want to perform
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -404,7 +456,9 @@ export default function Dashboard() {
             <CardTitle className="text-base">Total Clients</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.summary.totalClients}</div>
+            <div className="text-2xl font-bold">
+              {data.summary.totalClients}
+            </div>
             <p className="text-xs text-muted-foreground">Active customers</p>
           </CardContent>
         </Card>
@@ -414,7 +468,9 @@ export default function Dashboard() {
             <CardTitle className="text-base">Total Products</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.summary.totalProducts}</div>
+            <div className="text-2xl font-bold">
+              {data.summary.totalProducts}
+            </div>
             <p className="text-xs text-muted-foreground">In inventory</p>
           </CardContent>
         </Card>
@@ -424,7 +480,9 @@ export default function Dashboard() {
             <CardTitle className="text-base">Total Workers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.summary.totalWorkers}</div>
+            <div className="text-2xl font-bold">
+              {data.summary.totalWorkers}
+            </div>
             <p className="text-xs text-muted-foreground">Team members</p>
           </CardContent>
         </Card>
