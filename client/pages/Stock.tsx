@@ -546,7 +546,18 @@ export default function Stock() {
                             value={product.unitType}
                             onValueChange={async (val) => {
                               try {
-                                await productAPI.update(product._id, { unitType: val });
+                                // Fetch full product to satisfy strict validators if present
+                                const d = await productAPI.getById(product._id);
+                                const p = d.data || {};
+                                await productAPI.update(product._id, {
+                                  name: p.name ?? product.name,
+                                  category: p.category ?? product.category,
+                                  unitType: val,
+                                  buyPrice: p.buyPrice ?? 0,
+                                  sellPrice: p.sellPrice ?? 0,
+                                  stockQty: p.stockQty ?? product.stockQty ?? 0,
+                                  imageUrl: p.imageUrl ?? undefined,
+                                });
                                 toast.success("Unit updated");
                                 fetchCurrentStock();
                               } catch (e: any) {
