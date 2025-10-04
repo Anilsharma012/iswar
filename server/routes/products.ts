@@ -77,7 +77,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
     console.log("Received product update data:", req.body);
-    const { error, value } = productSchema.validate(req.body);
+    const { error, value } = productUpdateSchema.validate(req.body);
     if (error) {
       console.error(
         "Product update validation error:",
