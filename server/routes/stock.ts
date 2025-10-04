@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { Product, StockLedger, IssueRegister, Event } from "../models";
+import { Product, StockLedger, IssueRegister, Event, B2BStock, ManualB2BAllocation } from "../models";
 import { AuthRequest } from "../utils/auth";
 import { stockUpdateSchema } from "../utils/validation";
 import { consumeProductStock } from "../utils/b2bStock";
