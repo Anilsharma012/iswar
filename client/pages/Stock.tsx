@@ -55,7 +55,7 @@ interface Product {
   _id: string;
   name: string;
   category: string;
-  unitType: 'pcs' | 'meter' | 'sqft' | 'sqyd' | 'sqmt';
+  unitType: string;
   stockQty: number;
 }
 
