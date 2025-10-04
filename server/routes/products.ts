@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { Product } from "../models";
 import { AuthRequest } from "../utils/auth";
-import { productSchema } from "../utils/validation";
+import { productSchema, productUpdateSchema } from "../utils/validation";
 
 export const getProducts = async (req: AuthRequest, res: Response) => {
   try {
