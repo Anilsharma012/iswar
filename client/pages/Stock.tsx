@@ -541,7 +541,51 @@ export default function Stock() {
                           </div>
                         </TableCell>
                         <TableCell>{product.category}</TableCell>
-                        <TableCell className="capitalize">{product.unitType}</TableCell>
+                        <TableCell className="capitalize">
+                          <Select
+                            value={product.unitType}
+                            onValueChange={async (val) => {
+                              try {
+                                await productAPI.update(product._id, { unitType: val });
+                                toast.success("Unit updated");
+                                fetchCurrentStock();
+                              } catch (e: any) {
+                                console.error(e);
+                                toast.error(e?.response?.data?.error || "Failed to update unit");
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="w-[140px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[
+                                { value: 'pcs', label: 'Pieces' },
+                                { value: 'no', label: 'No.' },
+                                { value: 'nos', label: 'Nos.' },
+                                { value: 'unit', label: 'Unit' },
+                                { value: 'units', label: 'Units' },
+                                { value: 'pair', label: 'Pair' },
+                                { value: 'set', label: 'Set' },
+                                { value: 'meter', label: 'Meter' },
+                                { value: 'sqft', label: 'Square Feet' },
+                                { value: 'sqyd', label: 'Square Yard' },
+                                { value: 'sqmt', label: 'Square Meter' },
+                                { value: 'kg', label: 'Kilogram' },
+                                { value: 'g', label: 'Gram' },
+                                { value: 'litre', label: 'Litre' },
+                                { value: 'ml', label: 'Millilitre' },
+                                { value: 'box', label: 'Box' },
+                                { value: 'roll', label: 'Roll' },
+                                { value: 'bundle', label: 'Bundle' },
+                              ].map((u) => (
+                                <SelectItem key={u.value} value={u.value}>
+                                  {u.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
                         <TableCell>
                           <span className={product.stockQty === 0 ? 'text-red-600 font-medium' : 'font-medium'}>
                             {product.stockQty} {product.unitType}
