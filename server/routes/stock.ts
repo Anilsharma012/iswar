@@ -190,7 +190,6 @@ export const updateStock = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    // Calculate quantity change based on type
     let qtyChange = 0;
     let newQty = product.stockQty;
     let allocation = null as
@@ -198,18 +197,64 @@ export const updateStock = async (req: AuthRequest, res: Response) => {
       | null;
 
     if (type === "in") {
-      qtyChange = quantity;
-      newQty = product.stockQty + quantity;
-      product.stockQty = newQty;
-      await product.save();
+      // First repay any outstanding B2B borrowings for this product
+      let qtyRemaining = quantity;
+      const debts = await ManualB2BAllocation.find({
+        productId: product._id,
+        totalRemaining: { $gt: 0 },
+      }).sort({ createdAt: 1 });
+
+      for (const debt of debts) {
+        if (qtyRemaining <= 0) break;
+        for (const alloc of debt.allocations) {
+          if (qtyRemaining <= 0) break;
+          if (alloc.quantityRemaining <= 0) continue;
+          const giveBack = Math.min(alloc.quantityRemaining, qtyRemaining);
+          // Return to the specific B2B stock entry
+          await B2BStock.findByIdAndUpdate(alloc.stockId, {
+            $inc: { quantityAvailable: giveBack },
+          });
+          alloc.quantityRemaining -= giveBack;
+          qtyRemaining -= giveBack;
+        }
+        // Recompute total remaining and persist
+        debt.totalRemaining = (debt.allocations || []).reduce(
+          (sum, a) => sum + Number(a.quantityRemaining || 0),
+          0,
+        );
+        await debt.save();
+      }
+
+      // Any remaining quantity goes to main stock
+      if (qtyRemaining > 0) {
+        product.stockQty = product.stockQty + qtyRemaining;
+        await product.save();
+      }
+      newQty = product.stockQty;
+      qtyChange = quantity - qtyRemaining + qtyRemaining - quantity + qtyRemaining; // simplify below
+      // qtyChange should reflect only change in main stock (qtyRemaining)
+      qtyChange = qtyRemaining;
     } else if (type === "out") {
-      qtyChange = -quantity;
       const result = await consumeProductStock({
         product,
         quantity,
       });
       newQty = result.projectedStock;
       allocation = { ...result, reason: "manual" };
+      // Record B2B borrowings for future repayment on manual stock-in
+      if (result.b2bUsed > 0 && result.b2bUsages.length > 0) {
+        const doc = new ManualB2BAllocation({
+          productId: product._id,
+          allocations: result.b2bUsages.map((u) => ({
+            stockId: u.stockId,
+            quantityRemaining: u.quantity,
+            supplierName: u.supplierName,
+          })),
+        });
+        await doc.save();
+      }
+      // qtyChange should reflect only change in main stock (negative of mainUsed)
+      qtyChange = -result.mainUsed;
     } else if (type === "adjustment") {
       qtyChange = quantity - product.stockQty;
       newQty = quantity;
@@ -217,7 +262,6 @@ export const updateStock = async (req: AuthRequest, res: Response) => {
       await product.save();
     }
 
-    // Create stock ledger entry
     const stockEntry = new StockLedger({
       productId,
       qtyChange,
@@ -232,6 +276,12 @@ export const updateStock = async (req: AuthRequest, res: Response) => {
       product,
       ledgerEntry: stockEntry,
       allocation,
+      details: allocation
+        ? {
+            mainUsed: allocation.mainUsed,
+            b2bUsed: allocation.b2bUsed,
+          }
+        : undefined,
     });
   } catch (error) {
     console.error("Update stock error:", error);
