@@ -388,6 +388,83 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
                 Number(det.mainAvailable || 0) -
                 Number(det.b2bAvailable || 0),
             );
+            if (shortage > 0) {
+              const normalizedName = String(product.name || "").trim().toLowerCase();
+              let b2b = await B2BStock.findOne({
+                $or: [
+                  { productId: product._id },
+                  { normalizedItemName: normalizedName },
+                ],
+              }).session(session);
+              if (b2b) {
+                await B2BStock.updateOne(
+                  { _id: b2b._id },
+                  {
+                    $inc: { quantityAvailable: shortage },
+                    $push: {
+                      purchaseLogs: {
+                        quantity: shortage,
+                        price: 0,
+                        supplierName: "Auto Borrow",
+                        createdAt: new Date(),
+                      },
+                    },
+                  },
+                ).session(session);
+              } else {
+                b2b = new B2BStock({
+                  itemName: product.name,
+                  supplierName: "Auto Borrow",
+                  quantityAvailable: shortage,
+                  unitPrice: 0,
+                  productId: product._id,
+                  purchaseLogs: [
+                    {
+                      quantity: shortage,
+                      price: 0,
+                      supplierName: "Auto Borrow",
+                      createdAt: new Date(),
+                    },
+                  ],
+                });
+                await (b2b as any).save({ session });
+              }
+
+              const allocation = await consumeProductStock({
+                product: product as any,
+                quantity: item.qty,
+                session,
+              });
+
+              itemsWithAlloc.push({
+                ...item,
+                b2bAllocations: allocation.b2bUsages,
+              });
+
+              const stockEntry = new StockLedger({
+                productId: item.productId,
+                qtyChange: -item.qty,
+                reason: "invoice",
+                refType: "Invoice",
+                refId: existingInvoice._id,
+              });
+              await stockEntry.save({ session });
+
+              await IssueRegister.findOneAndUpdate(
+                { productId: item.productId, clientId: value.clientId },
+                {
+                  $inc: { qtyIssued: item.qty },
+                  $setOnInsert: {
+                    issueDate: new Date(),
+                    qtyReturned: 0,
+                    returnDates: [],
+                  },
+                },
+                { upsert: true, session },
+              );
+
+              continue;
+            }
             await session.abortTransaction();
             session.endSession();
             return res.status(400).json({
