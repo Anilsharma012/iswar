@@ -55,7 +55,7 @@ interface Product {
   _id: string;
   name: string;
   category: string;
-  unitType: 'pcs' | 'meter' | 'sqft' | 'sqyd' | 'sqmt';
+  unitType: string;
   buyPrice?: number;
   sellPrice?: number;
   stockQty?: number;
@@ -67,7 +67,7 @@ interface Product {
 interface ProductFormData {
   name: string;
   category: string;
-  unitType: 'pcs' | 'meter' | 'sqft' | 'sqyd' | 'sqmt';
+  unitType: string;
   buyPrice: string;
   sellPrice: string;
   stockQty: string;
@@ -86,10 +86,23 @@ const initialFormData: ProductFormData = {
 
 const unitTypes = [
   { value: 'pcs', label: 'Pieces' },
+  { value: 'no', label: 'No.' },
+  { value: 'nos', label: 'Nos.' },
+  { value: 'unit', label: 'Unit' },
+  { value: 'units', label: 'Units' },
+  { value: 'pair', label: 'Pair' },
+  { value: 'set', label: 'Set' },
   { value: 'meter', label: 'Meter' },
   { value: 'sqft', label: 'Square Feet' },
   { value: 'sqyd', label: 'Square Yard' },
   { value: 'sqmt', label: 'Square Meter' },
+  { value: 'kg', label: 'Kilogram' },
+  { value: 'g', label: 'Gram' },
+  { value: 'litre', label: 'Litre' },
+  { value: 'ml', label: 'Millilitre' },
+  { value: 'box', label: 'Box' },
+  { value: 'roll', label: 'Roll' },
+  { value: 'bundle', label: 'Bundle' },
 ];
 
 export default function Products() {
