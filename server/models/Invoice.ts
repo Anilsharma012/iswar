@@ -3,7 +3,7 @@ import mongoose, { Schema, model, Document, Types } from "mongoose";
 export interface IInvoiceItem {
   productId: Types.ObjectId;
   desc?: string;
-  unitType: "pcs" | "meter" | "sqft" | "sqyd" | "sqmt";
+  unitType: string;
   qty: number;
   rate: number;
   taxPct?: number;
