@@ -132,7 +132,10 @@ export const updateB2BStock = async (req: AuthRequest, res: Response) => {
       const delta = nextQty - prevQty;
 
       // If linked to a product, treat delta as transfer between main and B2B
-      const linkedProductId = (value.productId as any) || item.productId;
+      const linkedProductId = (value.productId as any) ||
+        ((item.productId && typeof (item.productId as any) === "object")
+          ? (item.productId as any)._id
+          : (item.productId as any));
       if (delta !== 0 && linkedProductId) {
         const product = await Product.findById(linkedProductId);
         if (!product) {
@@ -140,14 +143,14 @@ export const updateB2BStock = async (req: AuthRequest, res: Response) => {
         }
         if (delta > 0) {
           // Moving from main -> B2B; ensure enough main stock
-          if (product.stockQty < delta) {
+          if ((Number(product.stockQty) || 0) < delta) {
             return res.status(400).json({ error: "Insufficient main stock to transfer to B2B" });
           }
-          product.stockQty -= delta;
+          product.stockQty = (Number(product.stockQty) || 0) - delta;
           await product.save();
         } else if (delta < 0) {
           // Moving from B2B -> main
-          product.stockQty += -delta;
+          product.stockQty = (Number(product.stockQty) || 0) + (-delta);
           await product.save();
         }
       }
