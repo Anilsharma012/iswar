@@ -172,6 +172,23 @@ export default function Stock() {
     fetchCurrentStock();
   }, [searchTerm, categoryFilter, stockFilter]);
 
+  // Refresh stock when other pages signal updates (e.g., Event Return)
+  useEffect(() => {
+    const onCustom = () => fetchCurrentStock();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'stockRefreshTs') fetchCurrentStock();
+    };
+    const onFocus = () => fetchCurrentStock();
+    window.addEventListener('stock:refresh' as any, onCustom);
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('stock:refresh' as any, onCustom);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'ledger') {
       fetchStockLedger();
@@ -465,7 +482,7 @@ export default function Stock() {
                     <SelectItem value="good">Good Stock (&gt;50)</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" onClick={fetchCurrentStock}>
+                <Button variant="outline" onClick={fetchCurrentStock} title="Refresh">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
