@@ -197,43 +197,62 @@ export const updateStock = async (req: AuthRequest, res: Response) => {
       | null;
 
     if (type === "in") {
-      // First repay any outstanding B2B borrowings for this product
-      let qtyRemaining = quantity;
-      const debts = await ManualB2BAllocation.find({
-        productId: product._id,
-        totalRemaining: { $gt: 0 },
-      }).sort({ createdAt: 1 });
+      // Optional: user-provided B2B repayments; do not auto-repay
+      const repayments: Array<{ stockId: string; quantity: number }> = Array.isArray((req.body as any).b2bRepayments)
+        ? (req.body as any).b2bRepayments
+        : [];
 
-      for (const debt of debts) {
-        if (qtyRemaining <= 0) break;
-        for (const alloc of debt.allocations) {
-          if (qtyRemaining <= 0) break;
-          if (alloc.quantityRemaining <= 0) continue;
-          const giveBack = Math.min(alloc.quantityRemaining, qtyRemaining);
-          // Return to the specific B2B stock entry
-          await B2BStock.findByIdAndUpdate(alloc.stockId, {
-            $inc: { quantityAvailable: giveBack },
-          });
-          alloc.quantityRemaining -= giveBack;
-          qtyRemaining -= giveBack;
-        }
-        // Recompute total remaining and persist
-        debt.totalRemaining = (debt.allocations || []).reduce(
-          (sum, a) => sum + Number(a.quantityRemaining || 0),
-          0,
-        );
-        await debt.save();
+      const totalRepay = repayments.reduce(
+        (sum, r) => sum + Number(r.quantity || 0),
+        0,
+      );
+      if (totalRepay > quantity) {
+        return res
+          .status(400)
+          .json({ error: "B2B repayments cannot exceed total stock-in quantity" });
       }
 
-      // Any remaining quantity goes to main stock
-      if (qtyRemaining > 0) {
-        product.stockQty = product.stockQty + qtyRemaining;
+      // Apply B2B repayments as requested
+      for (const r of repayments) {
+        await B2BStock.findByIdAndUpdate(r.stockId, {
+          $inc: { quantityAvailable: r.quantity },
+        });
+      }
+
+      // Reduce any tracked debt for this product by the repaid amounts
+      if (repayments.length) {
+        const debts = await ManualB2BAllocation.find({
+          productId: product._id,
+          totalRemaining: { $gt: 0 },
+        }).sort({ createdAt: 1 });
+        let repayLeft = totalRepay;
+        for (const debt of debts) {
+          if (repayLeft <= 0) break;
+          for (const alloc of debt.allocations) {
+            if (repayLeft <= 0) break;
+            const r = repayments.find((x) => String(x.stockId) === String(alloc.stockId));
+            if (!r) continue;
+            const giveBack = Math.min(alloc.quantityRemaining, r.quantity);
+            alloc.quantityRemaining -= giveBack;
+            r.quantity -= giveBack;
+            repayLeft -= giveBack;
+          }
+          debt.totalRemaining = (debt.allocations || []).reduce(
+            (sum, a) => sum + Number(a.quantityRemaining || 0),
+            0,
+          );
+          await debt.save();
+        }
+      }
+
+      // Remaining goes to main stock
+      const toMain = quantity - totalRepay;
+      if (toMain > 0) {
+        product.stockQty = product.stockQty + toMain;
         await product.save();
       }
       newQty = product.stockQty;
-      qtyChange = quantity - qtyRemaining + qtyRemaining - quantity + qtyRemaining; // simplify below
-      // qtyChange should reflect only change in main stock (qtyRemaining)
-      qtyChange = qtyRemaining;
+      qtyChange = toMain;
     } else if (type === "out") {
       const result = await consumeProductStock({
         product,
