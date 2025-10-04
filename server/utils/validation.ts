@@ -18,7 +18,26 @@ export const productSchema = Joi.object({
   name: Joi.string().required().trim(),
   category: Joi.string().required().trim(),
   unitType: Joi.string()
-    .valid("pcs", "meter", "sqft", "sqyd", "sqmt")
+    .valid(
+      "pcs",
+      "no",
+      "nos",
+      "unit",
+      "units",
+      "pair",
+      "set",
+      "meter",
+      "sqft",
+      "sqyd",
+      "sqmt",
+      "kg",
+      "g",
+      "litre",
+      "ml",
+      "box",
+      "roll",
+      "bundle",
+    )
     .required(),
   buyPrice: Joi.number().min(0).required(),
   sellPrice: Joi.number().min(0).required(),
@@ -26,11 +45,61 @@ export const productSchema = Joi.object({
   imageUrl: Joi.string().optional().trim(),
 });
 
+export const productUpdateSchema = Joi.object({
+  name: Joi.string().optional().trim(),
+  category: Joi.string().optional().trim(),
+  unitType: Joi.string()
+    .valid(
+      "pcs",
+      "no",
+      "nos",
+      "unit",
+      "units",
+      "pair",
+      "set",
+      "meter",
+      "sqft",
+      "sqyd",
+      "sqmt",
+      "kg",
+      "g",
+      "litre",
+      "ml",
+      "box",
+      "roll",
+      "bundle",
+    )
+    .optional(),
+  buyPrice: Joi.number().min(0).optional(),
+  sellPrice: Joi.number().min(0).optional(),
+  stockQty: Joi.number().min(0).optional(),
+  imageUrl: Joi.string().optional().trim(),
+}).min(1);
+
 export const invoiceItemSchema = Joi.object({
   productId: Joi.string().required(),
   desc: Joi.string().optional().trim(),
   unitType: Joi.string()
-    .valid("pcs", "meter", "sqft", "sqyd", "sqmt")
+    .valid(
+      "pcs",
+      "no",
+      "nos",
+      "unit",
+      "units",
+      "pair",
+      "set",
+      "meter",
+      "sqft",
+      "sqyd",
+      "sqmt",
+      "kg",
+      "g",
+      "litre",
+      "ml",
+      "box",
+      "roll",
+      "bundle",
+    )
     .required(),
   qty: Joi.number().min(0).required(),
   rate: Joi.number().min(0).required(),

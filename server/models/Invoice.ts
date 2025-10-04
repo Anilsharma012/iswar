@@ -3,7 +3,7 @@ import mongoose, { Schema, model, Document, Types } from "mongoose";
 export interface IInvoiceItem {
   productId: Types.ObjectId;
   desc?: string;
-  unitType: "pcs" | "meter" | "sqft" | "sqyd" | "sqmt";
+  unitType: string;
   qty: number;
   rate: number;
   taxPct?: number;
@@ -48,7 +48,26 @@ const invoiceItemSchema = new Schema<IInvoiceItem>({
   },
   unitType: {
     type: String,
-    enum: ["pcs", "meter", "sqft", "sqyd", "sqmt"],
+    enum: [
+      "pcs",
+      "no",
+      "nos",
+      "unit",
+      "units",
+      "pair",
+      "set",
+      "meter",
+      "sqft",
+      "sqyd",
+      "sqmt",
+      "kg",
+      "g",
+      "litre",
+      "ml",
+      "box",
+      "roll",
+      "bundle",
+    ],
     required: true,
   },
   qty: {

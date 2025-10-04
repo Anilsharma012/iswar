@@ -82,7 +82,7 @@ interface Product {
   _id: string;
   name: string;
   category: string;
-  unitType: "pcs" | "meter" | "sqft" | "sqyd" | "sqmt";
+  unitType: string;
   sellPrice: number;
   stockQty: number;
 }
@@ -90,7 +90,7 @@ interface Product {
 interface InvoiceItem {
   productId: string;
   desc?: string;
-  unitType: "pcs" | "meter" | "sqft" | "sqyd" | "sqmt";
+  unitType: string;
   qty: number;
   rate: number;
   taxPct?: number;

@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { Product } from "../models";
 import { AuthRequest } from "../utils/auth";
-import { productSchema } from "../utils/validation";
+import { productSchema, productUpdateSchema } from "../utils/validation";
 
 export const getProducts = async (req: AuthRequest, res: Response) => {
   try {
@@ -77,7 +77,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
     console.log("Received product update data:", req.body);
-    const { error, value } = productSchema.validate(req.body);
+    const { error, value } = productUpdateSchema.validate(req.body);
     if (error) {
       console.error(
         "Product update validation error:",

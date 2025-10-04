@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -19,22 +19,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Plus,
   Search,
@@ -47,26 +48,26 @@ import {
   BarChart3,
   History,
   AlertCircle,
-} from 'lucide-react';
-import { stockAPI, productAPI } from '@/lib/api';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { stockAPI, productAPI } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface Product {
   _id: string;
   name: string;
   category: string;
-  unitType: 'pcs' | 'meter' | 'sqft' | 'sqyd' | 'sqmt';
+  unitType: string;
   stockQty: number;
 }
 
 interface StockLedgerEntry {
   _id: string;
   productId: Product;
-  type: 'in' | 'out' | 'adjustment';
+  type: "in" | "out" | "adjustment";
   quantity: number;
   reason: string;
   referenceId?: string;
-  referenceType?: 'invoice' | 'manual' | 'return';
+  referenceType?: "invoice" | "manual" | "return";
   balanceAfter: number;
   date: string;
   createdAt: string;
@@ -75,7 +76,7 @@ interface StockLedgerEntry {
 interface IssueRegisterEntry {
   _id: string;
   productId: Product;
-  issueType: 'damage' | 'lost' | 'expired' | 'other';
+  issueType: "damage" | "lost" | "expired" | "other";
   quantity: number;
   description: string;
   reportedBy: string;
@@ -85,16 +86,16 @@ interface IssueRegisterEntry {
 
 interface StockUpdateFormData {
   productId: string;
-  type: 'in' | 'out' | 'adjustment';
+  type: "in" | "out" | "adjustment";
   quantity: string;
   reason: string;
 }
 
 const initialStockFormData: StockUpdateFormData = {
-  productId: '',
-  type: 'in',
-  quantity: '',
-  reason: '',
+  productId: "",
+  type: "in",
+  quantity: "",
+  reason: "",
 };
 
 export default function Stock() {
@@ -103,12 +104,13 @@ export default function Stock() {
   const [issueRegister, setIssueRegister] = useState<IssueRegisterEntry[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState<StockUpdateFormData>(initialStockFormData);
+  const [formData, setFormData] =
+    useState<StockUpdateFormData>(initialStockFormData);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [stockFilter, setStockFilter] = useState('all');
-  const [activeTab, setActiveTab] = useState('current');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("current");
   const [categories, setCategories] = useState<string[]>([]);
 
   const fetchCurrentStock = async () => {
@@ -116,15 +118,15 @@ export default function Stock() {
       setLoading(true);
       const params = {
         search: searchTerm,
-        category: categoryFilter === 'all' ? '' : categoryFilter,
-        stockLevel: stockFilter === 'all' ? '' : stockFilter,
+        category: categoryFilter === "all" ? "" : categoryFilter,
+        stockLevel: stockFilter === "all" ? "" : stockFilter,
       };
-      
+
       const response = await stockAPI.getCurrent(params);
       setCurrentStock(response.data.products || []);
     } catch (error: any) {
-      console.error('Fetch current stock error:', error);
-      toast.error('Failed to load current stock');
+      console.error("Fetch current stock error:", error);
+      toast.error("Failed to load current stock");
     } finally {
       setLoading(false);
     }
@@ -135,8 +137,8 @@ export default function Stock() {
       const response = await stockAPI.getLedger({ limit: 50 });
       setStockLedger(response.data.ledger || []);
     } catch (error: any) {
-      console.error('Fetch stock ledger error:', error);
-      toast.error('Failed to load stock ledger');
+      console.error("Fetch stock ledger error:", error);
+      toast.error("Failed to load stock ledger");
     }
   };
 
@@ -145,8 +147,8 @@ export default function Stock() {
       const response = await stockAPI.getIssueRegister({ limit: 50 });
       setIssueRegister(response.data.issues || []);
     } catch (error: any) {
-      console.error('Fetch issue register error:', error);
-      toast.error('Failed to load issue register');
+      console.error("Fetch issue register error:", error);
+      toast.error("Failed to load issue register");
     }
   };
 
@@ -155,7 +157,7 @@ export default function Stock() {
       const response = await productAPI.getAll({ limit: 1000 });
       setProducts(response.data.products || []);
     } catch (error) {
-      console.error('Fetch products error:', error);
+      console.error("Fetch products error:", error);
     }
   };
 
@@ -164,7 +166,7 @@ export default function Stock() {
       const response = await productAPI.getCategories();
       setCategories(response.data || []);
     } catch (error) {
-      console.error('Fetch categories error:', error);
+      console.error("Fetch categories error:", error);
     }
   };
 
@@ -172,10 +174,27 @@ export default function Stock() {
     fetchCurrentStock();
   }, [searchTerm, categoryFilter, stockFilter]);
 
+  // Refresh stock when other pages signal updates (e.g., Event Return)
   useEffect(() => {
-    if (activeTab === 'ledger') {
+    const onCustom = () => fetchCurrentStock();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "stockRefreshTs") fetchCurrentStock();
+    };
+    const onFocus = () => fetchCurrentStock();
+    window.addEventListener("stock:refresh" as any, onCustom);
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("stock:refresh" as any, onCustom);
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "ledger") {
       fetchStockLedger();
-    } else if (activeTab === 'issues') {
+    } else if (activeTab === "issues") {
       fetchIssueRegister();
     }
   }, [activeTab]);
@@ -189,17 +208,17 @@ export default function Stock() {
     e.preventDefault();
 
     if (!formData.productId) {
-      toast.error('Please select a product');
+      toast.error("Please select a product");
       return;
     }
 
     if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
-      toast.error('Please enter a valid quantity');
+      toast.error("Please enter a valid quantity");
       return;
     }
 
     if (!formData.reason.trim()) {
-      toast.error('Please provide a reason for stock update');
+      toast.error("Please provide a reason for stock update");
       return;
     }
 
@@ -212,20 +231,23 @@ export default function Stock() {
 
     try {
       await stockAPI.updateStock(updateData);
-      toast.success('Stock updated successfully');
-      
+      toast.success("Stock updated successfully");
+
       setIsDialogOpen(false);
       setFormData(initialStockFormData);
       fetchCurrentStock();
-      if (activeTab === 'ledger') {
+      if (activeTab === "ledger") {
         fetchStockLedger();
       }
     } catch (error: any) {
-      console.error('Update stock error:', error);
-      if (error.response?.status === 400 && error.response?.data?.error?.includes('insufficient stock')) {
-        toast.error('Insufficient stock for this operation');
+      console.error("Update stock error:", error);
+      if (
+        error.response?.status === 400 &&
+        error.response?.data?.error?.includes("insufficient stock")
+      ) {
+        toast.error("Insufficient stock for this operation");
       } else {
-        toast.error(error.response?.data?.error || 'Failed to update stock');
+        toast.error(error.response?.data?.error || "Failed to update stock");
       }
     }
   };
@@ -249,19 +271,27 @@ export default function Stock() {
 
   const getLedgerIcon = (type: string) => {
     switch (type) {
-      case 'in': return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case 'out': return <TrendingDown className="h-4 w-4 text-red-600" />;
-      case 'adjustment': return <BarChart3 className="h-4 w-4 text-blue-600" />;
-      default: return null;
+      case "in":
+        return <TrendingUp className="h-4 w-4 text-green-600" />;
+      case "out":
+        return <TrendingDown className="h-4 w-4 text-red-600" />;
+      case "adjustment":
+        return <BarChart3 className="h-4 w-4 text-blue-600" />;
+      default:
+        return null;
     }
   };
 
   const getLedgerColor = (type: string) => {
     switch (type) {
-      case 'in': return 'text-green-600';
-      case 'out': return 'text-red-600';
-      case 'adjustment': return 'text-blue-600';
-      default: return 'text-gray-600';
+      case "in":
+        return "text-green-600";
+      case "out":
+        return "text-red-600";
+      case "adjustment":
+        return "text-blue-600";
+      default:
+        return "text-gray-600";
     }
   };
 
@@ -271,7 +301,9 @@ export default function Stock() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Stock Management</h1>
-          <p className="text-gray-600">Monitor inventory, stock movements, and issues</p>
+          <p className="text-gray-600">
+            Monitor inventory, stock movements, and issues
+          </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -293,7 +325,9 @@ export default function Stock() {
                   <Label htmlFor="productId">Product *</Label>
                   <Select
                     value={formData.productId}
-                    onValueChange={(value) => setFormData({ ...formData, productId: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, productId: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select product" />
@@ -301,19 +335,22 @@ export default function Stock() {
                     <SelectContent>
                       {products.map((product) => (
                         <SelectItem key={product._id} value={product._id}>
-                          {product.name} - Current: {product.stockQty} {product.unitType}
+                          {product.name} - Current: {product.stockQty}{" "}
+                          {product.unitType}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="type">Operation *</Label>
                     <Select
                       value={formData.type}
-                      onValueChange={(value: 'in' | 'out' | 'adjustment') => setFormData({ ...formData, type: value })}
+                      onValueChange={(value: "in" | "out" | "adjustment") =>
+                        setFormData({ ...formData, type: value })
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -340,14 +377,16 @@ export default function Stock() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="quantity">Quantity *</Label>
                     <Input
                       id="quantity"
                       type="number"
                       value={formData.quantity}
-                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, quantity: e.target.value })
+                      }
                       placeholder="Enter quantity"
                       min="0"
                       step="0.01"
@@ -355,43 +394,55 @@ export default function Stock() {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="reason">Reason *</Label>
                   <Input
                     id="reason"
                     value={formData.reason}
-                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, reason: e.target.value })
+                    }
                     placeholder="Enter reason for stock update"
                     required
                   />
                 </div>
-                
+
                 {/* Show current stock info */}
                 {formData.productId && (
                   <div className="bg-blue-50 p-3 rounded-lg">
                     {(() => {
-                      const product = products.find(p => p._id === formData.productId);
+                      const product = products.find(
+                        (p) => p._id === formData.productId,
+                      );
                       if (!product) return null;
-                      
+
                       const qty = parseFloat(formData.quantity) || 0;
                       let newStock = product.stockQty;
-                      
-                      if (formData.type === 'in') {
+
+                      if (formData.type === "in") {
                         newStock += qty;
-                      } else if (formData.type === 'out') {
+                      } else if (formData.type === "out") {
                         newStock -= qty;
-                      } else if (formData.type === 'adjustment') {
+                      } else if (formData.type === "adjustment") {
                         newStock = qty;
                       }
-                      
+
                       return (
                         <div className="text-sm">
-                          <p><strong>{product.name}</strong></p>
-                          <p>Current Stock: {product.stockQty} {product.unitType}</p>
-                          <p className={newStock < 0 ? 'text-red-600 font-medium' : ''}>
+                          <p>
+                            <strong>{product.name}</strong>
+                          </p>
+                          <p>
+                            Current Stock: {product.stockQty} {product.unitType}
+                          </p>
+                          <p
+                            className={
+                              newStock < 0 ? "text-red-600 font-medium" : ""
+                            }
+                          >
                             New Stock: {newStock} {product.unitType}
-                            {newStock < 0 && ' (Insufficient stock!)'}
+                            {newStock < 0 && " (Insufficient stock!)"}
                           </p>
                         </div>
                       );
@@ -403,9 +454,7 @@ export default function Stock() {
                 <Button type="button" variant="outline" onClick={resetDialog}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  Update Stock
-                </Button>
+                <Button type="submit">Update Stock</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -440,7 +489,10 @@ export default function Stock() {
                     />
                   </div>
                 </div>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <Select
+                  value={categoryFilter}
+                  onValueChange={setCategoryFilter}
+                >
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Filter by category" />
                   </SelectTrigger>
@@ -465,7 +517,11 @@ export default function Stock() {
                     <SelectItem value="good">Good Stock (&gt;50)</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" onClick={fetchCurrentStock}>
+                <Button
+                  variant="outline"
+                  onClick={fetchCurrentStock}
+                  title="Refresh"
+                >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -491,12 +547,15 @@ export default function Stock() {
               ) : currentStock.length === 0 ? (
                 <div className="text-center py-12">
                   <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    No products found
+                  </h3>
                   <p className="text-gray-500 mb-4">
-                    {searchTerm || categoryFilter !== 'all' || stockFilter !== 'all'
-                      ? 'Try adjusting your search or filter criteria.'
-                      : 'No products available in stock.'
-                    }
+                    {searchTerm ||
+                    categoryFilter !== "all" ||
+                    stockFilter !== "all"
+                      ? "Try adjusting your search or filter criteria."
+                      : "No products available in stock."}
                   </p>
                 </div>
               ) : (
@@ -524,9 +583,73 @@ export default function Stock() {
                           </div>
                         </TableCell>
                         <TableCell>{product.category}</TableCell>
-                        <TableCell className="capitalize">{product.unitType}</TableCell>
+                        <TableCell className="capitalize">
+                          <Select
+                            value={product.unitType}
+                            onValueChange={async (val) => {
+                              try {
+                                // Fetch full product to satisfy strict validators if present
+                                const d = await productAPI.getById(product._id);
+                                const p = d.data || {};
+                                await productAPI.update(product._id, {
+                                  name: p.name ?? product.name,
+                                  category: p.category ?? product.category,
+                                  unitType: val,
+                                  buyPrice: p.buyPrice ?? 0,
+                                  sellPrice: p.sellPrice ?? 0,
+                                  stockQty: p.stockQty ?? product.stockQty ?? 0,
+                                  imageUrl: p.imageUrl ?? undefined,
+                                });
+                                toast.success("Unit updated");
+                                fetchCurrentStock();
+                              } catch (e: any) {
+                                console.error(e);
+                                toast.error(
+                                  e?.response?.data?.error ||
+                                    "Failed to update unit",
+                                );
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="w-[140px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[
+                                { value: "pcs", label: "Pieces" },
+                                { value: "no", label: "No." },
+                                { value: "nos", label: "Nos." },
+                                { value: "unit", label: "Unit" },
+                                { value: "units", label: "Units" },
+                                { value: "pair", label: "Pair" },
+                                { value: "set", label: "Set" },
+                                { value: "meter", label: "Meter" },
+                                { value: "sqft", label: "Square Feet" },
+                                { value: "sqyd", label: "Square Yard" },
+                                { value: "sqmt", label: "Square Meter" },
+                                { value: "kg", label: "Kilogram" },
+                                { value: "g", label: "Gram" },
+                                { value: "litre", label: "Litre" },
+                                { value: "ml", label: "Millilitre" },
+                                { value: "box", label: "Box" },
+                                { value: "roll", label: "Roll" },
+                                { value: "bundle", label: "Bundle" },
+                              ].map((u) => (
+                                <SelectItem key={u.value} value={u.value}>
+                                  {u.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
                         <TableCell>
-                          <span className={product.stockQty === 0 ? 'text-red-600 font-medium' : 'font-medium'}>
+                          <span
+                            className={
+                              product.stockQty === 0
+                                ? "text-red-600 font-medium"
+                                : "font-medium"
+                            }
+                          >
                             {product.stockQty} {product.unitType}
                           </span>
                         </TableCell>
@@ -558,8 +681,12 @@ export default function Stock() {
               {stockLedger.length === 0 ? (
                 <div className="text-center py-12">
                   <History className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No stock movements found</h3>
-                  <p className="text-gray-500">No stock transactions have been recorded yet.</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    No stock movements found
+                  </h3>
+                  <p className="text-gray-500">
+                    No stock transactions have been recorded yet.
+                  </p>
                 </div>
               ) : (
                 <Table>
@@ -580,21 +707,39 @@ export default function Stock() {
                           {new Date(entry.date).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{entry.productId?.name}</div>
-                          <div className="text-sm text-gray-500">{entry.productId?.category}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className={cn("flex items-center gap-2", getLedgerColor(entry.type))}>
-                            {getLedgerIcon(entry.type)}
-                            <span className="capitalize font-medium">{entry.type}</span>
+                          <div className="font-medium">
+                            {entry.productId?.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {entry.productId?.category}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className={cn("font-medium", 
-                            entry.type === 'in' ? 'text-green-600' : 
-                            entry.type === 'out' ? 'text-red-600' : 'text-blue-600'
-                          )}>
-                            {entry.type === 'out' ? '-' : '+'}{entry.quantity} {entry.productId?.unitType}
+                          <div
+                            className={cn(
+                              "flex items-center gap-2",
+                              getLedgerColor(entry.type),
+                            )}
+                          >
+                            {getLedgerIcon(entry.type)}
+                            <span className="capitalize font-medium">
+                              {entry.type}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={cn(
+                              "font-medium",
+                              entry.type === "in"
+                                ? "text-green-600"
+                                : entry.type === "out"
+                                  ? "text-red-600"
+                                  : "text-blue-600",
+                            )}
+                          >
+                            {entry.type === "out" ? "-" : "+"}
+                            {entry.quantity} {entry.productId?.unitType}
                           </span>
                         </TableCell>
                         <TableCell>{entry.reason}</TableCell>
@@ -628,8 +773,12 @@ export default function Stock() {
               {issueRegister.length === 0 ? (
                 <div className="text-center py-12">
                   <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No issues reported</h3>
-                  <p className="text-gray-500">No stock issues have been reported yet.</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    No issues reported
+                  </h3>
+                  <p className="text-gray-500">
+                    No stock issues have been reported yet.
+                  </p>
                 </div>
               ) : (
                 <Table>
@@ -650,8 +799,12 @@ export default function Stock() {
                           {new Date(issue.date).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{issue.productId?.name}</div>
-                          <div className="text-sm text-gray-500">{issue.productId?.category}</div>
+                          <div className="font-medium">
+                            {issue.productId?.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {issue.productId?.category}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="capitalize">

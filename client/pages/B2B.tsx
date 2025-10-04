@@ -253,6 +253,8 @@ export default function B2B() {
                   <TableRow>
                     <TableHead>Item</TableHead>
                     <TableHead>Supplier</TableHead>
+                    <TableHead>Received (Total)</TableHead>
+                    <TableHead>Used</TableHead>
                     <TableHead>Qty Available</TableHead>
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Linked Product</TableHead>
@@ -260,178 +262,191 @@ export default function B2B() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((it) => (
-                    <TableRow key={it._id}>
-                      <TableCell>
-                        <Input
-                          value={it.itemName}
-                          onChange={(e) =>
-                            onInlineUpdate(it._id, "itemName", e.target.value)
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={it.supplierName}
-                          onChange={(e) =>
-                            onInlineUpdate(
-                              it._id,
-                              "supplierName",
-                              e.target.value,
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="w-32">
-                        <Input
-                          type="number"
-                          value={it.quantityAvailable}
-                          onChange={(e) =>
-                            onInlineUpdate(
-                              it._id,
-                              "quantityAvailable",
-                              Number(e.target.value),
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="w-32">
-                        <Input
-                          type="number"
-                          value={it.unitPrice}
-                          onChange={(e) =>
-                            onInlineUpdate(
-                              it._id,
-                              "unitPrice",
-                              Number(e.target.value),
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {typeof it.productId === "object" && it.productId ? (
-                          <span className="text-sm text-gray-700">
-                            {(it.productId as any).name}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-400">
-                            Not linked
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openPurchase(it)}
-                              >
-                                Add Purchase
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>
-                                  Add Purchase - {active?.itemName}
-                                </DialogTitle>
-                              </DialogHeader>
-                              <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-                                <div>
-                                  <Label>Quantity</Label>
-                                  <Input
-                                    type="number"
-                                    value={editQty}
-                                    onChange={(e) =>
-                                      setEditQty(
-                                        e.target.value === ""
-                                          ? ""
-                                          : Number(e.target.value),
-                                      )
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Price</Label>
-                                  <Input
-                                    type="number"
-                                    value={editPrice}
-                                    onChange={(e) =>
-                                      setEditPrice(
-                                        e.target.value === ""
-                                          ? ""
-                                          : Number(e.target.value),
-                                      )
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Supplier</Label>
-                                  <Input
-                                    value={editSupplier}
-                                    onChange={(e) =>
-                                      setEditSupplier(e.target.value)
-                                    }
-                                  />
-                                </div>
-                              </div>
-                              <div className="flex justify-end gap-2">
-                                <Button onClick={onPurchase}>Save</Button>
-                              </div>
-                              {active?.purchaseLogs &&
-                                active.purchaseLogs.length > 0 && (
-                                  <div className="mt-4">
-                                    <h4 className="text-sm font-medium mb-2">
-                                      Purchase Logs
-                                    </h4>
-                                    <div className="max-h-48 overflow-y-auto">
-                                      <Table>
-                                        <TableHeader>
-                                          <TableRow>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Qty</TableHead>
-                                            <TableHead>Price</TableHead>
-                                            <TableHead>Supplier</TableHead>
-                                          </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                          {active.purchaseLogs.map((pl) => (
-                                            <TableRow
-                                              key={pl._id || pl.createdAt}
-                                            >
-                                              <TableCell>
-                                                {new Date(
-                                                  pl.createdAt,
-                                                ).toLocaleString()}
-                                              </TableCell>
-                                              <TableCell>
-                                                {pl.quantity}
-                                              </TableCell>
-                                              <TableCell>₹{pl.price}</TableCell>
-                                              <TableCell>
-                                                {pl.supplierName}
-                                              </TableCell>
-                                            </TableRow>
-                                          ))}
-                                        </TableBody>
-                                      </Table>
-                                    </div>
+                  {rows.map((it) => {
+                    const totalReceived = (it.purchaseLogs || []).reduce(
+                      (sum, p) => sum + Number(p.quantity || 0),
+                      0,
+                    );
+                    const used = Math.max(0, totalReceived - Number(it.quantityAvailable || 0));
+                    return (
+                      <TableRow key={it._id}>
+                        <TableCell>
+                          <Input
+                            value={it.itemName}
+                            onChange={(e) =>
+                              onInlineUpdate(it._id, "itemName", e.target.value)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={it.supplierName}
+                            onChange={(e) =>
+                              onInlineUpdate(
+                                it._id,
+                                "supplierName",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-medium">{totalReceived}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-orange-600 font-medium">{used}</span>
+                        </TableCell>
+                        <TableCell className="w-32">
+                          <Input
+                            type="number"
+                            value={it.quantityAvailable}
+                            onChange={(e) =>
+                              onInlineUpdate(
+                                it._id,
+                                "quantityAvailable",
+                                Number(e.target.value),
+                              )
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="w-32">
+                          <Input
+                            type="number"
+                            value={it.unitPrice}
+                            onChange={(e) =>
+                              onInlineUpdate(
+                                it._id,
+                                "unitPrice",
+                                Number(e.target.value),
+                              )
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {typeof it.productId === "object" && it.productId ? (
+                            <span className="text-sm text-gray-700">
+                              {(it.productId as any).name}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">
+                              Not linked
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openPurchase(it)}
+                                >
+                                  Add Purchase
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>
+                                    Add Purchase - {active?.itemName}
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                                  <div>
+                                    <Label>Quantity</Label>
+                                    <Input
+                                      type="number"
+                                      value={editQty}
+                                      onChange={(e) =>
+                                        setEditQty(
+                                          e.target.value === ""
+                                            ? ""
+                                            : Number(e.target.value),
+                                        )
+                                      }
+                                    />
                                   </div>
-                                )}
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => onDelete(it._id)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                  <div>
+                                    <Label>Price</Label>
+                                    <Input
+                                      type="number"
+                                      value={editPrice}
+                                      onChange={(e) =>
+                                        setEditPrice(
+                                          e.target.value === ""
+                                            ? ""
+                                            : Number(e.target.value),
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Supplier</Label>
+                                    <Input
+                                      value={editSupplier}
+                                      onChange={(e) =>
+                                        setEditSupplier(e.target.value)
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                  <Button onClick={onPurchase}>Save</Button>
+                                </div>
+                                {active?.purchaseLogs &&
+                                  active.purchaseLogs.length > 0 && (
+                                    <div className="mt-4">
+                                      <h4 className="text-sm font-medium mb-2">
+                                        Purchase Logs
+                                      </h4>
+                                      <div className="max-h-48 overflow-y-auto">
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow>
+                                              <TableHead>Date</TableHead>
+                                              <TableHead>Qty</TableHead>
+                                              <TableHead>Price</TableHead>
+                                              <TableHead>Supplier</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {active.purchaseLogs.map((pl) => (
+                                              <TableRow
+                                                key={pl._id || pl.createdAt}
+                                              >
+                                                <TableCell>
+                                                  {new Date(
+                                                    pl.createdAt,
+                                                  ).toLocaleString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {pl.quantity}
+                                                </TableCell>
+                                                <TableCell>₹{pl.price}</TableCell>
+                                                <TableCell>
+                                                  {pl.supplierName}
+                                                </TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </div>
+                                    </div>
+                                  )}
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => onDelete(it._id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

@@ -196,6 +196,12 @@ export default function EventReturn() {
         }
       } catch (_) {}
 
+      // Signal stock refresh across the app
+      try {
+        localStorage.setItem("stockRefreshTs", String(Date.now()));
+        window.dispatchEvent(new Event("stock:refresh"));
+      } catch {}
+
       if (summary?.allCompleted) {
         toast.success("All items returned");
         window.location.href = `/invoices`;

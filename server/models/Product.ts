@@ -4,7 +4,7 @@ export interface IProduct extends Document {
   name: string;
   sku?: string;
   category: string;
-  unitType: "pcs" | "meter" | "sqft" | "sqyd" | "sqmt";
+  unitType: string;
   buyPrice: number;
   sellPrice: number;
   stockQty: number;
@@ -31,7 +31,26 @@ const productSchema = new Schema<IProduct>(
     },
     unitType: {
       type: String,
-      enum: ["pcs", "meter", "sqft", "sqyd", "sqmt"],
+      enum: [
+        "pcs",
+        "no",
+        "nos",
+        "unit",
+        "units",
+        "pair",
+        "set",
+        "meter",
+        "sqft",
+        "sqyd",
+        "sqmt",
+        "kg",
+        "g",
+        "litre",
+        "ml",
+        "box",
+        "roll",
+        "bundle",
+      ],
       required: true,
     },
     buyPrice: {
