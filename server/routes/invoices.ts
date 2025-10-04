@@ -14,6 +14,101 @@ import { generateInvoiceNumber } from "../utils/invoiceNumber";
 import { generateInvoicePDF } from "../utils/pdfGenerator";
 import { consumeProductStock } from "../utils/b2bStock";
 
+const normalize = (s: string) => (s || "").trim().toLowerCase();
+
+async function allocateWithAutoBorrow({
+  product,
+  quantity,
+  session,
+}: {
+  product: any;
+  quantity: number;
+  session: any;
+}) {
+  let mainAvailable = Number(product.stockQty) || 0;
+  const mainUsed = Math.min(mainAvailable, quantity);
+  let remaining = quantity - mainUsed;
+  const usages: Array<{ stockId: any; supplierName: string; unitPrice: number; quantity: number }> = [];
+
+  if (remaining > 0) {
+    const query: any = {
+      quantityAvailable: { $gt: 0 },
+      $or: [
+        { productId: product._id },
+        { normalizedItemName: normalize(product.name) },
+      ],
+    };
+    const items = await B2BStock.find(query)
+      .sort({ lastUsedAt: 1, createdAt: 1 })
+      .session(session);
+
+    for (const it of items) {
+      if (remaining <= 0) break;
+      const avail = Number(it.quantityAvailable) || 0;
+      if (avail <= 0) continue;
+      const take = Math.min(avail, remaining);
+      if (take <= 0) continue;
+      it.quantityAvailable = avail - take;
+      it.lastUsedAt = new Date();
+      await it.save({ session });
+      usages.push({
+        stockId: it._id,
+        supplierName: it.supplierName,
+        unitPrice: Number(it.unitPrice) || 0,
+        quantity: take,
+      });
+      remaining -= take;
+    }
+  }
+
+  if (remaining > 0) {
+    const norm = normalize(product.name);
+    let b2b = await B2BStock.findOne({
+      $or: [{ productId: product._id }, { normalizedItemName: norm }],
+    }).session(session);
+    if (!b2b) {
+      b2b = new B2BStock({
+        itemName: product.name,
+        supplierName: "Auto Borrow",
+        quantityAvailable: 0,
+        unitPrice: 0,
+        productId: product._id,
+        purchaseLogs: [],
+      });
+      await (b2b as any).save({ session });
+    }
+    await B2BStock.updateOne(
+      { _id: b2b._id },
+      {
+        $inc: { quantityAvailable: remaining },
+        $push: {
+          purchaseLogs: {
+            quantity: remaining,
+            price: 0,
+            supplierName: "Auto Borrow",
+            createdAt: new Date(),
+          },
+        },
+      },
+    ).session(session);
+
+    usages.push({
+      stockId: b2b._id,
+      supplierName: "Auto Borrow",
+      unitPrice: 0,
+      quantity: remaining,
+    });
+    remaining = 0;
+  }
+
+  if (mainUsed > 0) {
+    product.stockQty = mainAvailable - mainUsed;
+    await product.save({ session });
+  }
+
+  return { mainUsed, b2bUsages: usages, b2bUsed: usages.reduce((s, u) => s + u.quantity, 0) };
+}
+
 export const getInvoices = async (req: AuthRequest, res: Response) => {
   try {
     const {
