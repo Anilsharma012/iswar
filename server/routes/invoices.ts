@@ -28,7 +28,12 @@ async function allocateWithAutoBorrow({
   let mainAvailable = Number(product.stockQty) || 0;
   const mainUsed = Math.min(mainAvailable, quantity);
   let remaining = quantity - mainUsed;
-  const usages: Array<{ stockId: any; supplierName: string; unitPrice: number; quantity: number }> = [];
+  const usages: Array<{
+    stockId: any;
+    supplierName: string;
+    unitPrice: number;
+    quantity: number;
+  }> = [];
 
   if (remaining > 0) {
     const query: any = {
@@ -106,7 +111,11 @@ async function allocateWithAutoBorrow({
     await product.save({ session });
   }
 
-  return { mainUsed, b2bUsages: usages, b2bUsed: usages.reduce((s, u) => s + u.quantity, 0) };
+  return {
+    mainUsed,
+    b2bUsages: usages,
+    b2bUsed: usages.reduce((s, u) => s + u.quantity, 0),
+  };
 }
 
 export const getInvoices = async (req: AuthRequest, res: Response) => {
@@ -262,7 +271,9 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
                 Number(det.b2bAvailable || 0),
             );
             if (shortage > 0) {
-              const normalizedName = String(product.name || "").trim().toLowerCase();
+              const normalizedName = String(product.name || "")
+                .trim()
+                .toLowerCase();
               let b2b = await B2BStock.findOne({
                 $or: [
                   { productId: product._id },
@@ -484,7 +495,9 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
                 Number(det.b2bAvailable || 0),
             );
             if (shortage > 0) {
-              const normalizedName = String(product.name || "").trim().toLowerCase();
+              const normalizedName = String(product.name || "")
+                .trim()
+                .toLowerCase();
               let b2b = await B2BStock.findOne({
                 $or: [
                   { productId: product._id },
