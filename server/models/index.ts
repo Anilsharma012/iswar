@@ -44,3 +44,5 @@ export { AuditLog } from "./AuditLog";
 export type { IAuditLog } from "./AuditLog";
 export { B2BStock } from "./B2BStock";
 export type { IB2BStock, IB2BPurchaseLog } from "./B2BStock";
+export { ManualB2BAllocation } from "./ManualB2BAllocation";
+export type { IManualB2BAllocation } from "./ManualB2BAllocation";

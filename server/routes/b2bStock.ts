@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { Response } from "express";
 import { B2BStock, Product } from "../models";
 import { AuthRequest } from "../utils/auth";
 import {
@@ -125,7 +126,36 @@ export const updateB2BStock = async (req: AuthRequest, res: Response) => {
       if (value.quantity < 0) {
         return res.status(400).json({ error: "Quantity cannot be negative" });
       }
-      item.quantityAvailable = value.quantity;
+
+      const prevQty = Number(item.quantityAvailable) || 0;
+      const nextQty = Number(value.quantity) || 0;
+      const delta = nextQty - prevQty;
+
+      // If linked to a product, treat delta as transfer between main and B2B
+      const linkedProductId = (value.productId as any) ||
+        ((item.productId && typeof (item.productId as any) === "object")
+          ? (item.productId as any)._id
+          : (item.productId as any));
+      if (delta !== 0 && linkedProductId) {
+        const product = await Product.findById(linkedProductId);
+        if (!product) {
+          return res.status(400).json({ error: "Linked product not found for transfer" });
+        }
+        if (delta > 0) {
+          // Moving from main -> B2B; ensure enough main stock
+          if ((Number(product.stockQty) || 0) < delta) {
+            return res.status(400).json({ error: "Insufficient main stock to transfer to B2B" });
+          }
+          product.stockQty = (Number(product.stockQty) || 0) - delta;
+          await product.save();
+        } else if (delta < 0) {
+          // Moving from B2B -> main
+          product.stockQty = (Number(product.stockQty) || 0) + (-delta);
+          await product.save();
+        }
+      }
+
+      item.quantityAvailable = nextQty;
     }
     if (typeof value.price === "number") {
       item.unitPrice = value.price;

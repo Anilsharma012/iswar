@@ -168,6 +168,14 @@ export const stockUpdateSchema = Joi.object({
   type: Joi.string().valid("in", "out", "adjustment").required(),
   quantity: Joi.number().min(0).required(),
   reason: Joi.string().required().trim(),
+  b2bRepayments: Joi.array()
+    .items(
+      Joi.object({
+        stockId: Joi.string().required(),
+        quantity: Joi.number().greater(0).required(),
+      }),
+    )
+    .optional(),
 });
 
 export const b2bStockCreateSchema = Joi.object({
