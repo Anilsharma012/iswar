@@ -272,10 +272,13 @@ export default function B2B() {
                       <TableRow key={it._id}>
                         <TableCell>
                           <Input
-                            value={it.itemName}
-                            onChange={(e) =>
-                              onInlineUpdate(it._id, "itemName", e.target.value)
-                            }
+                            defaultValue={it.itemName}
+                            onBlur={(e) => {
+                              const v = e.target.value.trim();
+                              if (v && v !== it.itemName) {
+                                onInlineUpdate(it._id, "itemName", v);
+                              }
+                            }}
                           />
                         </TableCell>
                         <TableCell>
