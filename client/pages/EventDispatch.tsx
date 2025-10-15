@@ -160,7 +160,9 @@ export default function EventDispatch() {
                   <TableCell>{r.sku || "-"}</TableCell>
                   <TableCell>{r.unitType}</TableCell>
                   <TableCell>
-                    {typeof r.stockQty === "number" ? `${r.stockQty} ${r.unitType || ""}` : "-"}
+                    {typeof r.stockQty === "number"
+                      ? `${r.stockQty} ${r.unitType || ""}`
+                      : "-"}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -203,7 +205,9 @@ export default function EventDispatch() {
                           updateRow(i, { rate: Number(e.target.value) })
                         }
                       />
-                      <span className="text-xs text-muted-foreground">/ {r.unitType}</span>
+                      <span className="text-xs text-muted-foreground">
+                        / {r.unitType}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">

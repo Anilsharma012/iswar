@@ -75,7 +75,8 @@ const DEFAULT_TERMS: string[] = [
   "Payment terms: advance to confirm booking; balance on delivery unless otherwise agreed in writing.",
 ];
 
-const formatINR = (n: number) => `Rs ${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const formatINR = (n: number) =>
+  `Rs ${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const generateInvoicePDF = (
   invoice: PDFInvoice,
