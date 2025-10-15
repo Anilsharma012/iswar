@@ -143,9 +143,9 @@ export default function B2B() {
       toast.success("Purchase logged");
       setActive(null);
       await load();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Purchase failed");
+      toast.error(e?.response?.data?.error || "Purchase failed");
     }
   };
 
