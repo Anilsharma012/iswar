@@ -143,9 +143,9 @@ export default function B2B() {
       toast.success("Purchase logged");
       setActive(null);
       await load();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Purchase failed");
+      toast.error(e?.response?.data?.error || "Purchase failed");
     }
   };
 
@@ -161,9 +161,9 @@ export default function B2B() {
       else (payload as any)[field] = value;
       await b2bAPI.update(id, payload);
       await load();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Update failed");
+      toast.error(e?.response?.data?.error || "Update failed");
     }
   };
 
@@ -272,22 +272,24 @@ export default function B2B() {
                       <TableRow key={it._id}>
                         <TableCell>
                           <Input
-                            value={it.itemName}
-                            onChange={(e) =>
-                              onInlineUpdate(it._id, "itemName", e.target.value)
-                            }
+                            defaultValue={it.itemName}
+                            onBlur={(e) => {
+                              const v = e.target.value.trim();
+                              if (v && v !== it.itemName) {
+                                onInlineUpdate(it._id, "itemName", v);
+                              }
+                            }}
                           />
                         </TableCell>
                         <TableCell>
                           <Input
-                            value={it.supplierName}
-                            onChange={(e) =>
-                              onInlineUpdate(
-                                it._id,
-                                "supplierName",
-                                e.target.value,
-                              )
-                            }
+                            defaultValue={it.supplierName}
+                            onBlur={(e) => {
+                              const v = e.target.value.trim();
+                              if (v && v !== it.supplierName) {
+                                onInlineUpdate(it._id, "supplierName", v);
+                              }
+                            }}
                           />
                         </TableCell>
                         <TableCell>
@@ -299,27 +301,42 @@ export default function B2B() {
                         <TableCell className="w-32">
                           <Input
                             type="number"
-                            value={it.quantityAvailable}
-                            onChange={(e) =>
-                              onInlineUpdate(
-                                it._id,
-                                "quantityAvailable",
-                                Number(e.target.value),
-                              )
-                            }
+                            defaultValue={it.quantityAvailable}
+                            min={0}
+                            onBlur={(e) => {
+                              const input = e.target as HTMLInputElement;
+                              const raw = input.value;
+                              if (raw === "") return;
+                              const num = Number(raw);
+                              if (!Number.isFinite(num) || num < 0) return;
+                              const current = Number(it.quantityAvailable) || 0;
+                              if (num === current) return;
+                              const delta = num - current;
+                              const linked = typeof it.productId === "object" && it.productId ? (it.productId as any) : null;
+                              const mainStock = linked && typeof linked.stockQty === "number" ? Number(linked.stockQty) : null;
+                              if (delta > 0 && mainStock !== null && mainStock < delta) {
+                                toast.error("Insufficient main stock to transfer to B2B");
+                                input.value = String(current);
+                                return;
+                              }
+                              onInlineUpdate(it._id, "quantityAvailable", num);
+                            }}
                           />
                         </TableCell>
                         <TableCell className="w-32">
                           <Input
                             type="number"
-                            value={it.unitPrice}
-                            onChange={(e) =>
-                              onInlineUpdate(
-                                it._id,
-                                "unitPrice",
-                                Number(e.target.value),
-                              )
-                            }
+                            defaultValue={it.unitPrice}
+                            min={0}
+                            onBlur={(e) => {
+                              const raw = e.target.value;
+                              if (raw === "") return;
+                              const num = Number(raw);
+                              if (!Number.isFinite(num) || num < 0) return;
+                              if (num !== Number(it.unitPrice)) {
+                                onInlineUpdate(it._id, "unitPrice", num);
+                              }
+                            }}
                           />
                         </TableCell>
                         <TableCell>

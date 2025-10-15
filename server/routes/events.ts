@@ -652,24 +652,49 @@ export const returnEvent = async (req: AuthRequest, res: Response) => {
           return res.status(404).json({ error: `Product ${pid} not found` });
         }
 
-        // Increase stock by returned qty
-        product.stockQty = Number(product.stockQty) + returned;
-        await product.save({ session });
+        // Repay B2B allocations first (from this dispatch line), remainder goes to main stock
+        let remainingToMain = returned;
+        const usages: Array<{ stockId: any; quantity: number }> = Array.isArray((matching as any).b2bUsages)
+          ? (matching as any).b2bUsages
+          : [];
+        for (const u of usages) {
+          if (remainingToMain <= 0) break;
+          const repay = Math.min(Number(u.quantity || 0), remainingToMain);
+          if (repay > 0 && u.stockId) {
+            await (mongoose.models.B2BStock as any).findByIdAndUpdate(
+              u.stockId,
+              { $inc: { quantityAvailable: repay } },
+              { session },
+            );
+            u.quantity = Number(u.quantity || 0) - repay;
+            remainingToMain -= repay;
+          }
+        }
+        // Persist updated usages back into dispatch line for future partial returns
+        (matching as any).b2bUsages = usages;
 
-        // Create stock ledger entry for this return
-        await (mongoose.models.StockLedger as any).create(
-          [
-            {
-              productId: product._id,
-              qtyChange: returned,
-              reason: "return",
-              refType: "Return",
-              refId: event._id,
-              at: new Date(),
-            },
-          ],
-          { session },
-        );
+        // Increase main stock by the remaining portion only
+        if (remainingToMain > 0) {
+          product.stockQty = Number(product.stockQty) + remainingToMain;
+          await product.save({ session });
+        }
+
+        // Create stock ledger entry for this return (only main stock change)
+        if (remainingToMain > 0) {
+          await (mongoose.models.StockLedger as any).create(
+            [
+              {
+                productId: product._id,
+                qtyChange: remainingToMain,
+                reason: "return",
+                refType: "Return",
+                refId: event._id,
+                at: new Date(),
+              },
+            ],
+            { session },
+          );
+        }
 
         // Create an inventory txn (issue txn) record
         await (mongoose.models.IssueTxn as any).create(

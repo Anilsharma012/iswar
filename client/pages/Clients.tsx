@@ -655,7 +655,9 @@ export default function Clients() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium">{client.name}</span>
+                              <span className="font-medium capitalize">
+                                {client.name}
+                              </span>
                               {client.eventName && (
                                 <span className="text-xs text-gray-500">
                                   • {client.eventName}

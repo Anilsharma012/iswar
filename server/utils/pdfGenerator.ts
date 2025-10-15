@@ -75,6 +75,9 @@ const DEFAULT_TERMS: string[] = [
   "Payment terms: advance to confirm booking; balance on delivery unless otherwise agreed in writing.",
 ];
 
+const formatINR = (n: number) =>
+  `Rs ${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export const generateInvoicePDF = (
   invoice: PDFInvoice,
   language: "en" | "hi" = "en",
@@ -155,11 +158,11 @@ export const generateInvoicePDF = (
     doc.text(item.desc || item.productId.name, descriptionX, y, { width: 220 });
     doc.text(item.unitType, unitX, y);
     doc.text(item.qty.toString(), qtyX, y);
-    doc.text(`₹${item.rate.toFixed(2)}`, rateX, y);
-    doc.text(`₹${lineAmount.toFixed(2)}`, amountX, y);
+    doc.text(formatINR(item.rate), rateX, y);
+    doc.text(formatINR(lineAmount), amountX, y);
 
     if (invoice.withGST && taxAmount > 0) {
-      doc.text(`₹${taxAmount.toFixed(2)}`, amountX + 60, y);
+      doc.text(formatINR(taxAmount), amountX + 60, y);
     }
 
     y += 18;
@@ -186,14 +189,14 @@ export const generateInvoicePDF = (
 
   doc.fontSize(10).font("Helvetica");
   doc.text(`${t.subtotal}:`, labelX, ty, { width: 160, align: "right" });
-  doc.text(`₹${invoice.totals.subTotal.toFixed(2)}`, valueX - 80, ty, {
+  doc.text(formatINR(invoice.totals.subTotal), valueX - 80, ty, {
     align: "right",
   });
 
   if (invoice.withGST && invoice.totals.tax > 0) {
     ty += 15;
     doc.text(`${t.tax}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`₹${invoice.totals.tax.toFixed(2)}`, valueX - 80, ty, {
+    doc.text(formatINR(invoice.totals.tax), valueX - 80, ty, {
       align: "right",
     });
   }
@@ -201,7 +204,7 @@ export const generateInvoicePDF = (
   if (invoice.totals.discount && invoice.totals.discount > 0) {
     ty += 15;
     doc.text(`${t.discount}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`-₹${invoice.totals.discount.toFixed(2)}`, valueX - 80, ty, {
+    doc.text(`- ${formatINR(invoice.totals.discount)}`, valueX - 80, ty, {
       align: "right",
     });
   }
@@ -209,7 +212,7 @@ export const generateInvoicePDF = (
   if (invoice.totals.roundOff && invoice.totals.roundOff !== 0) {
     ty += 15;
     doc.text(`${t.roundOff}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`₹${invoice.totals.roundOff.toFixed(2)}`, valueX - 80, ty, {
+    doc.text(formatINR(invoice.totals.roundOff), valueX - 80, ty, {
       align: "right",
     });
   }
@@ -217,7 +220,7 @@ export const generateInvoicePDF = (
   ty += 20;
   doc.font("Helvetica-Bold").fontSize(11);
   doc.text(`${t.grandTotal}:`, labelX, ty, { width: 160, align: "right" });
-  doc.text(`₹${invoice.totals.grandTotal.toFixed(2)}`, valueX - 80, ty, {
+  doc.text(formatINR(invoice.totals.grandTotal), valueX - 80, ty, {
     align: "right",
   });
 
@@ -226,12 +229,12 @@ export const generateInvoicePDF = (
     ty += 18;
     doc.font("Helvetica").fontSize(10);
     doc.text(`${t.paid}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`₹${invoice.totals.paid.toFixed(2)}`, valueX - 80, ty, {
+    doc.text(formatINR(invoice.totals.paid), valueX - 80, ty, {
       align: "right",
     });
     ty += 14;
     doc.text(`${t.pending}:`, labelX, ty, { width: 160, align: "right" });
-    doc.text(`₹${invoice.totals.pending.toFixed(2)}`, valueX - 80, ty, {
+    doc.text(formatINR(invoice.totals.pending), valueX - 80, ty, {
       align: "right",
     });
   }
@@ -356,8 +359,8 @@ export const generateAgreementPDF = (
     doc.text(name, colX.name, ty, { width: 220 });
     doc.text(uom, colX.uom, ty);
     doc.text(String(qty), colX.qty, ty);
-    doc.text(`₹${rate.toFixed(2)}`, colX.rate, ty);
-    doc.text(`₹${amount.toFixed(2)}`, colX.amount, ty);
+    doc.text(formatINR(rate), colX.rate, ty);
+    doc.text(formatINR(amount), colX.amount, ty);
 
     ty += 18;
     doc
@@ -387,21 +390,21 @@ export const generateAgreementPDF = (
   let sy = ty + 10;
   doc.font("Helvetica").fontSize(10);
   doc.text("Subtotal:", sx, sy, { width: 160, align: "right" });
-  doc.text(`₹${subtotal.toFixed(2)}`, 520, sy, { align: "right" });
+  doc.text(formatINR(subtotal), 520, sy, { align: "right" });
   sy += 14;
   doc.text("Advance:", sx, sy, { width: 160, align: "right" });
-  doc.text(`₹${adv.toFixed(2)}`, 520, sy, { align: "right" });
+  doc.text(formatINR(adv), 520, sy, { align: "right" });
   sy += 14;
   doc.text("Security:", sx, sy, { width: 160, align: "right" });
-  doc.text(`₹${sec.toFixed(2)}`, 520, sy, { align: "right" });
+  doc.text(formatINR(sec), 520, sy, { align: "right" });
   sy += 16;
   doc.font("Helvetica-Bold").fontSize(11);
   doc.text("Grand Total:", sx, sy, { width: 160, align: "right" });
-  doc.text(`₹${grand.toFixed(2)}`, 520, sy, { align: "right" });
+  doc.text(formatINR(grand), 520, sy, { align: "right" });
   sy += 14;
   doc.font("Helvetica").fontSize(10);
   doc.text("Amount Due:", sx, sy, { width: 160, align: "right" });
-  doc.text(`₹${due.toFixed(2)}`, 520, sy, { align: "right" });
+  doc.text(formatINR(due), 520, sy, { align: "right" });
 
   // Signatures
   const sigY = sy + 40;

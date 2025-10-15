@@ -159,7 +159,11 @@ export default function EventDispatch() {
                   <TableCell>{r.name}</TableCell>
                   <TableCell>{r.sku || "-"}</TableCell>
                   <TableCell>{r.unitType}</TableCell>
-                  <TableCell>{r.stockQty}</TableCell>
+                  <TableCell>
+                    {typeof r.stockQty === "number"
+                      ? `${r.stockQty} ${r.unitType || ""}`
+                      : "-"}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Button
@@ -179,6 +183,9 @@ export default function EventDispatch() {
                           updateRow(i, { qty: Number(e.target.value) })
                         }
                       />
+                      <span className="text-xs text-muted-foreground min-w-[2.5rem] text-center">
+                        {r.unitType}
+                      </span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -189,14 +196,19 @@ export default function EventDispatch() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={r.rate}
-                      onChange={(e) =>
-                        updateRow(i, { rate: Number(e.target.value) })
-                      }
-                    />
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        className="w-24"
+                        value={r.rate}
+                        onChange={(e) =>
+                          updateRow(i, { rate: Number(e.target.value) })
+                        }
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        / {r.unitType}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell className="font-medium">
                     {formatINR(r.amount || 0)}
