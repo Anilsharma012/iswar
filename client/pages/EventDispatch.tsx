@@ -52,7 +52,10 @@ export default function EventDispatch() {
 
         setRows(
           items.map((p: any) => {
-            const preset = prefillMap[String(p._id)] || { qty: 0, rate: p.sellPrice || 0 };
+            const preset = prefillMap[String(p._id)] || {
+              qty: 0,
+              rate: p.sellPrice || 0,
+            };
             const qty = Number(preset.qty || 0);
             const rate = Number((preset.rate ?? p.sellPrice) || 0);
             return {
@@ -118,7 +121,9 @@ export default function EventDispatch() {
       if (data?.error === "Stock Required") {
         const name = data?.productName || "item";
         const shortage = Number(data?.shortage || 0);
-        toast.error(`Stock required: ${name}${shortage ? ` (shortage ${shortage})` : ""}`);
+        toast.error(
+          `Stock required: ${name}${shortage ? ` (shortage ${shortage})` : ""}`,
+        );
       } else {
         toast.error(data?.error || "Failed to dispatch");
       }
@@ -153,7 +158,9 @@ export default function EventDispatch() {
       if (data?.error === "Stock Required") {
         const name = data?.productName || "item";
         const shortage = Number(data?.shortage || 0);
-        toast.error(`Stock required: ${name}${shortage ? ` (shortage ${shortage})` : ""}`);
+        toast.error(
+          `Stock required: ${name}${shortage ? ` (shortage ${shortage})` : ""}`,
+        );
       } else {
         toast.error(data?.error || "Failed to reserve");
       }
