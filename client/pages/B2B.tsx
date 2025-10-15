@@ -317,14 +317,17 @@ export default function B2B() {
                         <TableCell className="w-32">
                           <Input
                             type="number"
-                            value={it.unitPrice}
-                            onChange={(e) =>
-                              onInlineUpdate(
-                                it._id,
-                                "unitPrice",
-                                Number(e.target.value),
-                              )
-                            }
+                            defaultValue={it.unitPrice}
+                            min={0}
+                            onBlur={(e) => {
+                              const raw = e.target.value;
+                              if (raw === "") return;
+                              const num = Number(raw);
+                              if (!Number.isFinite(num) || num < 0) return;
+                              if (num !== Number(it.unitPrice)) {
+                                onInlineUpdate(it._id, "unitPrice", num);
+                              }
+                            }}
                           />
                         </TableCell>
                         <TableCell>
