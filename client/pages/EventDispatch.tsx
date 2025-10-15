@@ -80,12 +80,25 @@ export default function EventDispatch() {
           qty: r.qty,
           rate: r.rate,
         }));
+
+      if (!items.length) {
+        toast.error("Select at least one item with quantity > 0");
+        return;
+      }
+
       await eventAPI.dispatch(id!, { items });
       toast.success("Dispatch recorded");
       window.location.href = `/admin/events/${id}/agreement`;
     } catch (e: any) {
       console.error(e);
-      toast.error(e.response?.data?.error || "Failed to dispatch");
+      const data = e?.response?.data || {};
+      if (data?.error === "Stock Required") {
+        const name = data?.productName || "item";
+        const shortage = Number(data?.shortage || 0);
+        toast.error(`Stock required: ${name}${shortage ? ` (shortage ${shortage})` : ""}`);
+      } else {
+        toast.error(data?.error || "Failed to dispatch");
+      }
     }
   };
 
@@ -102,12 +115,25 @@ export default function EventDispatch() {
           qty: r.qty,
           rate: r.rate,
         }));
+
+      if (!items.length) {
+        toast.error("Select at least one item with quantity > 0");
+        return;
+      }
+
       await api.post(`/events/${id}/dispatch?dryRun=1`, { items });
       toast.success("Reserved");
       window.location.href = `/admin/events/${id}/agreement`;
     } catch (e: any) {
       console.error(e);
-      toast.error(e.response?.data?.error || "Failed to reserve");
+      const data = e?.response?.data || {};
+      if (data?.error === "Stock Required") {
+        const name = data?.productName || "item";
+        const shortage = Number(data?.shortage || 0);
+        toast.error(`Stock required: ${name}${shortage ? ` (shortage ${shortage})` : ""}`);
+      } else {
+        toast.error(data?.error || "Failed to reserve");
+      }
     }
   };
 
