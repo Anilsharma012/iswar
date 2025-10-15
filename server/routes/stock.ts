@@ -197,10 +197,37 @@ export const updateStock = async (req: AuthRequest, res: Response) => {
       | null;
 
     if (type === "in") {
-      // Optional: user-provided B2B repayments; do not auto-repay
-      const repayments: Array<{ stockId: string; quantity: number }> = Array.isArray((req.body as any).b2bRepayments)
+      // Determine repayments: use user-provided mapping if present; otherwise auto-repay FIFO from outstanding B2B borrowings
+      let repayments: Array<{ stockId: string; quantity: number }> = Array.isArray((req.body as any).b2bRepayments)
         ? (req.body as any).b2bRepayments
         : [];
+
+      // Auto-calculate repayments if none provided
+      if (!repayments.length) {
+        const debts = await ManualB2BAllocation.find({
+          productId: product._id,
+          totalRemaining: { $gt: 0 },
+        }).sort({ createdAt: 1 });
+        let remaining = quantity;
+        const auto: Array<{ stockId: string; quantity: number }> = [];
+        for (const debt of debts) {
+          if (remaining <= 0) break;
+          for (const alloc of debt.allocations) {
+            if (remaining <= 0) break;
+            if (alloc.quantityRemaining <= 0) continue;
+            const giveBack = Math.min(alloc.quantityRemaining, remaining);
+            auto.push({ stockId: String(alloc.stockId), quantity: giveBack });
+            alloc.quantityRemaining -= giveBack;
+            remaining -= giveBack;
+          }
+          debt.totalRemaining = (debt.allocations || []).reduce(
+            (sum, a) => sum + Number(a.quantityRemaining || 0),
+            0,
+          );
+          await debt.save();
+        }
+        repayments = auto;
+      }
 
       const totalRepay = repayments.reduce(
         (sum, r) => sum + Number(r.quantity || 0),
@@ -212,15 +239,15 @@ export const updateStock = async (req: AuthRequest, res: Response) => {
           .json({ error: "B2B repayments cannot exceed total stock-in quantity" });
       }
 
-      // Apply B2B repayments as requested
+      // Apply B2B repayments
       for (const r of repayments) {
         await B2BStock.findByIdAndUpdate(r.stockId, {
           $inc: { quantityAvailable: r.quantity },
         });
       }
 
-      // Reduce any tracked debt for this product by the repaid amounts
-      if (repayments.length) {
+      // If user provided a mapping, reduce tracked debt accordingly
+      if ((req.body as any).b2bRepayments && (repayments || []).length) {
         const debts = await ManualB2BAllocation.find({
           productId: product._id,
           totalRemaining: { $gt: 0 },
