@@ -212,7 +212,8 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
     });
 
     // If invoice is being finalized, update stock using main + B2B fallback
-    if (value.status === "final") {
+    const hasEvent = Boolean(value.eventId);
+    if (value.status === "final" && !hasEvent) {
       const itemsWithAlloc: any[] = [];
       for (const item of value.items) {
         if ((item as any).isAdjustment) {
@@ -402,7 +403,7 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
     }
 
     // If changing from final to draft, reverse stock changes (including B2B fallback)
-    if (existingInvoice.status === "final" && value.status === "draft") {
+    if (existingInvoice.status === "final" && value.status === "draft" && !existingInvoice.eventId) {
       for (const item of existingInvoice.items as any[]) {
         await Product.findByIdAndUpdate(
           item.productId,
@@ -439,7 +440,7 @@ export const updateInvoice = async (req: AuthRequest, res: Response) => {
     }
 
     // If changing from draft to final, apply stock changes using main + B2B
-    if (existingInvoice.status === "draft" && value.status === "final") {
+    if (existingInvoice.status === "draft" && value.status === "final" && !value.eventId) {
       const itemsWithAlloc: any[] = [];
       for (const item of value.items) {
         if ((item as any).isAdjustment) {
@@ -624,7 +625,7 @@ export const deleteInvoice = async (req: AuthRequest, res: Response) => {
     }
 
     // If invoice was finalized, restore stock (including B2B allocations)
-    if (invoice.status === "final") {
+    if (invoice.status === "final" && !invoice.eventId) {
       for (const item of invoice.items as any[]) {
         await Product.findByIdAndUpdate(
           item.productId,
@@ -687,8 +688,9 @@ export const returnInvoice = async (req: AuthRequest, res: Response) => {
         .json({ error: "Only final invoices can be returned" });
     }
 
-    // Restore stock for all items
-    for (const item of invoice.items) {
+    // Restore stock for all items (only for standalone invoices)
+    if (!invoice.eventId) {
+      for (const item of invoice.items) {
       await Product.findByIdAndUpdate(
         item.productId,
         { $inc: { stockQty: item.qty } },
@@ -714,6 +716,9 @@ export const returnInvoice = async (req: AuthRequest, res: Response) => {
         },
         { session },
       );
+    }
+
+    // close restore block for standalone invoices
     }
 
     // Update invoice status
