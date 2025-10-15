@@ -161,9 +161,9 @@ export default function B2B() {
       else (payload as any)[field] = value;
       await b2bAPI.update(id, payload);
       await load();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Update failed");
+      toast.error(e?.response?.data?.error || "Update failed");
     }
   };
 
