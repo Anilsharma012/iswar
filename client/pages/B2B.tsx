@@ -301,14 +301,17 @@ export default function B2B() {
                         <TableCell className="w-32">
                           <Input
                             type="number"
-                            value={it.quantityAvailable}
-                            onChange={(e) =>
-                              onInlineUpdate(
-                                it._id,
-                                "quantityAvailable",
-                                Number(e.target.value),
-                              )
-                            }
+                            defaultValue={it.quantityAvailable}
+                            min={0}
+                            onBlur={(e) => {
+                              const raw = e.target.value;
+                              if (raw === "") return;
+                              const num = Number(raw);
+                              if (!Number.isFinite(num) || num < 0) return;
+                              if (num !== Number(it.quantityAvailable)) {
+                                onInlineUpdate(it._id, "quantityAvailable", num);
+                              }
+                            }}
                           />
                         </TableCell>
                         <TableCell className="w-32">
