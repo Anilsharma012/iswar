@@ -304,13 +304,22 @@ export default function B2B() {
                             defaultValue={it.quantityAvailable}
                             min={0}
                             onBlur={(e) => {
-                              const raw = e.target.value;
+                              const input = e.target as HTMLInputElement;
+                              const raw = input.value;
                               if (raw === "") return;
                               const num = Number(raw);
                               if (!Number.isFinite(num) || num < 0) return;
-                              if (num !== Number(it.quantityAvailable)) {
-                                onInlineUpdate(it._id, "quantityAvailable", num);
+                              const current = Number(it.quantityAvailable) || 0;
+                              if (num === current) return;
+                              const delta = num - current;
+                              const linked = typeof it.productId === "object" && it.productId ? (it.productId as any) : null;
+                              const mainStock = linked && typeof linked.stockQty === "number" ? Number(linked.stockQty) : null;
+                              if (delta > 0 && mainStock !== null && mainStock < delta) {
+                                toast.error("Insufficient main stock to transfer to B2B");
+                                input.value = String(current);
+                                return;
                               }
+                              onInlineUpdate(it._id, "quantityAvailable", num);
                             }}
                           />
                         </TableCell>
