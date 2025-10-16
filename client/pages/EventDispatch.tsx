@@ -30,15 +30,41 @@ export default function EventDispatch() {
           eventAPI.getById(id!),
           productAPI.getAll({ limit: 1000 }),
         ]);
-        setEvent(ev.data);
+        const eventData = ev.data;
+        setEvent(eventData);
         const items = prods.data?.products || [];
+
+        // Prefill from last reserved draft (if any)
+        const drafts = Array.isArray(eventData?.dispatchDrafts)
+          ? eventData.dispatchDrafts
+          : [];
+        const lastDraft = drafts.length ? drafts[drafts.length - 1] : null;
+        const prefillMap: Record<string, { qty: number; rate: number }> = {};
+        if (lastDraft?.items?.length) {
+          for (const it of lastDraft.items) {
+            const pid = String(it.productId || it.itemId || "");
+            if (!pid) continue;
+            const qty = Number(it.qtyToSend ?? it.qty ?? 0) || 0;
+            const rate = Number(it.rate || 0) || 0;
+            prefillMap[pid] = { qty, rate };
+          }
+        }
+
         setRows(
-          items.map((p: any) => ({
-            ...p,
-            qty: 0,
-            rate: p.sellPrice || 0,
-            amount: 0,
-          })),
+          items.map((p: any) => {
+            const preset = prefillMap[String(p._id)] || {
+              qty: 0,
+              rate: p.sellPrice || 0,
+            };
+            const qty = Number(preset.qty || 0);
+            const rate = Number((preset.rate ?? p.sellPrice) || 0);
+            return {
+              ...p,
+              qty,
+              rate,
+              amount: Number((qty * rate).toFixed(2)),
+            };
+          }),
         );
       } catch (e) {
         console.error(e);
@@ -80,12 +106,27 @@ export default function EventDispatch() {
           qty: r.qty,
           rate: r.rate,
         }));
+
+      if (!items.length) {
+        toast.error("Select at least one item with quantity > 0");
+        return;
+      }
+
       await eventAPI.dispatch(id!, { items });
       toast.success("Dispatch recorded");
       window.location.href = `/admin/events/${id}/agreement`;
     } catch (e: any) {
       console.error(e);
-      toast.error(e.response?.data?.error || "Failed to dispatch");
+      const data = e?.response?.data || {};
+      if (data?.error === "Stock Required") {
+        const name = data?.productName || "item";
+        const shortage = Number(data?.shortage || 0);
+        toast.error(
+          `Stock required: ${name}${shortage ? ` (shortage ${shortage})` : ""}`,
+        );
+      } else {
+        toast.error(data?.error || "Failed to dispatch");
+      }
     }
   };
 
@@ -102,12 +143,27 @@ export default function EventDispatch() {
           qty: r.qty,
           rate: r.rate,
         }));
+
+      if (!items.length) {
+        toast.error("Select at least one item with quantity > 0");
+        return;
+      }
+
       await api.post(`/events/${id}/dispatch?dryRun=1`, { items });
       toast.success("Reserved");
       window.location.href = `/admin/events/${id}/agreement`;
     } catch (e: any) {
       console.error(e);
-      toast.error(e.response?.data?.error || "Failed to reserve");
+      const data = e?.response?.data || {};
+      if (data?.error === "Stock Required") {
+        const name = data?.productName || "item";
+        const shortage = Number(data?.shortage || 0);
+        toast.error(
+          `Stock required: ${name}${shortage ? ` (shortage ${shortage})` : ""}`,
+        );
+      } else {
+        toast.error(data?.error || "Failed to reserve");
+      }
     }
   };
 

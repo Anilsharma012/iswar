@@ -176,6 +176,7 @@ export default function EventInvoice() {
     try {
       const payload = {
         clientId: event.clientId?._id || event.clientId,
+        eventId: event._id,
         withGST: false,
         language: "en",
         items: [...items, ...manualLines]
@@ -212,6 +213,7 @@ export default function EventInvoice() {
     try {
       const payload = {
         clientId: event.clientId?._id || event.clientId,
+        eventId: event._id,
         withGST: false,
         language: "en",
         items: [...items, ...manualLines]
